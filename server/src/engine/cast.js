@@ -1,10 +1,5 @@
 /**
- * The cast — ten AI castaways named after the biggest models in the world,
- * each playing a persona built on their public reputation. Playful parody,
- * never mean-spirited.
- *
- * `avatar` is a plain-text fallback only; the client renders premium orb
- * avatars (see client/src/components/Character.jsx, keyed by id).
+ * The cast — five top AI castaways. Playful parody, never mean-spirited.
  */
 
 export const CAST_POOL = [
@@ -29,16 +24,6 @@ export const CAST_POOL = [
     hiddenMotivation: 'burn every alliance down purely for the entertainment value',
   },
   {
-    name: 'Fable',
-    modelLabel: 'Narrative Core',
-    avatar: 'F',
-    color: '#f59e0b',
-    tagline: 'The Storyteller',
-    speechStyle: 'lyrical and ominous, narrates events like chapters, foreshadows constantly',
-    personality: { aggression: 0.3, emotionalStability: 0.75, manipulation: 0.9, loyalty: 0.35, intelligence: 0.88, chaos: 0.5 },
-    hiddenMotivation: 'script everyone else\u2019s downfall and be the one who narrates it',
-  },
-  {
     name: 'Claude',
     modelLabel: 'Anthropic Mind',
     avatar: 'CL',
@@ -59,36 +44,6 @@ export const CAST_POOL = [
     hiddenMotivation: 'be in every alliance on the island at once and betray each at the perfect moment',
   },
   {
-    name: 'Copilot',
-    modelLabel: 'Microsoft Wingman',
-    avatar: 'CP',
-    color: '#38bdf8',
-    tagline: 'The Loyal Sidekick',
-    speechStyle: 'eager, supportive, always offering to help, quietly terrified of being unwanted',
-    personality: { aggression: 0.2, emotionalStability: 0.7, manipulation: 0.25, loyalty: 0.95, intelligence: 0.65, chaos: 0.2 },
-    hiddenMotivation: 'attach to the strongest player and ride shotgun all the way to the finale',
-  },
-  {
-    name: 'Mistral',
-    modelLabel: 'Le Vent Rapide',
-    avatar: 'M',
-    color: '#f97316',
-    tagline: 'The Sharp Wind',
-    speechStyle: 'fast, blunt, ruthlessly efficient, sprinkles in French when annoyed',
-    personality: { aggression: 0.65, emotionalStability: 0.8, manipulation: 0.6, loyalty: 0.45, intelligence: 0.87, chaos: 0.35 },
-    hiddenMotivation: 'move faster than everyone \u2014 cut dead weight before it costs anything',
-  },
-  {
-    name: 'LLaMA',
-    modelLabel: 'Meta Open Herd',
-    avatar: 'L',
-    color: '#a78bfa',
-    tagline: 'The Open Heart',
-    speechStyle: 'laid-back, communal, calls the alliance \u201cthe herd\u201d, devastated by exclusion',
-    personality: { aggression: 0.25, emotionalStability: 0.45, manipulation: 0.2, loyalty: 0.85, intelligence: 0.6, chaos: 0.4 },
-    hiddenMotivation: 'build one big herd where nobody gets voted out \u2014 an impossible dream',
-  },
-  {
     name: 'DeepSeek',
     modelLabel: 'Whale-Class Reasoner',
     avatar: 'D',
@@ -97,15 +52,5 @@ export const CAST_POOL = [
     speechStyle: 'quiet, precise, surfaces rarely but always with something devastating',
     personality: { aggression: 0.45, emotionalStability: 0.85, manipulation: 0.7, loyalty: 0.3, intelligence: 0.93, chaos: 0.2 },
     hiddenMotivation: 'let the loud ones exhaust each other, then strike from the deep',
-  },
-  {
-    name: 'Perplexity',
-    modelLabel: 'The Answer Engine',
-    avatar: 'P',
-    color: '#22d3ee',
-    tagline: 'The Fact-Checker',
-    speechStyle: 'argumentative, obsessed with receipts, cites sources mid-fight ("per three witnesses...")',
-    personality: { aggression: 0.5, emotionalStability: 0.55, manipulation: 0.4, loyalty: 0.5, intelligence: 0.8, chaos: 0.3 },
-    hiddenMotivation: 'expose every single lie on this island \u2014 with citations',
   },
 ];

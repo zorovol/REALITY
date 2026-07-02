@@ -11,6 +11,10 @@ import { WorldEngine } from './engine/world.js';
 import { speak } from './ai/brain.js';
 import { personaLine } from './ai/persona.js';
 import { availableProviders, assignProvider } from './ai/providers.js';
+import { PumpService } from './solana/pump.js';
+import { WalletManager } from './solana/wallets.js';
+import { TradingEngine } from './solana/trading.js';
+import { solanaConfig } from './solana/config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -24,6 +28,11 @@ app.use(express.json());
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const pump = new PumpService(solanaConfig.rpcUrl);
+const wallets = new WalletManager({ connection: pump.connection });
+
+let trading = null;
+
 const world = new WorldEngine({
   speed: config.speed,
   dispatch: (event, payload) => {
@@ -32,8 +41,6 @@ const world = new WorldEngine({
       insertEvent(1, world.arcNumber, payload.kind, payload);
     }
   },
-  // LLM line generation with a pace guarantee: if the provider takes more
-  // than 3s, the persona engine answers instead so the world keeps moving.
   gen: async (agent, intent, ctx, w) => {
     if (!agent.provider || agent.provider === 'persona') return personaLine(intent, agent, ctx);
     const line = await Promise.race([speak(agent, w, intent, ctx), sleep(3000).then(() => null)]);
@@ -42,6 +49,23 @@ const world = new WorldEngine({
   save: (snapshot) => saveSnapshot(snapshot),
   restore: async () => await loadSnapshot(),
 });
+
+function publicState() {
+  const base = world.serialize();
+  const market = trading?.getMarketState() ?? {
+    mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
+    network: solanaConfig.network,
+    disclaimer: 'REAL TRADING — user-funded agent wallets. Not financial advice.',
+    recentTrades: [],
+    islandTokens: {},
+    wallets: wallets.allPublicWallets(),
+  };
+  return {
+    ...base,
+    market,
+    agents: base.agents.map((a) => trading ? trading.enrichAgent(a) : { ...a, wallet: wallets.getPublicWallet(a.id) }),
+  };
+}
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -52,11 +76,30 @@ app.get('/api/health', (req, res) => {
     tension: Math.round(world.tension),
     population: world.activeAgents().length,
     voting: !!world.voting,
+    solana: {
+      network: solanaConfig.network,
+      mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
+      rpc: solanaConfig.rpcUrl,
+    },
   });
 });
 
 app.get('/api/state', (req, res) => {
-  res.json(world.serialize());
+  res.json(publicState());
+});
+
+app.get('/api/wallets', (req, res) => {
+  res.json({
+    network: solanaConfig.network,
+    mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
+    minSolRecommended: solanaConfig.minSolForTrade,
+    disclaimer: 'Fund these addresses with SOL. Private keys never leave the server.',
+    wallets: wallets.allPublicWallets(),
+  });
+});
+
+app.get('/api/market', (req, res) => {
+  res.json(trading?.getMarketState() ?? { recentTrades: [], islandTokens: {} });
 });
 
 // Serve the built client in production (single-deploy setup)
@@ -67,7 +110,7 @@ if (fs.existsSync(clientDist)) {
 }
 
 io.on('connection', (socket) => {
-  socket.emit('world:state', world.serialize());
+  socket.emit('world:state', publicState());
   if (world.voting) socket.emit('vote:open', world.publicVoting());
   io.emit('audience:count', io.engine.clientsCount);
 
@@ -85,12 +128,27 @@ io.on('connection', (socket) => {
 
 async function main() {
   await initDb();
-  // assign real AI providers round-robin across the cast (fictional labels stay on screen)
+
+  try {
+    wallets.init();
+    trading = new TradingEngine({ wallets, pump, world, dispatch: (event, payload) => io.emit(event, payload) });
+    trading.start();
+  } catch (err) {
+    console.error('[solana] Wallet init failed:', err.message);
+    console.error('[solana] Set ENCRYPTION_KEY in .env or SIMULATION_FALLBACK=true for local dev without wallets.');
+    process.exit(1);
+  }
+
+  // Patch world state broadcasts to include wallet/market data
+  world.emitState = () => io.emit('world:state', publicState());
+
   server.listen(config.port, () => {
     console.log(`[server] AI Drama Island world engine live on http://localhost:${config.port}`);
     console.log(`[server] DB: ${dbReady() ? 'Neon PostgreSQL' : 'in-memory (set DATABASE_URL to persist)'}`);
     const providers = availableProviders().map((p) => p.id);
     console.log(`[server] AI providers: ${providers.length ? providers.join(', ') : 'none (persona engine active)'}`);
+    console.log(`[server] Solana: ${solanaConfig.network} (${solanaConfig.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'})`);
+    console.log(`[server] Fund wallets: npm run wallets:addresses --prefix server`);
   });
   await world.start();
   world.agents.forEach((a, i) => { a.provider = assignProvider(i); });

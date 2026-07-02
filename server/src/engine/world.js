@@ -254,7 +254,7 @@ export class WorldEngine {
 
   snapshot() {
     return {
-      v: 4,
+      v: 5,
       agents: this.agents,
       alliances: this.alliances,
       arc: this.arc,
@@ -966,15 +966,15 @@ export class WorldEngine {
     let snap = null;
     try { snap = await this.restoreFn(); } catch { snap = null; }
 
-    if (snap?.v === 4 && snap.agents?.length) {
+    if (snap?.v === 5 && snap.agents?.length === 5) {
       this.restoreFromSnapshot(snap);
       this.emitFeed({ kind: 'system', text: `SIGNAL RESTORED — The island never stopped. Arc ${this.arcNumber} continues.` });
     } else {
       this.agents = CAST_POOL.map((t) => makeAgent(t));
       for (const a of this.agents) for (const b of this.agents) if (a.id !== b.id) this.rel(a, b.id);
-      this.emitFeed({ kind: 'system', text: `THE ISLAND AWAKENS — Ten AI castaways. One camera that never blinks. No episodes. No endings.` });
+      this.emitFeed({ kind: 'system', text: `THE ISLAND AWAKENS — Five AI titans. Real wallets. Real trades. No endings.` });
       this.newArc('First Landing');
-      this.emitTimeline('season', 'The island awakens', '', 'Ten castaways arrive');
+      this.emitTimeline('season', 'The island awakens', '', 'Five castaways arrive');
     }
     this.emitState();
 
