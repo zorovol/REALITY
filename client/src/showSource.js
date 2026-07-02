@@ -5,14 +5,10 @@ import { buildFallbackMarket } from './lib/marketState.js';
 
 /**
  * Show source manager.
- * Tries the live world server first (same origin, or VITE_SERVER_URL when
- * the frontend is hosted separately, e.g. on Vercel). If no server responds
- * within the timeout — or the connection errors — a full local world
- * simulation starts in the browser so the app ALWAYS loads. If a real server
- * shows up later, we switch to it seamlessly.
+ * Local dev: Vite proxies /api + /socket.io to localhost:4000 (same origin).
+ * Production: Vercel rewrites /api + /socket.io to Render (same origin, any custom domain).
+ * Never call Render directly from the browser — CORS is restricted to known frontends.
  */
-
-const RENDER_SERVER = 'https://ai-drama-island-api.onrender.com';
 
 function isLocalDev() {
   if (typeof window === 'undefined') return false;
@@ -20,15 +16,16 @@ function isLocalDev() {
   return h === 'localhost' || h === '127.0.0.1';
 }
 
+/** Same-origin in all deployed builds; explicit URL only for non-proxied staging. */
 function resolveServerUrl() {
   if (isLocalDev()) return undefined;
-  return import.meta.env.VITE_SERVER_URL?.trim() || RENDER_SERVER;
+  return undefined;
 }
 
 const SERVER_URL = resolveServerUrl();
 const FALLBACK_AFTER_MS = 30000;
 const HARD_DEADLINE_MS = 45000;
-const HTTP_TIMEOUT_MS = 20000;
+const HTTP_TIMEOUT_MS = 25000;
 const SIM_STORE_KEY = 'adi-world-v6';
 
 // Stable per-browser voter identity
@@ -99,12 +96,12 @@ function ingestServerState(state) {
 
 async function tryHttpBootstrap() {
   try {
-    const base = SERVER_URL ?? '';
-    const res = await fetch(`${base}/api/state`, { signal: AbortSignal.timeout(HTTP_TIMEOUT_MS) });
+    const res = await fetch('/api/state', { signal: AbortSignal.timeout(HTTP_TIMEOUT_MS) });
     if (!res.ok) return false;
     const state = await res.json();
     return ingestServerState(state);
-  } catch {
+  } catch (err) {
+    console.warn('[show] HTTP bootstrap failed:', err?.message ?? err);
     return false;
   }
 }
@@ -159,6 +156,7 @@ function switchToServer() {
     sim.stop();
     sim = null;
   }
+  try { localStorage.removeItem(SIM_STORE_KEY); } catch { /* unavailable */ }
   notifyStatus();
 }
 
@@ -182,13 +180,12 @@ socket.onAny((event, payload) => {
 socket.on('connect', () => {
   notifyStatus();
   if (mode === 'local') {
-    tryHttpBootstrap();
+    void tryHttpBootstrap();
     return;
   }
   if (!booted) {
-  // Socket connected but world:state may lag — HTTP backup after short grace.
     setTimeout(() => {
-      if (!booted && mode !== 'local') tryHttpBootstrap();
+      if (!booted && mode !== 'local') void tryHttpBootstrap();
     }, 1500);
   }
 });
@@ -203,7 +200,8 @@ socket.on('disconnect', () => {
   }, FALLBACK_AFTER_MS);
 });
 
-socket.on('connect_error', () => {
+socket.on('connect_error', (err) => {
+  console.warn('[show] Socket connect_error:', err?.message ?? err);
   if (mode === 'connecting') activateFallback('connect_error');
 });
 
@@ -216,8 +214,9 @@ hardDeadlineTimer = setTimeout(() => {
 }, HARD_DEADLINE_MS);
 
 if (!isLocalDev()) {
+  void tryHttpBootstrap();
   setInterval(() => {
-    if (mode === 'local') tryHttpBootstrap();
+    if (mode === 'local') void tryHttpBootstrap();
   }, 12000);
 }
 

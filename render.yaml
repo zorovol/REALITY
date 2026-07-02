@@ -15,7 +15,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://ai-drama-island.vercel.app
+        value: https://gptgrokgeminideepseekfable.com,https://www.gptgrokgeminideepseekfable.com,https://ai-drama-island.vercel.app
       - key: SIMULATION_FALLBACK
         value: "false"
       - key: PUMP_DISCOVERY

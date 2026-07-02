@@ -4,11 +4,6 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "build": {
-    "env": {
-      "VITE_SERVER_URL": "https://ai-drama-island-api.onrender.com"
-    }
-  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/$1" },
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
