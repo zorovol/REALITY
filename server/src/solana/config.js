@@ -16,6 +16,8 @@ export const solanaConfig = {
   autoLaunch: config.pumpAutoLaunch,
   discoveryEnabled: config.pumpDiscoveryEnabled,
   discoveryRefreshMs: config.pumpDiscoveryRefreshMs,
+  tradeUsdPerSide: config.tradeUsdPerSide,
+  solUsdFallback: config.solUsdFallback,
 };
 
 export function solscanTxUrl(signature) {

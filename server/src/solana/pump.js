@@ -184,7 +184,7 @@ export class PumpService {
     return { signature, explorerUrl, solAmount, side: 'buy' };
   }
 
-  async sellToken({ keypair, mintAddress, sellRatio = 0.5 }) {
+  async sellToken({ keypair, mintAddress, sellRatio = 0.5, targetSol }) {
     const mint = new PublicKey(mintAddress);
     const user = keypair.publicKey;
     const tokenProgram = await this.getMintTokenProgram(mint);
@@ -198,13 +198,19 @@ export class PumpService {
     }
     if (tokenBalance <= 0n) return null;
 
-    const sellAmount = new BN(
-      (BigInt(tokenBalance.toString()) * BigInt(Math.floor(sellRatio * 100)) / 100n).toString(),
-    );
-    if (sellAmount.lte(new BN(0))) return null;
-
     const { global, feeConfig } = await this.getTradeContext();
     const { bondingCurveAccountInfo, bondingCurve } = await this.online.fetchSellState(mint, user, tokenProgram);
+
+    let sellAmount;
+    if (targetSol != null && targetSol > 0) {
+      sellAmount = this.tokenAmountForSolOut(global, feeConfig, bondingCurve, tokenBalance, targetSol);
+    } else {
+      sellAmount = new BN(
+        (BigInt(tokenBalance.toString()) * BigInt(Math.floor(sellRatio * 100)) / 100n).toString(),
+      );
+    }
+    if (sellAmount.lte(new BN(0))) return null;
+
     const solAmount = this.calcSellAmount(global, feeConfig, bondingCurve, sellAmount);
 
     const instructions = await this.sdk.sellInstructions({
@@ -229,7 +235,38 @@ export class PumpService {
       explorerUrl,
       side: 'sell',
       solAmount: Number(solAmount.toString()) / LAMPORTS_PER_SOL,
+      sellRatio: targetSol != null
+        ? Number(sellAmount.toString()) / Number(tokenBalance.toString())
+        : sellRatio,
     };
+  }
+
+  /** Find token sell size that yields ~targetSol (caps at full balance). */
+  tokenAmountForSolOut(global, feeConfig, bondingCurve, tokenBalance, targetSol) {
+    const targetLamports = BigInt(Math.floor(targetSol * LAMPORTS_PER_SOL));
+    const balance = BigInt(tokenBalance.toString());
+    if (balance <= 0n) return new BN(0);
+
+    const fullBn = new BN(balance.toString());
+    const fullSol = BigInt(this.calcSellAmount(global, feeConfig, bondingCurve, fullBn).toString());
+    if (fullSol <= targetLamports) return fullBn;
+
+    let lo = 1n;
+    let hi = balance;
+    let best = balance;
+    while (lo <= hi) {
+      const mid = (lo + hi) / 2n;
+      const solOut = BigInt(
+        this.calcSellAmount(global, feeConfig, bondingCurve, new BN(mid.toString())).toString(),
+      );
+      if (solOut >= targetLamports) {
+        best = mid;
+        hi = mid - 1n;
+      } else {
+        lo = mid + 1n;
+      }
+    }
+    return new BN(best.toString());
   }
 
   async getTokenBalance(keypair, mintAddress) {

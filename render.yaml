@@ -22,6 +22,14 @@ services:
         value: "true"
       - key: PUMP_AUTO_LAUNCH
         value: "false"
+      - key: TRADE_USD_PER_SIDE
+        value: "2"
+      - key: TRADE_INTERVAL_MS
+        value: "8000"
+      - key: MAX_TRADES_PER_MINUTE
+        value: "8"
+      - key: MIN_SOL_FOR_TRADE
+        value: "0.02"
       - key: ENCRYPTION_KEY
         sync: false
       - key: WALLETS_ENC_B64

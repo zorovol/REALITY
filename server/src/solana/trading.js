@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { CAST_POOL } from '../engine/cast.js';
 import { solanaConfig } from './config.js';
 import { PumpDiscovery } from './pumpDiscovery.js';
+import { getSolUsdPrice, usdToSol } from './solPrice.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = path.join(__dirname, '..', '..', 'data', 'trading-state.json');
@@ -82,6 +83,8 @@ export class TradingEngine {
     this.timers = [];
     this.holdings = new Map();
     this.discovery = new PumpDiscovery();
+    this.solUsdPrice = solanaConfig.solUsdFallback;
+    this.lastBuyMint = new Map();
   }
 
   start() {
@@ -93,8 +96,15 @@ export class TradingEngine {
       this.timers.push(setInterval(() => this.discovery.refresh(), solanaConfig.discoveryRefreshMs));
     }
     this.refreshBalances();
+    getSolUsdPrice(solanaConfig.solUsdFallback).then((p) => {
+      this.solUsdPrice = p;
+      console.log(`[trading] SOL/USD ~$${p.toFixed(2)} — $${solanaConfig.tradeUsdPerSide} per side, tick every ${solanaConfig.tradeIntervalMs}ms`);
+    });
     console.log(`[trading] Real on-chain mode — network=${solanaConfig.network}, fallback=${solanaConfig.simulationFallback}, discovery=${solanaConfig.discoveryEnabled}`);
-    setTimeout(() => this.tradingTick(), 5_000);
+    setTimeout(() => this.tradingTick(), 3_000);
+    setInterval(() => {
+      getSolUsdPrice(solanaConfig.solUsdFallback).then((p) => { this.solUsdPrice = p; });
+    }, 60_000);
   }
 
   stop() {
@@ -367,7 +377,7 @@ export class TradingEngine {
       const balance = this.wallets.getBalance(agent.id);
 
       const p = agent.personality;
-      const tradeChance = funded.length === 1 ? 1 : 0.15 + p.chaos * 0.35 + p.aggression * 0.2;
+      const tradeChance = funded.length === 1 ? 1 : 0.55 + p.chaos * 0.25 + p.aggression * 0.15;
       if (!chance(tradeChance)) return;
 
       const keypair = this.wallets.getKeypair(agent.id);
@@ -379,9 +389,10 @@ export class TradingEngine {
 
       const chainHeld = await this.getChainHoldings(agent.id, keypair);
       this.syncHoldingsPanel(agent.id, chainHeld);
+      const tradeSol = usdToSol(solanaConfig.tradeUsdPerSide, this.solUsdPrice);
       const feeReserve = 0.003;
       const canSell = chainHeld.length > 0 && balance >= feeReserve;
-      if (balance < solanaConfig.minSolForTrade && !canSell) {
+      if (balance < tradeSol + feeReserve && !canSell) {
         this.emitBroke(agent);
         return;
       }
@@ -394,28 +405,30 @@ export class TradingEngine {
         }
       }
 
-      const sellChance = 0.6 + p.aggression * 0.3 + p.chaos * 0.1;
+      const recentBuy = this.lastBuyMint.get(agent.id);
+      const justBought = recentBuy && Date.now() - recentBuy.at < 45_000;
+      const sellChance = canSell && (justBought ? 0.92 : 0.75 + p.aggression * 0.2);
       const isSell = canSell && chance(sellChance);
-      const reserve = 0.005;
-      const maxSpend = Math.max(0, balance - reserve);
 
       if (isSell) {
-        const target = pick(chainHeld);
-        const sellRatio = 0.45 + p.aggression * 0.35;
-        console.log(`[trading] ${agent.name} selling $${target.symbol ?? '?'} (${Math.round(sellRatio * 100)}%)`);
+        const target = justBought && chainHeld.some((h) => h.mint === recentBuy.mint)
+          ? chainHeld.find((h) => h.mint === recentBuy.mint)
+          : pick(chainHeld);
+        console.log(`[trading] ${agent.name} selling $${target.symbol ?? '?'} (~$${solanaConfig.tradeUsdPerSide})`);
         const result = await this.pump.sellToken({
           keypair,
           mintAddress: target.mint,
-          sellRatio,
+          targetSol: tradeSol,
         });
         if (result) {
           this.recordTrade(agent.id);
+          this.lastBuyMint.delete(agent.id);
           this.logTrade(agent, {
             ...result,
             mint: target.mint,
             symbol: target.symbol,
             targetAgentId: target.agentId,
-            sellRatio,
+            usdAmount: solanaConfig.tradeUsdPerSide,
           });
           await this.handleTradeDrama(agent, target, 'sell', result);
           const remaining = await this.getChainHoldings(agent.id, keypair);
@@ -427,7 +440,7 @@ export class TradingEngine {
         return;
       }
 
-      if (balance < solanaConfig.minSolForTrade) return;
+      if (balance < tradeSol + feeReserve) return;
 
       const targets = this.tradeableMints(agent.id);
       if (!targets.length) {
@@ -436,16 +449,17 @@ export class TradingEngine {
       }
 
       const target = pick(targets);
-      const spend = Math.min(maxSpend, 0.01 + Math.random() * 0.04 * (1 + p.chaos));
-      if (spend < 0.005) {
-        this.emitBroke(agent);
-        return;
-      }
-
-      console.log(`[trading] ${agent.name} buying $${target.symbol ?? '?'} for ${spend.toFixed(3)} SOL`);
-      const result = await this.pump.buyToken({ keypair, mintAddress: target.mint, solAmount: spend });
+      console.log(`[trading] ${agent.name} buying $${target.symbol ?? '?'} (~$${solanaConfig.tradeUsdPerSide} / ${tradeSol.toFixed(4)} SOL)`);
+      const result = await this.pump.buyToken({ keypair, mintAddress: target.mint, solAmount: tradeSol });
       this.recordTrade(agent.id);
-      this.logTrade(agent, { ...result, mint: target.mint, symbol: target.symbol, targetAgentId: target.agentId });
+      this.lastBuyMint.set(agent.id, { mint: target.mint, at: Date.now() });
+      this.logTrade(agent, {
+        ...result,
+        mint: target.mint,
+        symbol: target.symbol,
+        targetAgentId: target.agentId,
+        usdAmount: solanaConfig.tradeUsdPerSide,
+      });
       await this.handleTradeDrama(agent, target, 'buy', result);
     } catch (err) {
       const msg = err.message ?? String(err);
@@ -516,13 +530,14 @@ export class TradingEngine {
     const targetName = target.symbol
       ? `$${target.symbol}`
       : (targetAgent?.name ?? (target.agentId === 'pumpfun' ? 'a pump.fun coin' : 'a mystery coin'));
-    const sol = result.solAmount?.toFixed?.(3) ?? '?';
+    const sol = result.solAmount?.toFixed?.(4) ?? '?';
+    const usd = solanaConfig.tradeUsdPerSide;
 
     const text = side === 'buy'
       ? (target.agentId === 'pumpfun' || target.agentId === 'external' || target.agentId === 'held')
-        ? `${agent.name} aped ${sol} SOL into ${targetName} on pump.fun`
-        : `${agent.name} aped ${sol} SOL into ${targetName}'s coin on pump.fun`
-      : `${agent.name} dumped ${targetName} for ~${sol} SOL on pump.fun`;
+        ? `${agent.name} scalped $${usd} into ${targetName} on pump.fun`
+        : `${agent.name} scalped $${usd} into ${targetName}'s coin on pump.fun`
+      : `${agent.name} flipped ${targetName} for ~$${usd} (~${sol} SOL) on pump.fun`;
 
     this.world.emitFeed({
       kind: 'trade',
