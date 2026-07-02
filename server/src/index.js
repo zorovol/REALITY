@@ -15,6 +15,7 @@ import { PumpService } from './solana/pump.js';
 import { WalletManager } from './solana/wallets.js';
 import { TradingEngine } from './solana/trading.js';
 import { solanaConfig } from './solana/config.js';
+import { buildSkeletonMarket } from './solana/marketFallback.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -55,14 +56,8 @@ const world = new WorldEngine({
 
 function publicState() {
   const base = world.serialize();
-  const market = trading?.getMarketState() ?? {
-    mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
-    network: solanaConfig.network,
-    disclaimer: 'REAL TRADING — user-funded agent wallets. Not financial advice.',
-    recentTrades: [],
-    islandTokens: {},
-    wallets: wallets.allPublicWallets(),
-  };
+  const walletMap = wallets.allPublicWallets();
+  const market = trading?.getMarketState() ?? buildSkeletonMarket(walletMap);
   return {
     ...base,
     market,
@@ -102,7 +97,7 @@ app.get('/api/wallets', (req, res) => {
 });
 
 app.get('/api/market', (req, res) => {
-  res.json(trading?.getMarketState() ?? { recentTrades: [], islandTokens: {}, agentPanels: [], tradesByAgent: {} });
+  res.json(trading?.getMarketState() ?? buildSkeletonMarket(wallets.allPublicWallets()));
 });
 
 app.get('/api/trades', (req, res) => {

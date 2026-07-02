@@ -16,6 +16,20 @@ function FeedItem({ item }) {
     );
   }
 
+  if (item.kind === 'trade') {
+    return (
+      <div className={`feed-trade tone-${item.tone ?? 'default'}`}>
+        <div className="feed-trade-badge">ON-CHAIN</div>
+        <p className="feed-trade-text">{text}</p>
+        {item.explorerUrl && (
+          <a className="feed-trade-link" href={item.explorerUrl} target="_blank" rel="noopener noreferrer">
+            View on Solscan
+          </a>
+        )}
+      </div>
+    );
+  }
+
   if (item.kind === 'announcement' || item.kind === 'drama') {
     return (
       <div className={`feed-event tone-${item.tone ?? 'default'} ${item.big ? 'feed-event-major' : ''}`}>

@@ -48,6 +48,22 @@ const EMOTION_BY_INTENT = {
   returnee: 'anger', idol_found: 'alliance',
 };
 
+function migrateSnapshotAgents(snap) {
+  if (!snap?.agents?.length) return snap;
+  const agents = snap.agents.map((a) => {
+    if (a.id !== 'claude') return a;
+    return { ...a, id: 'fable', name: 'Fable', modelLabel: a.modelLabel ?? 'Narrative Core', tagline: a.tagline ?? 'The Storyteller' };
+  });
+  return { ...snap, agents };
+}
+
+function isValidSnapshot(snap) {
+  const required = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
+  if (!snap || snap.v !== 6 || !Array.isArray(snap.agents) || snap.agents.length !== 5) return false;
+  const ids = new Set(snap.agents.map((a) => a.id));
+  return required.every((id) => ids.has(id));
+}
+
 function makeAgent(template) {
   return {
     id: template.name.toLowerCase(),
@@ -254,7 +270,7 @@ export class WorldEngine {
 
   snapshot() {
     return {
-      v: 5,
+      v: 6,
       agents: this.agents,
       alliances: this.alliances,
       arc: this.arc,
@@ -965,8 +981,9 @@ export class WorldEngine {
     if (this.stopped) return;
     let snap = null;
     try { snap = await this.restoreFn(); } catch { snap = null; }
+    if (snap) snap = migrateSnapshotAgents(snap);
 
-    if (snap?.v === 5 && snap.agents?.length === 5) {
+    if (isValidSnapshot(snap)) {
       this.restoreFromSnapshot(snap);
       this.emitFeed({ kind: 'system', text: `SIGNAL RESTORED — The island never stopped. Arc ${this.arcNumber} continues.` });
     } else {

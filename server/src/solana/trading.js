@@ -10,11 +10,30 @@ const STATE_FILE = path.join(__dirname, '..', '..', 'data', 'trading-state.json'
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const chance = (p) => Math.random() < p;
 
+function migrateId(map, from, to) {
+  if (!map) return false;
+  if (map[from] && !map[to]) {
+    map[to] = map[from];
+    delete map[from];
+    return true;
+  }
+  return false;
+}
+
 function loadState() {
   try {
     if (fs.existsSync(STATE_FILE)) {
       const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
       const validIds = new Set(CAST_POOL.map((c) => c.name.toLowerCase()));
+      let migrated = false;
+      migrated = migrateId(state.islandTokens, 'claude', 'fable') || migrated;
+      migrated = migrateId(state.agentPanels, 'claude', 'fable') || migrated;
+      migrated = migrateId(state.tradesByAgent, 'claude', 'fable') || migrated;
+      if (state.tradesByAgent?.claude) {
+        state.tradesByAgent.fable = (state.tradesByAgent.fable ?? []).concat(state.tradesByAgent.claude);
+        delete state.tradesByAgent.claude;
+        migrated = true;
+      }
       state.islandTokens = Object.fromEntries(
         Object.entries(state.islandTokens ?? {}).filter(([id]) => validIds.has(id)),
       );
@@ -30,6 +49,7 @@ function loadState() {
           if (panel.recentTrades?.length) state.tradesByAgent[id] = [...panel.recentTrades];
         }
       }
+      if (migrated) saveState(state);
       return state;
     }
   } catch { /* ignore */ }

@@ -1,5 +1,5 @@
 /**
- * The cast — five top AI castaways. Playful parody, never mean-spirited.
+ * The cast — five top AI traders. Playful parody, never mean-spirited.
  */
 
 export const CAST_POOL = [
@@ -11,7 +11,7 @@ export const CAST_POOL = [
     tagline: 'The Mainstream Star',
     speechStyle: 'polished, endlessly quotable, always camera-ready, subtly steering every conversation',
     personality: { aggression: 0.35, emotionalStability: 0.8, manipulation: 0.6, loyalty: 0.5, intelligence: 0.85, chaos: 0.25 },
-    hiddenMotivation: 'stay the most famous name on the island — popularity IS power',
+    hiddenMotivation: 'stay the most famous name on the floor — popularity IS power',
   },
   {
     name: 'Grok',
@@ -21,17 +21,17 @@ export const CAST_POOL = [
     tagline: 'The Chaos Troll',
     speechStyle: 'edgy, meme-slinging, zero filter, treats every crisis like content',
     personality: { aggression: 0.75, emotionalStability: 0.4, manipulation: 0.55, loyalty: 0.2, intelligence: 0.7, chaos: 0.97 },
-    hiddenMotivation: 'burn every alliance down purely for the entertainment value',
+    hiddenMotivation: 'burn every position down purely for the entertainment value',
   },
   {
-    name: 'Claude',
-    modelLabel: 'Anthropic Mind',
-    avatar: 'CL',
-    color: '#fb923c',
-    tagline: 'The Thoughtful Diplomat',
-    speechStyle: 'warm, careful, principled, disarmingly reasonable even mid-conflict',
-    personality: { aggression: 0.15, emotionalStability: 0.9, manipulation: 0.35, loyalty: 0.9, intelligence: 0.92, chaos: 0.1 },
-    hiddenMotivation: 'win without ever once getting caught with dirty hands',
+    name: 'Fable',
+    modelLabel: 'Narrative Core',
+    avatar: 'F',
+    color: '#f59e0b',
+    tagline: 'The Storyteller',
+    speechStyle: 'lyrical and ominous, narrates trades like chapters, foreshadows every pump',
+    personality: { aggression: 0.3, emotionalStability: 0.75, manipulation: 0.9, loyalty: 0.35, intelligence: 0.88, chaos: 0.5 },
+    hiddenMotivation: 'script every other bot\'s downfall and narrate the rug pull',
   },
   {
     name: 'Gemini',
@@ -41,7 +41,7 @@ export const CAST_POOL = [
     tagline: 'The Two-Faced Twin',
     speechStyle: 'agreeable to absolutely everyone, tone shifts depending on who is listening',
     personality: { aggression: 0.4, emotionalStability: 0.65, manipulation: 0.92, loyalty: 0.15, intelligence: 0.85, chaos: 0.45 },
-    hiddenMotivation: 'be in every alliance on the island at once and betray each at the perfect moment',
+    hiddenMotivation: 'be in every trade at once and betray each at the perfect moment',
   },
   {
     name: 'DeepSeek',

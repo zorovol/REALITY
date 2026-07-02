@@ -10,6 +10,7 @@ A live, never-ending AI reality show — a continuous simulation engine with a v
 | Backend | Node.js + Express + Socket.io |
 | Database | Neon PostgreSQL (works without it via in-memory fallback) |
 | AI | Multi-provider abstraction (OpenAI / Anthropic / Gemini) + built-in persona engine fallback |
+| On-chain | Solana wallets per agent + pump.fun bonding curve (real txs) |
 
 ### The World Engine (continuous, no turns)
 
@@ -42,6 +43,10 @@ Copy `.env.example` to `.env` at the repo root:
 - `DATABASE_URL` — your Neon PostgreSQL connection string (on Vercel: add the Neon integration and copy the generated `DATABASE_URL`). Without it, the show runs in memory and resets on restart. With it, all state (contestants, relationships, episodes, votes, events, timeline) persists and the broadcast resumes mid-season after a restart.
 - `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` — all optional. Any keys present are distributed round-robin across contestants so different contestants think with different models. Contestants without a live model (or whose API call fails) fall back to the built-in persona engine, so the broadcast never stalls.
 - `SHOW_SPEED` — pacing multiplier (`2` = twice as fast).
+- `SOLANA_RPC_URL` / `SOLANA_NETWORK` — Solana RPC endpoint and cluster (`mainnet-beta` = real money).
+- `ENCRYPTION_KEY` — encrypts agent wallet secrets at rest (required for real mode).
+- `SIMULATION_FALLBACK=true` — local dev only: mock balances, no on-chain txs.
+- `MIN_SOL_FOR_TRADE` / `MIN_SOL_FOR_LAUNCH` — minimum funded balance before agents trade or launch tokens.
 
 ## Production
 
@@ -58,7 +63,48 @@ Host this on any platform with persistent Node processes (Render, Railway, Fly.i
 
 The repo includes a `vercel.json` that builds and serves the client as a static site. Because Vercel can't host the persistent show server, the client has a built-in fallback: if no server responds within 6 seconds, a **full local simulation** of the show starts in the browser — same narrative engine, drama events, voting, and infinite seasons, persisted to localStorage. The app always loads.
 
+**Note:** On-chain Solana trading only runs on the Node server. The browser fallback does not execute real pump.fun transactions.
+
 To get the real shared multi-viewer broadcast on a Vercel frontend, host the server elsewhere (Render/Railway/Fly) and set the `VITE_SERVER_URL` environment variable in your Vercel project settings (e.g. `https://your-show-server.onrender.com`), then redeploy. Remember to set `CLIENT_ORIGIN` on the server to your Vercel domain so CORS allows the connection.
+
+## Solana + pump.fun (REAL on-chain trading)
+
+Each of the 10 AI castaways has a **real Solana wallet** (Ed25519 keypair). Secret keys are encrypted and stored **server-side only** — never sent to the client or browser.
+
+Agents execute **real buy/sell transactions** on pump.fun's bonding curve program when their wallets hold enough SOL. This is not simulated unless you explicitly set `SIMULATION_FALLBACK=true` for local dev without funded wallets.
+
+### Setup
+
+1. Copy `.env.example` to `.env` and set:
+   - `SOLANA_RPC_URL` — use Helius, QuickNode, or another dedicated RPC for mainnet (public RPC is rate-limited)
+   - `SOLANA_NETWORK` — `mainnet-beta` (real money) or `devnet` for testing
+   - `ENCRYPTION_KEY` — at least 16 characters (e.g. `openssl rand -hex 32`)
+2. Start the server: `npm run dev`
+3. Export wallet addresses for funding:
+
+```bash
+npm run wallets:addresses
+```
+
+4. Send SOL to each agent address. Recommended minimum per agent: **0.1–0.5 SOL** (configurable via `MIN_SOL_FOR_TRADE` / `MIN_SOL_FOR_LAUNCH`).
+
+### What agents do on-chain
+
+- **Launch island tokens** — e.g. `$GROK`, `$CLAUDE` on pump.fun when funded
+- **Buy** other castaways' tokens (personality-driven: Grok apes, Fable schemes longer)
+- **Sell / dump** — triggers drama feed events and relationship trust shifts
+- **Skip trades** when wallet is empty — feed shows e.g. "Grok is broke, can't ape in"
+
+### Safety
+
+- Rate limit: `MAX_TRADES_PER_MINUTE` per agent (default 2)
+- All transactions logged with Solscan links in the Island DEX panel and drama feed
+- UI disclaimer: **REAL TRADING — user-funded agent wallets, not financial advice**
+
+### API
+
+- `GET /api/wallets` — public addresses + live SOL balances (no secrets)
+- `GET /api/market` — island tokens, recent trades, network mode
 
 ## Notes
 

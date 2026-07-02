@@ -102,6 +102,45 @@ export function IconCaretDown({ size = 12 }) {
   );
 }
 
+export function IconWallet({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="6" width="18" height="14" rx="2" {...S} />
+      <path d="M3 10 H21" {...S} />
+      <circle cx="17" cy="14" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function IconMarket({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 18 V10 L8 6 L12 12 L16 8 L20 14 V18" {...S} />
+      <path d="M4 18 H20" {...S} />
+    </svg>
+  );
+}
+
+export function IconTrade({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 16 L3 12 L7 8" {...S} />
+      <path d="M3 12 H14" {...S} />
+      <path d="M17 8 L21 12 L17 16" {...S} />
+      <path d="M21 12 H10" {...S} />
+    </svg>
+  );
+}
+
+export function IconCopy({ size = 12 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="8" y="8" width="12" height="12" rx="2" {...S} />
+      <path d="M4 16 V6 C4 4.9 4.9 4 6 4 H16" {...S} />
+    </svg>
+  );
+}
+
 export function IconSkull({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">

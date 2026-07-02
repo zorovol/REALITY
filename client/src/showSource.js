@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import { WorldEngine } from './sim/world.js';
 import { personaLine } from './sim/persona.js';
+import { buildFallbackMarket } from './lib/marketState.js';
 
 /**
  * Show source manager.
@@ -13,7 +14,8 @@ import { personaLine } from './sim/persona.js';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || undefined;
 const FALLBACK_AFTER_MS = 6000;
-const SIM_STORE_KEY = 'adi-world-v4';
+const HARD_DEADLINE_MS = 8000;
+const SIM_STORE_KEY = 'adi-world-v6';
 
 // Stable per-browser voter identity
 const KEY = 'adi-voter-id';
@@ -45,31 +47,95 @@ function dispatch(event, payload) {
 
 let mode = 'connecting'; // 'connecting' | 'server' | 'local'
 let sim = null;
+let booted = false;
+let fallbackTimer = null;
+let hardDeadlineTimer = null;
 
 export function getMode() {
   return mode;
 }
 
-function notifyStatus() {
-  dispatch('source:change', { mode, connected: mode === 'server' ? socket.connected : mode === 'local' });
+function notifyStatus(extra = {}) {
+  dispatch('source:change', {
+    mode,
+    connected: mode === 'server' ? socket.connected : mode === 'local',
+    booted,
+    ...extra,
+  });
 }
 
-function startLocal() {
-  if (mode === 'server' || sim) return;
-  console.warn('[show] No world server reachable — starting local island simulation.');
-  mode = 'local';
-  sim = new WorldEngine({
-    dispatch,
-    gen: (agent, intent, ctx) => personaLine(intent, agent, ctx),
-    save: (snapshot) => {
-      try { localStorage.setItem(SIM_STORE_KEY, JSON.stringify(snapshot)); } catch { /* full/unavailable */ }
-    },
-    restore: () => {
-      try { return JSON.parse(localStorage.getItem(SIM_STORE_KEY) ?? 'null'); } catch { return null; }
-    },
-  });
-  sim.start();
+function markBooted() {
+  if (booted) return;
+  booted = true;
   notifyStatus();
+}
+
+function ingestServerState(state) {
+  if (!state) return false;
+  switchToServer();
+  dispatch('world:state', state);
+  if (state.market) {
+    dispatch('market:update', state.market);
+  } else if (state.agents?.length) {
+    dispatch('market:update', buildFallbackMarket({ agents: state.agents, mode: 'real' }));
+  }
+  markBooted();
+  return true;
+}
+
+async function tryHttpBootstrap() {
+  try {
+    const base = SERVER_URL ?? '';
+    const res = await fetch(`${base}/api/state`, { signal: AbortSignal.timeout(4500) });
+    if (!res.ok) return false;
+    const state = await res.json();
+    return ingestServerState(state);
+  } catch {
+    return false;
+  }
+}
+
+function startLocal(reason = 'timeout') {
+  if (mode === 'server' || sim) return;
+  console.warn(`[show] Starting local simulation (${reason}).`);
+  mode = 'local';
+  try {
+    sim = new WorldEngine({
+      dispatch,
+      gen: (agent, intent, ctx) => personaLine(intent, agent, ctx),
+      save: (snapshot) => {
+        try { localStorage.setItem(SIM_STORE_KEY, JSON.stringify(snapshot)); } catch { /* full/unavailable */ }
+      },
+      restore: () => {
+        try { return JSON.parse(localStorage.getItem(SIM_STORE_KEY) ?? 'null'); } catch { return null; }
+      },
+    });
+    sim.start();
+    markBooted();
+  } catch (err) {
+    console.error('[show] Local sim failed:', err);
+    dispatch('world:state', {
+      startedAt: Date.now(),
+      arc: null,
+      tension: 0,
+      zones: [],
+      agents: [],
+      alliances: [],
+      feed: [],
+      timeline: [],
+      voting: null,
+    });
+    dispatch('market:update', buildFallbackMarket({ mode: 'local' }));
+    dispatch('source:change', { mode: 'local', connected: true, booted: true, error: err.message });
+    booted = true;
+  }
+  notifyStatus({ reason });
+}
+
+async function activateFallback(reason) {
+  if (mode === 'server' || booted) return;
+  const ok = await tryHttpBootstrap();
+  if (!ok) startLocal(reason);
 }
 
 function switchToServer() {
@@ -89,31 +155,45 @@ const socket = io(SERVER_URL, {
 });
 
 socket.onAny((event, payload) => {
-  // The server always sends world:state first — that's our signal it's real.
-  if (event === 'world:state') switchToServer();
-  if (mode === 'local') return; // ignore stray server chatter while simulating
+  if (event === 'world:state') {
+    ingestServerState(payload);
+    return;
+  }
+  if (mode === 'local') return;
   dispatch(event, payload);
 });
 
-socket.on('connect', notifyStatus);
+socket.on('connect', () => {
+  notifyStatus();
+  if (!booted) {
+  // Socket connected but world:state may lag — HTTP backup after short grace.
+    setTimeout(() => {
+      if (!booted && mode !== 'local') tryHttpBootstrap();
+    }, 1500);
+  }
+});
+
 socket.on('disconnect', () => {
   notifyStatus();
-  // Server went away mid-broadcast: give it a grace period, then take over locally
   setTimeout(() => {
-    if (!socket.connected && mode !== 'local') {
+    if (!socket.connected && mode === 'server') {
       mode = 'connecting';
-      startLocal();
+      activateFallback('disconnect');
     }
   }, FALLBACK_AFTER_MS);
 });
+
 socket.on('connect_error', () => {
-  if (mode === 'connecting') startLocal();
+  if (mode === 'connecting') activateFallback('connect_error');
 });
 
-// Hard deadline: never leave the audience staring at a boot screen
-setTimeout(() => {
-  if (mode === 'connecting') startLocal();
+fallbackTimer = setTimeout(() => {
+  if (!booted) activateFallback('timeout');
 }, FALLBACK_AFTER_MS);
+
+hardDeadlineTimer = setTimeout(() => {
+  if (!booted) startLocal('hard_deadline');
+}, HARD_DEADLINE_MS);
 
 export function castVote(contestantId, cb) {
   if (mode === 'local' && sim) {

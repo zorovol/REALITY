@@ -1,6 +1,18 @@
-node_modules/
-dist/
+# Secrets and runtime data
 .env
-.env.local
-*.log
+server/data/
+*.enc.json
+
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Build output
+client/dist/
+dist/
+
+# OS / editor
 .DS_Store
+Thumbs.db
+*.log

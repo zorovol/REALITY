@@ -34,6 +34,15 @@ function saveStore(store) {
   fs.writeFileSync(WALLET_FILE, JSON.stringify(store, null, 2));
 }
 
+function migrateAgentId(store, key) {
+  if (store.agents?.claude && !store.agents?.fable) {
+    store.agents.fable = store.agents.claude;
+    delete store.agents.claude;
+    return true;
+  }
+  return false;
+}
+
 export class WalletManager {
   constructor({ connection }) {
     this.connection = connection;
@@ -56,7 +65,7 @@ export class WalletManager {
     }
     this.encryptionKey = deriveKey(solanaConfig.encryptionKey);
     const store = loadStore();
-    let changed = false;
+    let changed = migrateAgentId(store);
 
     for (const id of agentIds()) {
       if (store.agents[id]?.secret) {
