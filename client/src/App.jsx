@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { socket } from './socket.js';
+import { on, getMode } from './showSource.js';
 import Header from './components/Header.jsx';
 import ContestantsPanel from './components/ContestantsPanel.jsx';
 import DramaFeed from './components/DramaFeed.jsx';
@@ -13,59 +13,38 @@ export default function App() {
   const [timeline, setTimeline] = useState([]);
   const [voting, setVoting] = useState(null);
   const [audience, setAudience] = useState(1);
-  const [connected, setConnected] = useState(socket.connected);
+  const [connected, setConnected] = useState(getMode() !== 'connecting');
   const [winner, setWinner] = useState(null);
   const [eliminatedFlash, setEliminatedFlash] = useState(null);
 
   useEffect(() => {
-    const onState = (state) => {
-      setGame(state);
-      setFeed(state.feed ?? []);
-      setTimeline(state.timeline ?? []);
-      setVoting(state.voting ?? null);
-    };
-    const onFeed = (item) => setFeed((prev) => [...prev.slice(-160), item]);
-    const onTimeline = (item) => setTimeline((prev) => [...prev.slice(-120), item]);
-    const onPhase = ({ phase, endsAt, episode, season }) =>
-      setGame((g) => (g ? { ...g, phase, phaseEndsAt: endsAt, episode, season } : g));
-    const onVoteOpen = (v) => setVoting(v);
-    const onVoteUpdate = (v) => setVoting(v);
-    const onVoteClosed = () => setVoting((v) => (v ? { ...v, closed: true } : v));
-    const onAudience = (n) => setAudience(n);
-    const onWinner = (w) => {
-      setWinner(w);
-      setTimeout(() => setWinner(null), 9000);
-    };
-    const onEliminated = ({ id, name }) => {
-      setEliminatedFlash({ id, name });
-      setTimeout(() => setEliminatedFlash(null), 4000);
-    };
-
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
-    socket.on('game:state', onState);
-    socket.on('feed:item', onFeed);
-    socket.on('timeline:item', onTimeline);
-    socket.on('phase:change', onPhase);
-    socket.on('vote:open', onVoteOpen);
-    socket.on('vote:update', onVoteUpdate);
-    socket.on('vote:closed', onVoteClosed);
-    socket.on('audience:count', onAudience);
-    socket.on('season:winner', onWinner);
-    socket.on('contestant:eliminated', onEliminated);
-
-    return () => {
-      socket.off('game:state', onState);
-      socket.off('feed:item', onFeed);
-      socket.off('timeline:item', onTimeline);
-      socket.off('phase:change', onPhase);
-      socket.off('vote:open', onVoteOpen);
-      socket.off('vote:update', onVoteUpdate);
-      socket.off('vote:closed', onVoteClosed);
-      socket.off('audience:count', onAudience);
-      socket.off('season:winner', onWinner);
-      socket.off('contestant:eliminated', onEliminated);
-    };
+    const offs = [
+      on('game:state', (state) => {
+        setGame(state);
+        setFeed(state.feed ?? []);
+        setTimeline(state.timeline ?? []);
+        setVoting(state.voting ?? null);
+      }),
+      on('feed:item', (item) => setFeed((prev) => [...prev.slice(-160), item])),
+      on('timeline:item', (item) => setTimeline((prev) => [...prev.slice(-120), item])),
+      on('phase:change', ({ phase, endsAt, episode, season }) =>
+        setGame((g) => (g ? { ...g, phase, phaseEndsAt: endsAt, episode, season } : g))
+      ),
+      on('vote:open', (v) => setVoting(v)),
+      on('vote:update', (v) => setVoting(v)),
+      on('vote:closed', () => setVoting((v) => (v ? { ...v, closed: true } : v))),
+      on('audience:count', (n) => setAudience(n)),
+      on('season:winner', (w) => {
+        setWinner(w);
+        setTimeout(() => setWinner(null), 9000);
+      }),
+      on('contestant:eliminated', ({ id, name }) => {
+        setEliminatedFlash({ id, name });
+        setTimeout(() => setEliminatedFlash(null), 4000);
+      }),
+      on('source:change', ({ connected: isUp }) => setConnected(isUp)),
+    ];
+    return () => offs.forEach((off) => off());
   }, []);
 
   const contestantById = useCallback(

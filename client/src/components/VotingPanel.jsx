@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { socket, VOTER_ID } from '../socket.js';
+import { castVote } from '../showSource.js';
 
 function useCountdown(endsAt) {
   const [left, setLeft] = useState(0);
@@ -42,7 +42,7 @@ export default function VotingPanel({ voting, phase, contestantById }) {
 
   const submit = () => {
     if (!selected || !open) return;
-    socket.emit('vote:cast', { voterId: VOTER_ID, contestantId: selected }, (res) => {
+    castVote(selected, (res) => {
       if (res?.ok) {
         setMyVote(selected);
         setError('');

@@ -47,10 +47,20 @@ Copy `.env.example` to `.env` at the repo root:
 
 ## Production
 
+### Self-hosted (full experience — shared broadcast for all viewers)
+
 ```bash
 npm run build     # builds the client into client/dist
 npm start         # Express serves the built client + API + websockets on one port
 ```
+
+Host this on any platform with persistent Node processes (Render, Railway, Fly.io, a VPS). Vercel serverless **cannot** run the Socket.io show server.
+
+### Vercel (static frontend)
+
+The repo includes a `vercel.json` that builds and serves the client as a static site. Because Vercel can't host the persistent show server, the client has a built-in fallback: if no server responds within 6 seconds, a **full local simulation** of the show starts in the browser — same narrative engine, drama events, voting, and infinite seasons, persisted to localStorage. The app always loads.
+
+To get the real shared multi-viewer broadcast on a Vercel frontend, host the server elsewhere (Render/Railway/Fly) and set the `VITE_SERVER_URL` environment variable in your Vercel project settings (e.g. `https://your-show-server.onrender.com`), then redeploy. Remember to set `CLIENT_ORIGIN` on the server to your Vercel domain so CORS allows the connection.
 
 ## Notes
 
