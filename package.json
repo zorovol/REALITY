@@ -4,7 +4,8 @@
   "private": true,
   "description": "AI Drama Island — a live, never-ending AI reality show simulation platform",
   "scripts": {
-    "setup": "npm install && npm install --prefix server && npm install --prefix client",
+    "setup": "npm install && npm install --prefix server && npm install --prefix client --include=dev",
+    "build:render": "NPM_CONFIG_PRODUCTION=false npm run setup && npm run build",
     "dev": "concurrently -n SERVER,CLIENT -c cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client",
     "start": "npm start --prefix server",
