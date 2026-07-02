@@ -1,7 +1,8 @@
-import { IconIsland, IconLive, IconMarket } from './Icons.jsx';
+import { IconIsland, IconLive, IconMarket, IconX } from './Icons.jsx';
 import Character from './Character.jsx';
 
 const BOTS = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
+const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgeminideepseekfable';
 
 export default function Header({ market, connected, audience }) {
   const tradeCount = market?.recentTrades?.length ?? 0;
@@ -28,24 +29,36 @@ export default function Header({ market, connected, audience }) {
         </div>
       </div>
 
-      <div className="trading-header-stats">
-        <div className="trading-stat trading-stat-highlight">
-          <IconMarket size={14} />
-          <span className="trading-stat-val">{tradeCount}</span>
-          <span className="trading-stat-lbl">TRADES</span>
+      <div className="trading-header-actions">
+        <div className="trading-header-stats">
+          <div className="trading-stat trading-stat-highlight">
+            <IconMarket size={14} />
+            <span className="trading-stat-val">{tradeCount}</span>
+            <span className="trading-stat-lbl">TRADES</span>
+          </div>
+          <div className="trading-stat">
+            <span className="trading-stat-val">{fundedCount}/5</span>
+            <span className="trading-stat-lbl">FUNDED</span>
+          </div>
+          <div className="trading-stat">
+            <span className="trading-stat-val">{audience}</span>
+            <span className="trading-stat-lbl">VIEWERS</span>
+          </div>
         </div>
-        <div className="trading-stat">
-          <span className="trading-stat-val">{fundedCount}/5</span>
-          <span className="trading-stat-lbl">FUNDED</span>
-        </div>
-        <div className="trading-stat">
-          <span className="trading-stat-val">{audience}</span>
-          <span className="trading-stat-lbl">VIEWERS</span>
-        </div>
-      </div>
 
-      <div className="trading-header-warn">
-        REAL TRADING — Not financial advice
+        <div className="trading-header-warn">
+          REAL TRADING — Not financial advice
+        </div>
+
+        <a
+          href={X_URL}
+          className="trading-header-x"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Follow on X"
+        >
+          <IconX size={18} />
+        </a>
       </div>
     </header>
   );

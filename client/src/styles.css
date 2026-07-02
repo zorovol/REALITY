@@ -1838,7 +1838,33 @@ body {
 .trading-header-stats {
   display: flex;
   gap: 20px;
+}
+
+.trading-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   margin-left: auto;
+}
+
+.trading-header-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.trading-header-x:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
 }
 
 .trading-stat {
@@ -3017,7 +3043,8 @@ body {
 
 @media (max-width: 1000px) {
   .tf-stations-grid { grid-template-columns: repeat(2, 1fr); }
-  .trading-header-stats { margin-left: 0; width: 100%; justify-content: flex-start; }
+  .trading-header-actions { margin-left: 0; width: 100%; flex-wrap: wrap; justify-content: space-between; }
+  .trading-header-stats { width: 100%; justify-content: flex-start; }
   .comp-row { grid-template-columns: 32px 40px 1fr 60px; gap: 8px; }
   .comp-header-stats { width: 100%; }
 }
@@ -3026,6 +3053,8 @@ body {
   .tf-stations-grid { grid-template-columns: 1fr; }
   .tf-station { min-height: auto; }
   .trading-header { flex-direction: column; align-items: flex-start; }
+  .trading-header-actions { flex-direction: column; align-items: stretch; }
+  .trading-header-x { align-self: flex-end; }
   .trading-header-warn { width: 100%; text-align: center; }
   .tf-log-row { grid-template-columns: 48px 40px 1fr; }
   .tf-log-sol, .tf-log-tx { grid-column: 3; font-size: 8px; }
