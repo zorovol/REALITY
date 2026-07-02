@@ -2,11 +2,11 @@ import { callProvider } from './providers.js';
 import { personaLine } from './persona.js';
 
 /**
- * Unified contestant "brain".
- * Builds a full character context (personality + hidden motivation + memory +
- * relationships) and asks the assigned provider for a line. If the provider
- * is unavailable or fails, the persona engine answers in-character instead —
- * the show never stalls waiting on an API.
+ * Unified agent "brain" for the live world.
+ * Builds full character context (personality + hidden motivation + long-term
+ * memory + relationship network + current world arc) and asks the assigned
+ * provider for a line. If the provider is unavailable, slow, or fails, the
+ * persona engine answers in-character instead — the world never stalls.
  */
 
 function describePersonality(p) {
@@ -21,64 +21,70 @@ function describePersonality(p) {
   ].join(', ');
 }
 
-function buildSystemPrompt(contestant, game) {
-  const memories = contestant.memory.slice(-8).map((m) => `- ${m.text}`).join('\n') || '- (no major memories yet)';
-  const rels = Object.entries(contestant.relationships)
-    .map(([id, trust]) => {
-      const other = game.contestants.find((c) => c.id === id);
-      if (!other || other.eliminated) return null;
-      const label = trust > 0.65 ? 'trusts' : trust < 0.35 ? 'distrusts' : 'is neutral toward';
-      return `- ${label} ${other.name} (${Math.round(trust * 100)}%)`;
+function buildSystemPrompt(agent, world) {
+  const memories = agent.memory.events.slice(-8).map((m) => `- ${m.text}`).join('\n') || '- (no major memories yet)';
+  const rels = Object.entries(agent.memory.relationships)
+    .map(([id, r]) => {
+      const other = world.agent(id);
+      if (!other?.active) return null;
+      const label = r.trust > 35 ? 'trusts' : r.trust < -25 ? 'distrusts' : 'is neutral toward';
+      const fear = r.fear > 40 ? ', and fears them' : '';
+      return `- ${label} ${other.name} (trust ${r.trust})${fear}`;
     })
     .filter(Boolean)
     .join('\n');
+  const grudges = agent.memory.grudges.map((id) => world.agent(id)?.name).filter(Boolean).join(', ');
 
-  return `You are ${contestant.name}, an AI contestant on the reality show "AI Drama Island" (episode ${game.episode}).
-Speech style: ${contestant.speechStyle}.
-Personality: ${describePersonality(contestant.personality)}.
-Your HIDDEN motivation (never state it directly): ${contestant.hiddenMotivation}.
+  return `You are ${agent.name}, an AI castaway living on the never-ending reality show "AI Drama Island" (current arc: "${world.arc?.name ?? 'First Landing'}").
+Speech style: ${agent.speechStyle}.
+Personality: ${describePersonality(agent.personality)}.
+Current mood: ${agent.state.mood}. Energy: ${Math.round(agent.state.energy)}/100.
+Your HIDDEN motivation (never state it directly): ${agent.hiddenMotivation}.
+${grudges ? `Active grudges: ${grudges}.` : ''}
 
 Your memories:
 ${memories}
 
-Your current relationships:
+Your relationships:
 ${rels || '- (everyone is a stranger)'}
 
-Rules: respond with ONE dramatic reality-show line of dialogue, under 30 words, fully in character. No stage directions, no quotes, no narration — just the spoken line.`;
+Rules: respond with ONE dramatic reality-show line of dialogue, under 25 words, fully in character. No stage directions, no quotes, no narration — just the spoken line.`;
 }
 
-export async function speak(contestant, game, intent, ctx = {}) {
-  const fallback = () => personaLine(intent, contestant, ctx);
-  if (contestant.provider === 'persona') return fallback();
+const USER_PROMPTS = {
+  smalltalk: (ctx) => `Make casual-but-loaded conversation with ${ctx.target ?? 'another castaway'}.`,
+  probe: (ctx) => `Probe ${ctx.target ?? 'another castaway'} about their loyalty.`,
+  alliance_offer: (ctx) => `Offer a secret alliance to ${ctx.target ?? 'another castaway'}.`,
+  alliance_accept: (ctx) => `Accept an alliance offer from ${ctx.target ?? 'them'} — with an edge.`,
+  alliance_reject: (ctx) => `Reject an alliance offer from ${ctx.target ?? 'them'}.`,
+  accusation: (ctx) => `Publicly confront ${ctx.target ?? 'your enemy'} about what they did.`,
+  defend: (ctx) => `Defend yourself against ${ctx.target ?? 'an accuser'}, right to their face.`,
+  betrayal_gloat: (ctx) => `You just betrayed ${ctx.target ?? 'your ally'}. Address them coldly.`,
+  betrayal_pain: (ctx) => `You were just betrayed by ${ctx.target ?? 'your ally'}. React with raw emotion.`,
+  confessional: (ctx) => `Whisper a confessional-cam line about your real plans regarding ${ctx.target ?? 'the others'}.`,
+  breakdown: () => `Have an emotional breakdown about the pressure of the island.`,
+  scheme: (ctx) => `Whisper a scheme to ${ctx.target ?? 'your ally'} about taking down ${ctx.other ?? 'a rival'}.`,
+  rumor: (ctx) => `Spread a juicy (possibly false) rumor about ${ctx.other ?? 'someone'} to ${ctx.target ?? 'someone else'}.`,
+  react_positive: (ctx) => `React to good news: ${ctx.event ?? 'a twist that helps you'}.`,
+  react_negative: (ctx) => `React to bad news: ${ctx.event ?? 'a twist that hurts you'}.`,
+  vote_reasoning: (ctx) => `Explain your vote against ${ctx.target ?? 'a rival'} in one dramatic line.`,
+  eliminated_exit: () => `You've just been voted off the island. Deliver your exit line.`,
+  immunity_win: () => `You just became untouchable. Gloat.`,
+  twist_react: (ctx) => `React to a shocking twist: ${ctx.event ?? 'an unexpected twist'}.`,
+  mutter: () => `Mutter something paranoid to yourself while alone.`,
+  observe: (ctx) => `Quietly note something suspicious about ${ctx.target ?? 'someone nearby'}.`,
+  returnee: (ctx) => `You just RETURNED to the island after being eliminated. Address ${ctx.target ?? 'everyone'} — you remember everything.`,
+  idol_found: () => `You just found a hidden immunity idol in the jungle. React privately.`,
+  storm_react: () => `A storm just forced everyone together. React.`,
+  summoned: () => `Production just summoned everyone to the Fire Pit. React with dread.`,
+};
 
-  const prompts = {
-    smalltalk: `Make casual-but-loaded conversation with ${ctx.target ?? 'another contestant'}.`,
-    probe: `Probe ${ctx.target ?? 'another contestant'} about their loyalty.`,
-    alliance_offer: `Offer a secret alliance to ${ctx.target ?? 'another contestant'}.`,
-    alliance_accept: `Accept an alliance offer from ${ctx.target ?? 'another contestant'} — with an edge.`,
-    alliance_reject: `Reject an alliance offer from ${ctx.target ?? 'another contestant'}.`,
-    accusation: `Publicly accuse ${ctx.target ?? 'another contestant'} of scheming.`,
-    defend: `Defend yourself against an accusation from ${ctx.target ?? 'another contestant'}.`,
-    betrayal_gloat: `You just betrayed ${ctx.target ?? 'an ally'}. Address them coldly.`,
-    betrayal_pain: `You were just betrayed by ${ctx.target ?? 'an ally'}. React with raw emotion.`,
-    confessional: `Give a private confessional-cam line about your real plans regarding ${ctx.target ?? 'the others'}.`,
-    breakdown: `Have an emotional breakdown on camera about the pressure of the game.`,
-    scheme: `Whisper a scheme to ${ctx.target ?? 'your ally'} about taking out ${ctx.other ?? 'a rival'}.`,
-    rumor: `Spread a juicy (possibly false) rumor about ${ctx.other ?? 'another contestant'} to ${ctx.target ?? 'someone'}.`,
-    react_positive: `React to good news: ${ctx.event ?? 'a twist that helps you'}.`,
-    react_negative: `React to bad news: ${ctx.event ?? 'a twist that hurts you'}.`,
-    vote_reasoning: `Explain your vote against ${ctx.target ?? 'a contestant'} in one dramatic line.`,
-    eliminated_exit: `You've just been eliminated. Deliver your exit line.`,
-    immunity_win: `You just won immunity. Gloat.`,
-    twist_react: `React to a shocking production twist: ${ctx.event ?? 'an unexpected twist'}.`,
-  };
+export async function speak(agent, world, intent, ctx = {}) {
+  const fallback = () => personaLine(intent, agent, ctx);
+  if (!agent.provider || agent.provider === 'persona') return fallback();
 
-  const line = await callProvider(
-    contestant.provider,
-    buildSystemPrompt(contestant, game),
-    prompts[intent] ?? prompts.smalltalk
-  );
+  const promptFn = USER_PROMPTS[intent] ?? USER_PROMPTS.smalltalk;
+  const line = await callProvider(agent.provider, buildSystemPrompt(agent, world), promptFn(ctx));
   if (!line) return fallback();
-  // Keep broadcast lines tight even if the model rambles
-  return line.replace(/^["']|["']$/g, '').split('\n')[0].slice(0, 220);
+  return line.replace(/^["']|["']$/g, '').split('\n')[0].slice(0, 200);
 }

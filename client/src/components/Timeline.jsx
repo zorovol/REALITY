@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function Timeline({ items, season }) {
+export default function Timeline({ items, arc }) {
   const scrollRef = useRef(null);
   const [focused, setFocused] = useState(null);
 
@@ -12,8 +12,8 @@ export default function Timeline({ items, season }) {
   return (
     <footer className="timeline glass">
       <div className="timeline-head">
-        <span className="timeline-title">📼 EPISODE TIMELINE</span>
-        <span className="timeline-season">Season {season}</span>
+        <span className="timeline-title">📼 STORY TIMELINE</span>
+        <span className="timeline-season">Arc {arc?.number ?? 1} — “{arc?.name ?? 'First Landing'}”</span>
       </div>
       <div className="timeline-scroll" ref={scrollRef}>
         <div className="timeline-track">
@@ -25,7 +25,7 @@ export default function Timeline({ items, season }) {
               title={`${item.label}${item.detail ? ` — ${item.detail}` : ''}`}
             >
               <span className="node-icon">{item.icon}</span>
-              <span className="node-ep">E{item.episode}</span>
+              <span className="node-ep">A{item.arc ?? item.episode ?? 1}</span>
               <span className="node-label">{item.label}</span>
               {focused === item.id && item.detail && (
                 <span className="node-detail">{item.detail}</span>

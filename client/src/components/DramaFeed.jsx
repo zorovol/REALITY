@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-const PHASE_BANNERS = {
-  interaction: { icon: '💬', text: 'INTERACTION PHASE — The island is talking' },
-  drama: { icon: '💥', text: 'DRAMA PHASE — Something is about to break' },
-  reaction: { icon: '😱', text: 'REACTION PHASE — The fallout begins' },
-  voting: { icon: '🗳️', text: 'VOTING PHASE — The audience decides' },
-  outcome: { icon: '⚖️', text: 'OUTCOME PHASE — The island delivers its verdict' },
-  intermission: { icon: '🎬', text: 'INTERMISSION — Next episode loading' },
-};
+import Avatar from './Avatar.jsx';
 
 function FeedItem({ item }) {
   if (item.kind === 'system') {
@@ -18,13 +10,20 @@ function FeedItem({ item }) {
       <div className={`feed-drama fade-in tone-${item.tone ?? 'default'} ${item.big ? 'big' : ''}`}>
         <div className="drama-glow" aria-hidden="true" />
         <p>{item.text}</p>
+        {item.story && (
+          <div className="story-chain">
+            <span><b>CAUSE</b> {item.story.cause}</span>
+            <span><b>CONTEXT</b> {item.story.context}</span>
+            <span><b>CONSEQUENCE</b> {item.story.consequence}</span>
+          </div>
+        )}
       </div>
     );
   }
   const confessional = item.kind === 'confessional';
   return (
     <div className={`feed-msg fade-in ${confessional ? 'confessional' : ''}`} style={{ '--accent': item.color }}>
-      <span className="feed-avatar">{item.avatar}</span>
+      <span className="feed-avatar"><Avatar id={item.speakerId} size={30} /></span>
       <div className="feed-body">
         <div className="feed-meta">
           <span className="feed-name">{item.speakerName}</span>
@@ -37,10 +36,9 @@ function FeedItem({ item }) {
   );
 }
 
-export default function DramaFeed({ feed, phase }) {
+export default function DramaFeed({ feed, arc }) {
   const scrollRef = useRef(null);
   const [pinned, setPinned] = useState(true);
-  const banner = PHASE_BANNERS[phase] ?? PHASE_BANNERS.interaction;
 
   useEffect(() => {
     if (pinned && scrollRef.current) {
@@ -56,9 +54,9 @@ export default function DramaFeed({ feed, phase }) {
 
   return (
     <section className="panel glass feed-panel">
-      <div className={`phase-banner banner-${phase}`}>
-        <span className="banner-icon">{banner.icon}</span>
-        <span className="banner-text">{banner.text}</span>
+      <div className={`phase-banner banner-arc-${arc?.tone ?? 'mid'}`}>
+        <span className="banner-icon">📖</span>
+        <span className="banner-text">ARC {arc?.number ?? 1} — “{arc?.name ?? 'First Landing'}”</span>
         <span className="banner-pulse" aria-hidden="true" />
       </div>
       <div className="feed-scroll" ref={scrollRef} onScroll={onScroll}>

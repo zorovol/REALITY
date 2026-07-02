@@ -2,43 +2,41 @@ import { useEffect, useState, useCallback } from 'react';
 import { on, getMode } from './showSource.js';
 import Header from './components/Header.jsx';
 import ContestantsPanel from './components/ContestantsPanel.jsx';
+import MapStage from './components/MapStage.jsx';
 import DramaFeed from './components/DramaFeed.jsx';
 import VotingPanel from './components/VotingPanel.jsx';
 import Timeline from './components/Timeline.jsx';
-import WinnerOverlay from './components/WinnerOverlay.jsx';
 
 export default function App() {
-  const [game, setGame] = useState(null);
+  const [world, setWorld] = useState(null);
   const [feed, setFeed] = useState([]);
   const [timeline, setTimeline] = useState([]);
   const [voting, setVoting] = useState(null);
   const [audience, setAudience] = useState(1);
   const [connected, setConnected] = useState(getMode() !== 'connecting');
-  const [winner, setWinner] = useState(null);
   const [eliminatedFlash, setEliminatedFlash] = useState(null);
 
   useEffect(() => {
     const offs = [
-      on('game:state', (state) => {
-        setGame(state);
+      on('world:state', (state) => {
+        setWorld(state);
         setFeed(state.feed ?? []);
         setTimeline(state.timeline ?? []);
         setVoting(state.voting ?? null);
       }),
       on('feed:item', (item) => setFeed((prev) => [...prev.slice(-160), item])),
       on('timeline:item', (item) => setTimeline((prev) => [...prev.slice(-120), item])),
-      on('phase:change', ({ phase, endsAt, episode, season }) =>
-        setGame((g) => (g ? { ...g, phase, phaseEndsAt: endsAt, episode, season } : g))
+      on('arc:change', (arc) => setWorld((w) => (w ? { ...w, arc } : w))),
+      on('agent:state', (agent) =>
+        setWorld((w) => w
+          ? { ...w, agents: w.agents.map((a) => (a.id === agent.id ? agent : a)) }
+          : w)
       ),
       on('vote:open', (v) => setVoting(v)),
       on('vote:update', (v) => setVoting(v)),
       on('vote:closed', () => setVoting((v) => (v ? { ...v, closed: true } : v))),
       on('audience:count', (n) => setAudience(n)),
-      on('season:winner', (w) => {
-        setWinner(w);
-        setTimeout(() => setWinner(null), 9000);
-      }),
-      on('contestant:eliminated', ({ id, name }) => {
+      on('agent:eliminated', ({ id, name }) => {
         setEliminatedFlash({ id, name });
         setTimeout(() => setEliminatedFlash(null), 4000);
       }),
@@ -47,12 +45,12 @@ export default function App() {
     return () => offs.forEach((off) => off());
   }, []);
 
-  const contestantById = useCallback(
-    (id) => game?.contestants?.find((c) => c.id === id),
-    [game]
+  const agentById = useCallback(
+    (id) => world?.agents?.find((a) => a.id === id),
+    [world]
   );
 
-  if (!game) {
+  if (!world) {
     return (
       <div className="boot-screen">
         <div className="boot-logo">🌴</div>
@@ -64,16 +62,18 @@ export default function App() {
   }
 
   return (
-    <div className={`app phase-${game.phase}`}>
+    <div className="app">
       <div className="bg-aurora" aria-hidden="true" />
-      <Header game={game} audience={audience} connected={connected} />
+      <Header world={world} audience={audience} connected={connected} votingLive={!!voting && !voting.closed} />
       <main className="layout">
-        <ContestantsPanel contestants={game.contestants} eliminatedFlash={eliminatedFlash} />
-        <DramaFeed feed={feed} phase={game.phase} />
-        <VotingPanel voting={voting} phase={game.phase} contestantById={contestantById} />
+        <ContestantsPanel agents={world.agents} eliminatedFlash={eliminatedFlash} agentById={agentById} />
+        <div className="center-stack">
+          <MapStage agents={world.agents} zones={world.zones} tension={world.tension ?? 0} />
+          <DramaFeed feed={feed} arc={world.arc} />
+        </div>
+        <VotingPanel voting={voting} contestantById={agentById} />
       </main>
-      <Timeline items={timeline} season={game.season} />
-      {winner && <WinnerOverlay winner={winner} />}
+      <Timeline items={timeline} arc={world.arc} />
     </div>
   );
 }

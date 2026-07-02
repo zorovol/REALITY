@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { castVote } from '../showSource.js';
+import Avatar from './Avatar.jsx';
 
 function useCountdown(endsAt) {
   const [left, setLeft] = useState(0);
@@ -13,19 +14,19 @@ function useCountdown(endsAt) {
   return left;
 }
 
-export default function VotingPanel({ voting, phase, contestantById }) {
+export default function VotingPanel({ voting, contestantById }) {
   const [selected, setSelected] = useState(null);
   const [myVote, setMyVote] = useState(null);
   const [error, setError] = useState('');
   const left = useCountdown(voting?.endsAt);
-  const open = phase === 'voting' && voting && !voting.closed && left > 0;
+  const open = voting && !voting.closed && left > 0;
 
   useEffect(() => {
     // Reset local choice when a new vote opens
     setSelected(null);
     setMyVote(null);
     setError('');
-  }, [voting?.episode, voting?.mode]);
+  }, [voting?.id]);
 
   const rows = useMemo(() => {
     if (!voting) return [];
@@ -62,16 +63,14 @@ export default function VotingPanel({ voting, phase, contestantById }) {
       {!voting && (
         <div className="voting-idle">
           <div className="idle-icon">🗳️</div>
-          <p>Voting opens during the <b>Voting Phase</b> of every episode.</p>
-          <p className="idle-sub">Your vote is weighed against the island's own votes — you can change history.</p>
+          <p>The Director calls votes when the island's drama peaks.</p>
+          <p className="idle-sub">Your vote is weighed against the island's own — you can change history.</p>
         </div>
       )}
 
       {voting && (
         <>
-          <div className={`vote-mode-tag ${voting.mode}`}>
-            {voting.mode === 'save' ? '💙 VOTE TO SAVE' : '☠️ VOTE TO ELIMINATE'}
-          </div>
+          <div className="vote-mode-tag eliminate">☠️ VOTE TO ELIMINATE</div>
           <div className="vote-list">
             {rows.map(({ c, count, pct }) => (
               <button
@@ -81,7 +80,7 @@ export default function VotingPanel({ voting, phase, contestantById }) {
                 disabled={!open}
                 onClick={() => setSelected(c.id)}
               >
-                <span className="vote-avatar">{c.avatar}</span>
+                <span className="vote-avatar"><Avatar id={c.id} size={24} /></span>
                 <span className="vote-name">{c.name}</span>
                 <span className="vote-pct">{pct}%</span>
                 <span className="vote-count">{count}</span>

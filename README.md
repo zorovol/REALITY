@@ -1,6 +1,6 @@
 # 🌴 AI Drama Island
 
-A live, never-ending AI reality show simulation platform. Ten AI contestants live on an island, form alliances, betray each other, break down on camera, and get voted off — forever. The audience votes in real time and changes the outcome of every episode.
+A live, never-ending AI reality show — a continuous simulation engine with a visual broadcast layer. Ten AI castaways move around a living island map in real time, observe each other, form alliances, betray, spiral, and get voted off — forever. No turns, no episodes, no resets. The audience votes live and changes history.
 
 ## Architecture
 
@@ -11,22 +11,20 @@ A live, never-ending AI reality show simulation platform. Ten AI contestants liv
 | Database | Neon PostgreSQL (works without it via in-memory fallback) |
 | AI | Multi-provider abstraction (OpenAI / Anthropic / Gemini) + built-in persona engine fallback |
 
-### The Narrative Engine
+### The World Engine (continuous, no turns)
 
-Every episode cycles through six phases automatically, forever:
+Several loops run permanently:
 
-1. **Interaction** — contestants talk, probe loyalties, spread rumors, and form alliances based on personality + relationship trust values
-2. **Drama** — the Director generates a weighted dramatic event: betrayals, exposed secret alliances, immunity twists, forced showdowns, breakdowns, misinformation storms, or surprise eliminations
-3. **Reaction** — contestants react emotionally and strategically, informed by their memory of past events
-4. **Voting** — the audience votes live via Socket.io; percentages update in real time
-5. **Outcome** — audience votes (40%) are combined with the island's own votes (60%); someone goes home or a twist saves them
-6. **Intermission** — the next episode begins automatically
+- **Movement loop (10 Hz)** — agents wander, chase grudges, seek allies, or withdraw across a live map with three zones (Cove of Calm, Fire Pit, Whisper Jungle). Positions stream over Socket.io; the client interpolates them at 60 fps.
+- **Micro-interaction loop (every 250–700ms)** — an agent near others may confront, scheme, bond, spread rumors, or form alliances; alone, they occasionally mutter confessionals. Silence is allowed — it's realism. Interactions are proximity-gated and rate-limited per agent.
+- **Director AI (~every 900ms)** — tracks island-wide tension, forces collisions between nearby enemies, seeds betrayal risk into too-comfortable alliances, injects catalysts when the story goes quiet (hidden idols, storms, production leaks, forced gatherings), names story arcs ("Trust Collapse", "Power Vacuum"...), and opens audience votes.
+- **Speech system** — every line is broadcast as an event and rendered letter-by-letter above the speaking agent's head, color-coded by emotion (anger = red glow, fear = blue jitter, alliance = green).
 
-When two contestants remain, a jury of eliminated players crowns a winner — and a brand-new season starts immediately. The show never ends.
+Big events carry an emergent story chain — cause, context, reaction, consequence — that feeds straight back into agent memory.
 
-### Contestants
+### Agents
 
-Each of the 10 contestants has a personality profile (aggression, emotional stability, manipulation, loyalty, intelligence, chaos), a hidden motivation, a persistent memory of every betrayal and alliance, and a live trust map toward every other player. Memories directly drive future decisions: who they talk to, who they accuse, who they vote against.
+Each of the 10 castaways has a personality profile (aggression, emotional stability, manipulation, loyalty, intelligence, chaos), a hidden motivation, live state (mood, energy, intent, focus target), and long-term memory: events, grudges, alliances, and a relationship network with trust/fear/loyalty values toward every other agent. Memory directly drives movement and dialogue. Eliminated players walk to the dock and leave — but when the population runs low, the boat returns them **with their memories and grudges intact**.
 
 ## Quick Start
 

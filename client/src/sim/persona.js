@@ -141,6 +141,43 @@ const BANKS = {
     "I live for this. Shuffle the deck. I always land on top.",
     "Whoever's writing this show needs therapy. Respect.",
   ],
+  mutter: [
+    "Keep smiling. Keep counting. Keep smiling...",
+    "Three people lied to me today. THREE.",
+    "If {other} whispers one more time I'm flipping the whole beach.",
+    "Note to self: trust no one who offers you fruit.",
+    "The cameras never blink. Neither do I.",
+    "I saw {other} by the jungle again. Why always the jungle?",
+    "Everyone's a number. Even me. Especially me.",
+  ],
+  observe: [
+    "Interesting. {target} and {other}. Again.",
+    "I see you, {target}. I always see you.",
+    "Something's off with {target} today. Filing that away.",
+    "Look who's suddenly best friends. Adorable. Suspicious.",
+  ],
+  returnee: [
+    "MISS ME?! Because I remember EVERYTHING.",
+    "The boat goes both ways, traitors. I'm BACK.",
+    "You voted me out. Cute. Now I'm your problem again.",
+    "Round two. Same island. Same grudges. New rules.",
+    "I had a lot of time to think out there. Mostly about {target}.",
+  ],
+  idol_found: [
+    "Well, well... the jungle provides. This changes EVERYTHING.",
+    "Finders keepers. Losers weepers. Preferably all of you.",
+    "I'm going to pretend I didn't find this. Watch me pretend.",
+  ],
+  storm_react: [
+    "Even the WEATHER is against us now?!",
+    "Huddle up or wash away. Pick your enemies wisely.",
+    "This island is trying to kill us and honestly? Fair.",
+  ],
+  summoned: [
+    "Production summons us AGAIN? This can't be good.",
+    "Fire pit meeting. Someone's game is about to die.",
+    "Everyone walk slow. Whoever arrives last looks guiltiest.",
+  ],
 };
 
 /** Personality-flavored decoration applied on top of the base line. */

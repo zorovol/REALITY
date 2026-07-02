@@ -1,17 +1,19 @@
 import { io } from 'socket.io-client';
-import { LocalShow } from './sim/director.js';
+import { WorldEngine } from './sim/world.js';
+import { personaLine } from './sim/persona.js';
 
 /**
  * Show source manager.
- * Tries the live show server first (same origin, or VITE_SERVER_URL when the
- * frontend is hosted separately, e.g. on Vercel). If no server responds
- * within the timeout — or the connection errors — a full local simulation of
- * the show starts in the browser so the app ALWAYS loads. If a real server
+ * Tries the live world server first (same origin, or VITE_SERVER_URL when
+ * the frontend is hosted separately, e.g. on Vercel). If no server responds
+ * within the timeout — or the connection errors — a full local world
+ * simulation starts in the browser so the app ALWAYS loads. If a real server
  * shows up later, we switch to it seamlessly.
  */
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || undefined;
 const FALLBACK_AFTER_MS = 6000;
+const SIM_STORE_KEY = 'adi-world-v3'; // v3: real-model cast — old snapshots invalid
 
 // Stable per-browser voter identity
 const KEY = 'adi-voter-id';
@@ -54,9 +56,18 @@ function notifyStatus() {
 
 function startLocal() {
   if (mode === 'server' || sim) return;
-  console.warn('[show] No show server reachable — starting local island simulation.');
+  console.warn('[show] No world server reachable — starting local island simulation.');
   mode = 'local';
-  sim = new LocalShow(dispatch);
+  sim = new WorldEngine({
+    dispatch,
+    gen: (agent, intent, ctx) => personaLine(intent, agent, ctx),
+    save: (snapshot) => {
+      try { localStorage.setItem(SIM_STORE_KEY, JSON.stringify(snapshot)); } catch { /* full/unavailable */ }
+    },
+    restore: () => {
+      try { return JSON.parse(localStorage.getItem(SIM_STORE_KEY) ?? 'null'); } catch { return null; }
+    },
+  });
   sim.start();
   notifyStatus();
 }
@@ -78,8 +89,8 @@ const socket = io(SERVER_URL, {
 });
 
 socket.onAny((event, payload) => {
-  // The server always sends game:state first — that's our signal it's real.
-  if (event === 'game:state') switchToServer();
+  // The server always sends world:state first — that's our signal it's real.
+  if (event === 'world:state') switchToServer();
   if (mode === 'local') return; // ignore stray server chatter while simulating
   dispatch(event, payload);
 });
@@ -106,7 +117,7 @@ setTimeout(() => {
 
 export function castVote(contestantId, cb) {
   if (mode === 'local' && sim) {
-    cb?.(sim.castVote(VOTER_ID, contestantId));
+    cb?.(sim.castAudienceVote(VOTER_ID, contestantId));
     return;
   }
   if (!socket.connected) {
