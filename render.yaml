@@ -6,8 +6,8 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm run build:render
-    startCommand: npm start
+    buildCommand: npm install --prefix server
+    startCommand: npm start --prefix server
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
