@@ -5,11 +5,12 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
+    "dev": "node --watch --import ./shims/anchor-loader.mjs src/index.js",
+    "start": "node --import ./shims/anchor-loader.mjs src/index.js",
     "wallets:addresses": "node scripts/wallets-addresses.js"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
     "@pump-fun/pump-sdk": "^1.36.0",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
