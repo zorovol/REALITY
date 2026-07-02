@@ -24,6 +24,8 @@ services:
         value: "false"
       - key: ENCRYPTION_KEY
         sync: false
+      - key: WALLETS_ENC_B64
+        sync: false
       - key: SOLANA_RPC_URL
         sync: false
       - key: SOLANA_NETWORK

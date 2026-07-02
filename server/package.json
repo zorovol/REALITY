@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "node --watch --import ./shims/anchor-loader.mjs src/index.js",
     "start": "node --import ./shims/anchor-loader.mjs src/index.js",
-    "wallets:addresses": "node scripts/wallets-addresses.js"
+    "wallets:addresses": "node scripts/wallets-addresses.js",
+    "wallets:export": "node scripts/wallets-export.js",
+    "wallets:import": "node scripts/wallets-import.js",
+    "wallets:render-b64": "node scripts/wallets-render-b64.js"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

@@ -21,6 +21,25 @@ function ensureDataDir() {
 
 function loadStore() {
   ensureDataDir();
+
+  const b64 = process.env.WALLETS_ENC_B64?.trim();
+  if (b64) {
+    try {
+      return JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
+    } catch (err) {
+      console.error('[wallets] Invalid WALLETS_ENC_B64:', err.message);
+    }
+  }
+
+  const rawJson = process.env.WALLETS_ENC_JSON?.trim();
+  if (rawJson) {
+    try {
+      return JSON.parse(rawJson);
+    } catch (err) {
+      console.error('[wallets] Invalid WALLETS_ENC_JSON:', err.message);
+    }
+  }
+
   if (!fs.existsSync(WALLET_FILE)) return { v: 1, agents: {} };
   try {
     return JSON.parse(fs.readFileSync(WALLET_FILE, 'utf8'));
