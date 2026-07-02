@@ -5,7 +5,8 @@ import Header from './components/Header.jsx';
 import TradingFloor from './components/TradingFloor.jsx';
 import BootScreen from './components/BootScreen.jsx';
 
-export default function App() {
+/** Public trading floor — no admin UI or wallet secrets. */
+export default function TradingApp() {
   const [world, setWorld] = useState(null);
   const [market, setMarket] = useState(null);
   const [audience, setAudience] = useState(1);

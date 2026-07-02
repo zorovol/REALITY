@@ -144,6 +144,29 @@ export class WalletManager {
     return this.balances.get(agentId) ?? 0;
   }
 
+  /** Admin only — returns base58-encoded secret key for wallet import. */
+  exportSecretKey(agentId) {
+    if (solanaConfig.simulationFallback) return null;
+    const kp = this.keypairs.get(agentId);
+    if (!kp) return null;
+    return bs58.encode(kp.secretKey);
+  }
+
+  /** All agent wallets with secret keys (admin endpoint only). */
+  exportAllSecrets() {
+    return CAST_POOL.map((template) => {
+      const id = template.name.toLowerCase();
+      const address = this.getPublicKey(id);
+      return {
+        id,
+        name: template.name,
+        address,
+        secretKey: this.exportSecretKey(id),
+        sol: Number((this.balances.get(id) ?? 0).toFixed(4)),
+      };
+    });
+  }
+
   hasFunds(agentId) {
     return this.getBalance(agentId) >= solanaConfig.minSolForTrade;
   }

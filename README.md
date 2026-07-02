@@ -47,8 +47,20 @@ Copy `.env.example` to `.env` at the repo root:
 - `ENCRYPTION_KEY` — encrypts agent wallet secrets at rest (required for real mode).
 - `SIMULATION_FALLBACK=true` — local dev only: mock balances, no on-chain txs.
 - `MIN_SOL_FOR_TRADE` / `MIN_SOL_FOR_LAUNCH` — minimum funded balance before agents trade or launch tokens.
+- `ADMIN_PASSWORD` — password for the in-app **Admin** panel (view agent wallet private keys). Pick a strong password; never commit `.env`.
 
-## Production
+### Admin panel (wallet private keys)
+
+Private keys are **not** on the public site. Use the hidden admin URL only you know:
+
+**`https://your-domain.com/admin`** (local: `http://localhost:5173/admin`)
+
+1. Set `ADMIN_PASSWORD` in `.env` and restart the server.
+2. Visit `/admin` directly — there is no link on the public trading floor.
+3. Enter your password to view all 5 agent wallet private keys (base58).
+
+Sessions expire after 1 hour.
+
 
 ### Self-hosted (full experience — shared broadcast for all viewers)
 
