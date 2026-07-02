@@ -1,36 +1,57 @@
 import { useEffect, useRef, useState } from 'react';
-import Avatar from './Avatar.jsx';
+import Character from './Character.jsx';
+import { IconArc, IconConfessional, IconCaretDown } from './Icons.jsx';
+import { stripEmoji } from '../utils/textUtils.js';
 
 function FeedItem({ item }) {
+  const text = stripEmoji(item.text);
+
   if (item.kind === 'system') {
-    return <div className="feed-system fade-in">{item.text}</div>;
+    return (
+      <div className="feed-system">
+        <span className="feed-system-line" />
+        <span className="feed-system-text">{text}</span>
+        <span className="feed-system-line" />
+      </div>
+    );
   }
+
   if (item.kind === 'announcement' || item.kind === 'drama') {
     return (
-      <div className={`feed-drama fade-in tone-${item.tone ?? 'default'} ${item.big ? 'big' : ''}`}>
-        <div className="drama-glow" aria-hidden="true" />
-        <p>{item.text}</p>
+      <div className={`feed-event tone-${item.tone ?? 'default'} ${item.big ? 'feed-event-major' : ''}`}>
+        <div className="feed-event-glow" aria-hidden="true" />
+        <p className="feed-event-text">{text}</p>
         {item.story && (
-          <div className="story-chain">
-            <span><b>CAUSE</b> {item.story.cause}</span>
-            <span><b>CONTEXT</b> {item.story.context}</span>
-            <span><b>CONSEQUENCE</b> {item.story.consequence}</span>
+          <div className="feed-story">
+            <div className="feed-story-row"><span className="feed-story-key">CAUSE</span>{stripEmoji(item.story.cause)}</div>
+            <div className="feed-story-row"><span className="feed-story-key">CONTEXT</span>{stripEmoji(item.story.context)}</div>
+            <div className="feed-story-row"><span className="feed-story-key">CONSEQUENCE</span>{stripEmoji(item.story.consequence)}</div>
           </div>
         )}
       </div>
     );
   }
+
   const confessional = item.kind === 'confessional';
   return (
-    <div className={`feed-msg fade-in ${confessional ? 'confessional' : ''}`} style={{ '--accent': item.color }}>
-      <span className="feed-avatar"><Avatar id={item.speakerId} size={30} /></span>
-      <div className="feed-body">
-        <div className="feed-meta">
-          <span className="feed-name">{item.speakerName}</span>
-          {confessional && <span className="confessional-tag">🎥 CONFESSIONAL</span>}
-          {item.targetName && !confessional && <span className="feed-target">→ {item.targetName}</span>}
+    <div className={`feed-line ${confessional ? 'feed-line-confessional' : ''}`}>
+      <div className="feed-line-avatar">
+        <Character id={item.speakerId} size={36} />
+      </div>
+      <div className="feed-line-body">
+        <div className="feed-line-meta">
+          <span className="feed-line-name">{item.speakerName}</span>
+          {confessional && (
+            <span className="feed-confessional-tag">
+              <IconConfessional size={10} />
+              CONFESSIONAL
+            </span>
+          )}
+          {item.targetName && !confessional && (
+            <span className="feed-line-target">→ {item.targetName}</span>
+          )}
         </div>
-        <p className="feed-text">{item.text}</p>
+        <p className="feed-line-text">{text}</p>
       </div>
     </div>
   );
@@ -52,25 +73,30 @@ export default function DramaFeed({ feed, arc }) {
     setPinned(el.scrollHeight - el.scrollTop - el.clientHeight < 80);
   };
 
+  const tone = arc?.tone ?? 'mid';
+
   return (
-    <section className="panel glass feed-panel">
-      <div className={`phase-banner banner-arc-${arc?.tone ?? 'mid'}`}>
-        <span className="banner-icon">📖</span>
-        <span className="banner-text">ARC {arc?.number ?? 1} — “{arc?.name ?? 'First Landing'}”</span>
-        <span className="banner-pulse" aria-hidden="true" />
-      </div>
+    <section className="feed-panel">
+      <header className={`feed-head feed-head-${tone}`}>
+        <IconArc size={14} />
+        <span className="feed-head-text">
+          ARC {arc?.number ?? 1} — {arc?.name ?? 'First Landing'}
+        </span>
+        <span className="feed-head-pulse" aria-hidden="true" />
+      </header>
       <div className="feed-scroll" ref={scrollRef} onScroll={onScroll}>
         {feed.map((item) => <FeedItem key={item.id} item={item} />)}
       </div>
       {!pinned && (
         <button
-          className="jump-live"
+          className="feed-jump"
           onClick={() => {
             setPinned(true);
             scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
           }}
         >
-          ▼ JUMP TO LIVE
+          <IconCaretDown size={12} />
+          JUMP TO LIVE
         </button>
       )}
     </section>

@@ -1,34 +1,27 @@
 import { useEffect, useRef } from 'react';
 import { on } from '../showSource.js';
-import Avatar from './Avatar.jsx';
-
-/**
- * MapStage — the living island.
- * React renders the static structure (zones, agent nodes); a single
- * requestAnimationFrame loop drives everything dynamic at 60fps by mutating
- * the DOM directly: smooth position interpolation between 10 Hz server
- * updates, letter-by-letter speech typing above each head, and fades.
- */
+import Character from './Character.jsx';
+import { MoodRing, IconDock } from './Icons.jsx';
+import { stripEmoji } from '../utils/textUtils.js';
 
 const WORLD = { w: 1000, h: 600 };
-const TYPE_MS = 30; // ms per character
-const LINGER_MS = 2400; // hold after typing completes
+const TYPE_MS = 28;
+const LINGER_MS = 2600;
 
-const MOOD_EMOJI = {
-  angry: '😡', calm: '😌', paranoid: '🫣', excited: '🤩', sad: '😢', gone: '👻',
-};
 const INTENT_LABEL = {
-  wander: 'wandering', seek_alliance: 'seeking allies', confront: 'on the hunt',
-  explore: 'exploring', isolate: 'withdrawing',
+  wander: 'Wandering',
+  seek_alliance: 'Seeking allies',
+  confront: 'On the hunt',
+  explore: 'Exploring',
+  isolate: 'Withdrawing',
 };
 
 export default function MapStage({ agents, zones, tension }) {
   const stageRef = useRef(null);
-  const posRef = useRef(new Map());    // id -> { x, y, tx, ty }
-  const speechRef = useRef(new Map()); // id -> { text, emotion, startedAt, durationMs }
-  const nodeRef = useRef(new Map());   // id -> { root, bubble, bubbleText }
+  const posRef = useRef(new Map());
+  const speechRef = useRef(new Map());
+  const nodeRef = useRef(new Map());
 
-  // seed / update interpolation targets from full state
   useEffect(() => {
     for (const a of agents) {
       if (!a.pos) continue;
@@ -48,7 +41,7 @@ export default function MapStage({ agents, zones, tension }) {
     });
     const offSpeak = on('agent:speak', (s) => {
       speechRef.current.set(s.agentId, {
-        text: s.text,
+        text: stripEmoji(s.text),
         emotion: s.emotion ?? 'neutral',
         startedAt: performance.now(),
         durationMs: s.durationMs ?? s.text.length * TYPE_MS + LINGER_MS,
@@ -57,7 +50,6 @@ export default function MapStage({ agents, zones, tension }) {
     return () => { offPos(); offSpeak(); };
   }, []);
 
-  // the 60fps render loop
   useEffect(() => {
     let raf;
     const frame = () => {
@@ -65,8 +57,8 @@ export default function MapStage({ agents, zones, tension }) {
       for (const [id, refs] of nodeRef.current) {
         const p = posRef.current.get(id);
         if (p && refs.root) {
-          p.x += (p.tx - p.x) * 0.12;
-          p.y += (p.ty - p.y) * 0.12;
+          p.x += (p.tx - p.x) * 0.11;
+          p.y += (p.ty - p.y) * 0.11;
           refs.root.style.left = `${(p.x / WORLD.w) * 100}%`;
           refs.root.style.top = `${(p.y / WORLD.h) * 100}%`;
         }
@@ -81,7 +73,9 @@ export default function MapStage({ agents, zones, tension }) {
               speechRef.current.delete(id);
               refs.bubble.classList.remove('visible');
             } else {
-              refs.bubbleText.textContent = s.text.slice(0, chars) + (done ? '' : '▌');
+              refs.bubbleText.textContent = s.text.slice(0, chars);
+              if (!done) refs.cursor?.classList.add('blink');
+              else refs.cursor?.classList.remove('blink');
               refs.bubble.className = `speech-bubble visible emo-${s.emotion}`;
             }
           } else if (refs.bubble.classList.contains('visible')) {
@@ -101,6 +95,7 @@ export default function MapStage({ agents, zones, tension }) {
         root: el,
         bubble: el.querySelector('.speech-bubble'),
         bubbleText: el.querySelector('.speech-text'),
+        cursor: el.querySelector('.speech-cursor'),
       });
     } else {
       nodeRef.current.delete(id);
@@ -110,55 +105,68 @@ export default function MapStage({ agents, zones, tension }) {
   const activeAgents = agents.filter((a) => a.active);
 
   return (
-    <section className="panel glass map-panel">
-      <div className="map-head">
-        <span className="map-title">🌴 THE ISLAND — LIVE STAGE</span>
-        <span className="tension-meter" title="Drama tension">
-          <span className="tension-label">TENSION</span>
-          <span className="tension-bar"><span className="tension-fill" style={{ width: `${tension}%` }} /></span>
-          <span className="tension-value">{tension}%</span>
-        </span>
+    <section className="stage-panel">
+      <div className="stage-toolbar">
+        <span className="stage-label">LIVE STAGE</span>
+        <div className="stage-tension">
+          <span className="stage-tension-label">TENSION</span>
+          <div className="stage-tension-bar">
+            <div className="stage-tension-fill" style={{ width: `${tension}%` }} />
+          </div>
+          <span className="stage-tension-val">{tension}%</span>
+        </div>
       </div>
-      <div className="map-stage" ref={stageRef}>
-        <div className="map-water" aria-hidden="true" />
-        <div className="map-island" aria-hidden="true" />
+
+      <div className="stage-canvas" ref={stageRef}>
+        <div className="terrain-ocean" aria-hidden="true" />
+        <div className="terrain-island" aria-hidden="true" />
+        <div className="terrain-grid" aria-hidden="true" />
+
         {zones?.map((z) => (
           <div
             key={z.id}
-            className={`map-zone zone-${z.type}`}
+            className={`zone zone-${z.type}`}
             style={{
               left: `${(z.x / WORLD.w) * 100}%`,
               top: `${(z.y / WORLD.h) * 100}%`,
               width: `${(z.r * 2 / WORLD.w) * 100}%`,
               height: `${(z.r * 2 / WORLD.h) * 100}%`,
-              '--intensity': z.intensity ?? 0.3,
+              '--zone-i': z.intensity ?? 0.3,
             }}
           >
-            <span className="zone-label">{z.name}</span>
+            <span className="zone-name">{z.name}</span>
+            <span className="zone-ring" />
           </div>
         ))}
-        <div className="map-dock" style={{ left: '6%', top: '90%' }} title="The Dock">⛵</div>
+
+        <div className="stage-dock" style={{ left: '5%', top: '88%' }} title="The Dock">
+          <IconDock size={22} />
+          <span>DOCK</span>
+        </div>
 
         {activeAgents.map((a) => (
           <div
             key={a.id}
             ref={bindNode(a.id)}
-            className={`map-agent mood-${a.mood} ${a.status === 'at_risk' ? 'at-risk' : ''} ${a.status === 'immune' ? 'immune' : ''}`}
+            className={`stage-agent mood-${a.mood} ${a.status === 'at_risk' ? 'at-risk' : ''} ${a.status === 'immune' ? 'immune' : ''}`}
             style={{
               left: `${((a.pos?.x ?? 500) / WORLD.w) * 100}%`,
               top: `${((a.pos?.y ?? 300) / WORLD.h) * 100}%`,
               '--accent': a.color,
             }}
-            title={`${a.name} — ${a.mood}, ${INTENT_LABEL[a.intent] ?? a.intent}`}
+            title={`${a.name} — ${a.mood}`}
           >
-            <div className="speech-bubble"><span className="speech-text" /></div>
-            <div className="agent-body">
-              <Avatar id={a.id} size={34} />
-              <span className="agent-mood">{MOOD_EMOJI[a.mood] ?? '😐'}</span>
+            <div className="speech-bubble">
+              <span className="speech-text" />
+              <span className="speech-cursor blink" />
             </div>
-            <div className="agent-nameplate">
-              <span className="agent-name">{a.name}</span>
-              <span className="agent-intent">{INTENT_LABEL[a.intent] ?? a.intent}</span>
+            <div className="agent-figure">
+              <Character id={a.id} size={46} mood={a.mood} />
+              <MoodRing mood={a.mood} size={8} className="agent-mood-ring" />
+            </div>
+            <div className="agent-plate">
+              <span className="agent-plate-name">{a.name}</span>
+              <span className="agent-plate-intent">{INTENT_LABEL[a.intent] ?? a.intent}</span>
             </div>
           </div>
         ))}

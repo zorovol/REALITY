@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { castVote } from '../showSource.js';
-import Avatar from './Avatar.jsx';
+import Character from './Character.jsx';
+import { IconVote, IconSkull } from './Icons.jsx';
 
 function useCountdown(endsAt) {
   const [left, setLeft] = useState(0);
@@ -22,7 +23,6 @@ export default function VotingPanel({ voting, contestantById }) {
   const open = voting && !voting.closed && left > 0;
 
   useEffect(() => {
-    // Reset local choice when a new vote opens
     setSelected(null);
     setMyVote(null);
     setError('');
@@ -44,56 +44,55 @@ export default function VotingPanel({ voting, contestantById }) {
   const submit = () => {
     if (!selected || !open) return;
     castVote(selected, (res) => {
-      if (res?.ok) {
-        setMyVote(selected);
-        setError('');
-      } else {
-        setError(res?.error ?? 'Vote failed.');
-      }
+      if (res?.ok) { setMyVote(selected); setError(''); }
+      else setError(res?.error ?? 'Vote failed.');
     });
   };
 
   return (
-    <aside className="panel glass voting-panel">
-      <h2 className="panel-title">
-        <span>AUDIENCE VOTE</span>
-        {open && <span className={`vote-timer ${left <= 10 ? 'urgent' : ''}`}>{left}s</span>}
-      </h2>
+    <aside className="vote-panel">
+      <header className="panel-head">
+        <span className="panel-head-title">AUDIENCE VOTE</span>
+        {open && <span className={`vote-countdown ${left <= 10 ? 'urgent' : ''}`}>{left}s</span>}
+      </header>
 
       {!voting && (
-        <div className="voting-idle">
-          <div className="idle-icon">🗳️</div>
-          <p>The Director calls votes when the island's drama peaks.</p>
-          <p className="idle-sub">Your vote is weighed against the island's own — you can change history.</p>
+        <div className="vote-idle">
+          <div className="vote-idle-icon"><IconVote size={32} /></div>
+          <p className="vote-idle-title">Standing by</p>
+          <p className="vote-idle-sub">The Director calls a vote when island tension peaks. Your ballot is weighed against the cast.</p>
         </div>
       )}
 
       {voting && (
-        <>
-          <div className="vote-mode-tag eliminate">☠️ VOTE TO ELIMINATE</div>
-          <div className="vote-list">
+        <div className="vote-body">
+          <div className="vote-mode">
+            <IconSkull size={14} />
+            <span>VOTE TO ELIMINATE</span>
+          </div>
+          <div className="vote-rows">
             {rows.map(({ c, count, pct }) => (
               <button
                 key={c.id}
-                className={`vote-row ${selected === c.id ? 'selected' : ''} ${myVote === c.id ? 'voted' : ''}`}
+                type="button"
+                className={`vote-row ${selected === c.id ? 'selected' : ''} ${myVote === c.id ? 'locked' : ''}`}
                 style={{ '--accent': c.color }}
                 disabled={!open}
                 onClick={() => setSelected(c.id)}
               >
-                <span className="vote-avatar"><Avatar id={c.id} size={24} /></span>
-                <span className="vote-name">{c.name}</span>
-                <span className="vote-pct">{pct}%</span>
-                <span className="vote-count">{count}</span>
-                <span className="vote-bar" style={{ width: `${pct}%` }} />
+                <Character id={c.id} size={30} mood={c.mood} />
+                <span className="vote-row-name">{c.name}</span>
+                <span className="vote-row-pct">{pct}%</span>
+                <span className="vote-row-bar" style={{ width: `${pct}%` }} />
               </button>
             ))}
           </div>
-          <button className="submit-vote" disabled={!open || !selected || myVote === selected} onClick={submit}>
-            {!open ? 'VOTING CLOSED' : myVote === selected && myVote ? '✓ VOTE LOCKED IN' : myVote ? 'CHANGE VOTE' : 'SUBMIT VOTE'}
+          <button type="button" className="vote-submit" disabled={!open || !selected || myVote === selected} onClick={submit}>
+            {!open ? 'VOTING CLOSED' : myVote === selected ? 'VOTE LOCKED' : myVote ? 'CHANGE VOTE' : 'CAST VOTE'}
           </button>
-          {error && <div className="vote-error">{error}</div>}
-          <div className="vote-total">{voting.totalVotes} audience vote{voting.totalVotes === 1 ? '' : 's'} cast</div>
-        </>
+          {error && <p className="vote-error">{error}</p>}
+          <p className="vote-total">{voting.totalVotes} ballot{voting.totalVotes === 1 ? '' : 's'} cast</p>
+        </div>
       )}
     </aside>
   );

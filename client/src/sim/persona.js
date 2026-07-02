@@ -182,7 +182,7 @@ const BANKS = {
 
 /** Personality-flavored decoration applied on top of the base line. */
 function flavor(line, p) {
-  if (p.chaos > 0.8 && chance(0.35)) line += ' 😈';
+  if (p.chaos > 0.8 && chance(0.35)) line += '.';
   if (p.aggression > 0.8 && chance(0.3)) line = line.toUpperCase().slice(0, 1) + line.slice(1);
   if (p.emotionalStability < 0.35 && chance(0.3)) line += '...';
   if (p.manipulation > 0.85 && chance(0.25)) line += ' Trust me.';

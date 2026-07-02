@@ -13,7 +13,7 @@ import { personaLine } from './sim/persona.js';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || undefined;
 const FALLBACK_AFTER_MS = 6000;
-const SIM_STORE_KEY = 'adi-world-v3'; // v3: real-model cast — old snapshots invalid
+const SIM_STORE_KEY = 'adi-world-v4';
 
 // Stable per-browser voter identity
 const KEY = 'adi-voter-id';

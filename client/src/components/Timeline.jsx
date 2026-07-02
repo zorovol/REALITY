@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { TimelineIcon, IconTimeline } from './Icons.jsx';
 
 export default function Timeline({ items, arc }) {
   const scrollRef = useRef(null);
@@ -10,29 +11,37 @@ export default function Timeline({ items, arc }) {
   }, [items.length]);
 
   return (
-    <footer className="timeline glass">
-      <div className="timeline-head">
-        <span className="timeline-title">📼 STORY TIMELINE</span>
-        <span className="timeline-season">Arc {arc?.number ?? 1} — “{arc?.name ?? 'First Landing'}”</span>
-      </div>
-      <div className="timeline-scroll" ref={scrollRef}>
+    <footer className="timeline-bar">
+      <header className="timeline-head">
+        <span className="timeline-title">
+          <IconTimeline size={14} />
+          STORY TIMELINE
+        </span>
+        <span className="timeline-arc">
+          Arc {arc?.number ?? 1} — {arc?.name ?? 'First Landing'}
+        </span>
+      </header>
+      <div className="timeline-track-wrap" ref={scrollRef}>
         <div className="timeline-track">
           {items.map((item) => (
             <button
               key={item.id}
+              type="button"
               className={`timeline-node type-${item.type} ${focused === item.id ? 'focused' : ''}`}
               onClick={() => setFocused(focused === item.id ? null : item.id)}
-              title={`${item.label}${item.detail ? ` — ${item.detail}` : ''}`}
+              title={item.detail ? `${item.label} — ${item.detail}` : item.label}
             >
-              <span className="node-icon">{item.icon}</span>
-              <span className="node-ep">A{item.arc ?? item.episode ?? 1}</span>
-              <span className="node-label">{item.label}</span>
+              <span className="timeline-node-icon">
+                <TimelineIcon type={item.type} size={16} />
+              </span>
+              <span className="timeline-node-arc">A{item.arc ?? 1}</span>
+              <span className="timeline-node-label">{item.label}</span>
               {focused === item.id && item.detail && (
-                <span className="node-detail">{item.detail}</span>
+                <span className="timeline-node-tip">{item.detail}</span>
               )}
             </button>
           ))}
-          {items.length === 0 && <div className="timeline-empty">History will be written here…</div>}
+          {items.length === 0 && <span className="timeline-empty">History will be written here…</span>}
         </div>
       </div>
     </footer>

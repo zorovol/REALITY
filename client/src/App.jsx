@@ -6,6 +6,7 @@ import MapStage from './components/MapStage.jsx';
 import DramaFeed from './components/DramaFeed.jsx';
 import VotingPanel from './components/VotingPanel.jsx';
 import Timeline from './components/Timeline.jsx';
+import BootScreen from './components/BootScreen.jsx';
 
 export default function App() {
   const [world, setWorld] = useState(null);
@@ -51,23 +52,20 @@ export default function App() {
   );
 
   if (!world) {
-    return (
-      <div className="boot-screen">
-        <div className="boot-logo">🌴</div>
-        <h1 className="boot-title">AI DRAMA ISLAND</h1>
-        <p className="boot-sub">{connected ? 'Tuning into the broadcast…' : 'Connecting to the island…'}</p>
-        <div className="boot-bar"><div className="boot-bar-fill" /></div>
-      </div>
-    );
+    return <BootScreen connected={connected} />;
   }
 
   return (
-    <div className="app">
-      <div className="bg-aurora" aria-hidden="true" />
+    <div className="broadcast">
+      <div className="broadcast-bg" aria-hidden="true">
+        <div className="broadcast-bg-gradient" />
+        <div className="broadcast-bg-noise" />
+        <div className="broadcast-bg-vignette" />
+      </div>
       <Header world={world} audience={audience} connected={connected} votingLive={!!voting && !voting.closed} />
-      <main className="layout">
+      <main className="broadcast-grid">
         <ContestantsPanel agents={world.agents} eliminatedFlash={eliminatedFlash} agentById={agentById} />
-        <div className="center-stack">
+        <div className="broadcast-center">
           <MapStage agents={world.agents} zones={world.zones} tension={world.tension ?? 0} />
           <DramaFeed feed={feed} arc={world.arc} />
         </div>

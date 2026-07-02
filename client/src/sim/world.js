@@ -254,7 +254,7 @@ export class WorldEngine {
 
   snapshot() {
     return {
-      v: 3, // v3: real-model cast (ids changed) — older snapshots are invalid
+      v: 4,
       agents: this.agents,
       alliances: this.alliances,
       arc: this.arc,
@@ -540,8 +540,8 @@ export class WorldEngine {
         b.memory.alliances = [...new Set([...b.memory.alliances, a.id])];
         this.remember(a, { type: 'alliance', target: b.id, intensity: 30, text: `Formed a pact with ${b.name}` });
         this.remember(b, { type: 'alliance', target: a.id, intensity: 30, text: `Formed a pact with ${a.name}` });
-        this.emitFeed({ kind: 'announcement', tone: 'alliance', text: `🤝 ALLIANCE FORMED — ${a.name} and ${b.name} made a ${alliance.secret ? 'SECRET ' : ''}pact.` });
-        this.emitTimeline('alliance', `${a.name} + ${b.name} pact`, '🤝', alliance.secret ? 'Formed in secret' : 'Formed openly');
+        this.emitFeed({ kind: 'announcement', tone: 'alliance', text: `ALLIANCE FORMED — ${a.name} and ${b.name} made a ${alliance.secret ? 'SECRET ' : ''}pact.` });
+        this.emitTimeline('alliance', `${a.name} + ${b.name} pact`, '', alliance.secret ? 'Formed in secret' : 'Formed openly');
       } else {
         await this.speak(b, 'alliance_reject', { target: a.name, memory: this.heaviestMemory(b) });
         this.shiftRel(a, b.id, { trust: -10 });
@@ -570,7 +570,7 @@ export class WorldEngine {
 
     this.emitFeed({
       kind: 'drama', tone: 'betrayal', big: true,
-      text: `💥 BETRAYAL — ${traitor.name} just turned on ${victim.name}${alliance ? ` and shattered the "${alliance.name}"` : ''}!`,
+      text: `BETRAYAL — ${traitor.name} just turned on ${victim.name}${alliance ? ` and shattered the "${alliance.name}"` : ''}!`,
       story: {
         cause: `${traitor.name}'s loyalty was always for sale`,
         context: alliance ? `They swore a pact${alliance.secret ? ' in secret' : ''}` : 'They were closest on the island',
@@ -593,7 +593,7 @@ export class WorldEngine {
         this.remember(w, { type: 'witnessed_betrayal', target: traitor.id, intensity: -12, text: `${traitor.name} betrayed ${victim.name}` });
       }
     }
-    this.emitTimeline('betrayal', `${traitor.name} betrayed ${victim.name}`, '🗡️', alliance ? `The ${alliance.name} collapsed` : '');
+    this.emitTimeline('betrayal', `${traitor.name} betrayed ${victim.name}`, '', alliance ? `The ${alliance.name} collapsed` : '');
     victim.status = 'at_risk';
     this.recentConflicts.push(Date.now());
     this.emitState();
@@ -607,7 +607,7 @@ export class WorldEngine {
   emitStoryEvent(story, big = true) {
     this.dispatch('story:event', { id: nextId(), ts: Date.now(), ...story });
     if (big) {
-      this.emitFeed({ kind: 'drama', tone: 'twist', big: true, text: `⚡ ${story.reaction}`, story });
+      this.emitFeed({ kind: 'drama', tone: 'twist', big: true, text: story.reaction, story });
     }
   }
 
@@ -655,7 +655,7 @@ export class WorldEngine {
           traitor.plannedBetrayal = victim.id;
           traitor.state.intent = 'confront';
           traitor.state.focusTarget = victim.id;
-          this.emitFeed({ kind: 'system', text: `🎬 The Director senses the ${al.name} has grown too comfortable...` });
+          this.emitFeed({ kind: 'system', text: `DIRECTOR NOTE — The ${al.name} has grown too comfortable...` });
         }
       }
     }
@@ -692,8 +692,8 @@ export class WorldEngine {
     const name = forcedName ?? pick(ARC_NAMES[tone]);
     this.arc = { number: this.arcNumber, name, tone, startedAt: Date.now() };
     this.dispatch('arc:change', this.arc);
-    this.emitFeed({ kind: 'system', text: `📖 ARC ${this.arcNumber}: "${name}" — the story shifts.` });
-    this.emitTimeline('arc', `Arc ${this.arcNumber}: ${name}`, '📖', `Tension ${Math.round(this.tension)}%`);
+    this.emitFeed({ kind: 'system', text: `ARC ${this.arcNumber}: "${name}" — the story shifts.` });
+    this.emitTimeline('arc', `Arc ${this.arcNumber}: ${name}`, '', `Tension ${Math.round(this.tension)}%`);
     this.persist();
   }
 
@@ -709,7 +709,7 @@ export class WorldEngine {
       finder.target = null;
       this.emitFeed({
         kind: 'drama', tone: 'twist', big: true,
-        text: `🗿 HIDDEN IDOL — ${finder.name} found something buried in the Whisper Jungle. They are UNTOUCHABLE in the next vote.`,
+        text: `HIDDEN IDOL — ${finder.name} found something buried in the Whisper Jungle. They are UNTOUCHABLE in the next vote.`,
         story: {
           cause: 'The Director buried an idol in the Mystery Zone',
           context: `${finder.name} was exploring alone`,
@@ -719,7 +719,7 @@ export class WorldEngine {
       });
       this.speak(finder, 'idol_found', { emotion: 'alliance' }, 'confessional');
       this.remember(finder, { type: 'idol', intensity: 40, text: 'I found a hidden idol' });
-      this.emitTimeline('twist', `${finder.name} finds an idol`, '🗿', 'Immune in the next vote');
+      this.emitTimeline('twist', `${finder.name} finds an idol`, '', 'Immune in the next vote');
     } else if (kind === 'gathering') {
       const z = this.zones[1];
       for (const a of pool) {
@@ -727,9 +727,9 @@ export class WorldEngine {
         a.target = { x: z.x + (Math.random() - 0.5) * z.r, y: z.y + (Math.random() - 0.5) * z.r };
         a.idleUntil = 0;
       }
-      this.emitFeed({ kind: 'announcement', tone: 'voting', big: true, text: `📣 PRODUCTION SUMMONS — Everyone to the Fire Pit. NOW.` });
+      this.emitFeed({ kind: 'announcement', tone: 'voting', big: true, text: `PRODUCTION SUMMONS — Everyone to the Fire Pit. NOW.` });
       this.speak(pick(pool), 'summoned', {});
-      this.emitTimeline('twist', 'Forced gathering', '📣', 'All agents summoned to the Fire Pit');
+      this.emitTimeline('twist', 'Forced gathering', '', 'All agents summoned to the Fire Pit');
     } else if (kind === 'leak') {
       const victim = pick(pool);
       const others = pool.filter((x) => x.id !== victim.id);
@@ -740,7 +740,7 @@ export class WorldEngine {
       victim.status = victim.status === 'immune' ? 'immune' : 'at_risk';
       this.emitFeed({
         kind: 'drama', tone: 'rumor', big: true,
-        text: `🐍 PRODUCTION LEAK — Whispers about ${victim.name} just reached the whole island at once.`,
+        text: `PRODUCTION LEAK — Whispers about ${victim.name} just reached the whole island at once.`,
         story: {
           cause: 'The island was too quiet',
           context: 'The Director fed a rumor into the camp',
@@ -748,7 +748,7 @@ export class WorldEngine {
           consequence: 'Four agents quietly downgraded their trust',
         },
       });
-      this.emitTimeline('rumor', `Leak targets ${victim.name}`, '🐍', 'Injected by the Director');
+      this.emitTimeline('rumor', `Leak targets ${victim.name}`, '', 'Injected by the Director');
     } else {
       const z = this.zones[0];
       for (const a of pool) {
@@ -757,9 +757,9 @@ export class WorldEngine {
         a.idleUntil = 0;
         this.remember(a, { type: 'storm', intensity: -8, text: 'We huddled through the storm' });
       }
-      this.emitFeed({ kind: 'drama', tone: 'emotional', big: true, text: `🌩️ STORM ROLLS IN — The island forces everyone into the Cove. Enemies, allies, no space between them.` });
+      this.emitFeed({ kind: 'drama', tone: 'emotional', big: true, text: `STORM ROLLS IN — The island forces everyone into the Cove. Enemies, allies, no space between them.` });
       this.speak(pick(pool), 'storm_react', { emotion: 'fear' });
-      this.emitTimeline('twist', 'Storm hits the island', '🌩️', 'Forced proximity in the Cove');
+      this.emitTimeline('twist', 'Storm hits the island', '', 'Forced proximity in the Cove');
     }
     this.emitState();
   }
@@ -786,7 +786,7 @@ export class WorldEngine {
     for (const c of candidates) if (c.status === 'safe') c.status = 'at_risk';
     this.emitFeed({
       kind: 'announcement', tone: 'voting', big: true,
-      text: `🗳️ THE ISLAND DEMANDS A SACRIFICE — Audience vote is OPEN. Your votes weigh against the island's own.`,
+      text: `THE ISLAND DEMANDS A SACRIFICE — Audience vote is OPEN. Your votes weigh against the island's own.`,
     });
     this.dispatch('vote:open', this.publicVoting());
     this.emitState();
@@ -868,7 +868,7 @@ export class WorldEngine {
 
     this.emitFeed({
       kind: 'drama', tone: 'elimination', big: true,
-      text: `🏝️ ELIMINATED — ${agent.name} (${reason}). They walk the long path to the dock. ${this.activeAgents().length - 1} remain.`,
+      text: `ELIMINATED — ${agent.name} (${reason}). They walk the long path to the dock. ${this.activeAgents().length - 1} remain.`,
       story: {
         cause: reason,
         context: `Arc ${this.arcNumber}: "${this.arc?.name}"`,
@@ -876,7 +876,7 @@ export class WorldEngine {
         consequence: 'Power rebalances; every alliance recalculates',
       },
     });
-    this.emitTimeline('elimination', `${agent.name} eliminated`, '🏝️', reason);
+    this.emitTimeline('elimination', `${agent.name} eliminated`, '', reason);
     this.dispatch('agent:eliminated', { id: agent.id, name: agent.name, reason });
 
     for (const w of this.activeAgents()) {
@@ -925,7 +925,7 @@ export class WorldEngine {
 
     this.emitFeed({
       kind: 'drama', tone: 'finale', big: true,
-      text: `⛵ RETURNEE TWIST — The boat is back. ${returning.map((r) => r.name).join(', ')} step onto the sand... and they remember EVERYTHING.`,
+      text: `RETURNEE TWIST — The boat is back. ${returning.map((r) => r.name).join(', ')} step onto the sand... and they remember EVERYTHING.`,
       story: {
         cause: 'The island population ran low',
         context: 'Eliminated players kept their memories in exile',
@@ -937,7 +937,7 @@ export class WorldEngine {
       const grudgeName = this.agent(r.memory.grudges[0])?.name;
       this.speak(r, 'returnee', { target: grudgeName ?? pick(this.activeAgents()).name, emotion: 'anger' });
     }
-    this.emitTimeline('finale', `${returning.map((r) => r.name).join(' + ')} return`, '⛵', 'Memories and grudges intact');
+    this.emitTimeline('finale', `${returning.map((r) => r.name).join(' + ')} return`, '', 'Memories and grudges intact');
     this.newArc('The Return');
     this.emitState();
     this.persist();
@@ -966,15 +966,15 @@ export class WorldEngine {
     let snap = null;
     try { snap = await this.restoreFn(); } catch { snap = null; }
 
-    if (snap?.v === 3 && snap.agents?.length) {
+    if (snap?.v === 4 && snap.agents?.length) {
       this.restoreFromSnapshot(snap);
-      this.emitFeed({ kind: 'system', text: `📡 SIGNAL RESTORED — The island never stopped. Arc ${this.arcNumber} continues.` });
+      this.emitFeed({ kind: 'system', text: `SIGNAL RESTORED — The island never stopped. Arc ${this.arcNumber} continues.` });
     } else {
       this.agents = CAST_POOL.map((t) => makeAgent(t));
       for (const a of this.agents) for (const b of this.agents) if (a.id !== b.id) this.rel(a, b.id);
-      this.emitFeed({ kind: 'system', text: `🌴 THE ISLAND AWAKENS — Ten AI castaways. One camera that never blinks. No episodes. No endings.` });
+      this.emitFeed({ kind: 'system', text: `THE ISLAND AWAKENS — Ten AI castaways. One camera that never blinks. No episodes. No endings.` });
       this.newArc('First Landing');
-      this.emitTimeline('season', 'The island awakens', '🌴', 'Ten castaways arrive');
+      this.emitTimeline('season', 'The island awakens', '', 'Ten castaways arrive');
     }
     this.emitState();
 

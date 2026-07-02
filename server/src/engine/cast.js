@@ -4,7 +4,7 @@
  * never mean-spirited.
  *
  * `avatar` is a plain-text fallback only; the client renders premium orb
- * avatars (see client/src/components/Avatar.jsx, keyed by id).
+ * avatars (see client/src/components/Character.jsx, keyed by id).
  */
 
 export const CAST_POOL = [
