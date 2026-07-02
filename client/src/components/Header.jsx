@@ -2,7 +2,7 @@ import { IconIsland, IconLive, IconMarket, IconX } from './Icons.jsx';
 import Character from './Character.jsx';
 
 const BOTS = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
-const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgeminideepseekfable';
+const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgdsfable?s=11';
 
 export default function Header({ market, connected, audience }) {
   const tradeCount = market?.recentTrades?.length ?? 0;
