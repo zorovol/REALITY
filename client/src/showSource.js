@@ -12,9 +12,21 @@ import { buildFallbackMarket } from './lib/marketState.js';
  * shows up later, we switch to it seamlessly.
  */
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || undefined;
-const FALLBACK_AFTER_MS = 6000;
-const HARD_DEADLINE_MS = 8000;
+const PRODUCTION_SERVER = 'https://ai-drama-island-api.onrender.com';
+
+function resolveServerUrl() {
+  const fromEnv = import.meta.env.VITE_SERVER_URL?.trim();
+  if (fromEnv) return fromEnv;
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
+    return PRODUCTION_SERVER;
+  }
+  return undefined;
+}
+
+const SERVER_URL = resolveServerUrl();
+const FALLBACK_AFTER_MS = 18000;
+const HARD_DEADLINE_MS = 25000;
+const HTTP_TIMEOUT_MS = 12000;
 const SIM_STORE_KEY = 'adi-world-v6';
 
 // Stable per-browser voter identity
@@ -86,7 +98,7 @@ function ingestServerState(state) {
 async function tryHttpBootstrap() {
   try {
     const base = SERVER_URL ?? '';
-    const res = await fetch(`${base}/api/state`, { signal: AbortSignal.timeout(4500) });
+    const res = await fetch(`${base}/api/state`, { signal: AbortSignal.timeout(HTTP_TIMEOUT_MS) });
     if (!res.ok) return false;
     const state = await res.json();
     return ingestServerState(state);
@@ -150,7 +162,7 @@ function switchToServer() {
 
 const socket = io(SERVER_URL, {
   transports: ['websocket', 'polling'],
-  timeout: 5000,
+  timeout: 12000,
   reconnectionDelayMax: 15000,
 });
 
@@ -165,6 +177,10 @@ socket.onAny((event, payload) => {
 
 socket.on('connect', () => {
   notifyStatus();
+  if (mode === 'local') {
+    tryHttpBootstrap();
+    return;
+  }
   if (!booted) {
   // Socket connected but world:state may lag — HTTP backup after short grace.
     setTimeout(() => {
