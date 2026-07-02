@@ -2359,6 +2359,322 @@ body {
 .boot-trading .boot-kicker { color: var(--accent-green); }
 .boot-trading .boot-mark { color: var(--accent-green); }
 
+/* ── competition leaderboard ── */
+
+.competition-chart {
+  margin: 0 12px 12px;
+  background: rgba(2, 8, 14, 0.95);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(52, 211, 153, 0.05);
+}
+
+.comp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.06), rgba(52, 211, 153, 0.04), transparent);
+}
+
+.comp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent-gold);
+}
+
+.comp-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.comp-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+}
+
+.comp-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.comp-header-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comp-stat-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-width: 90px;
+}
+
+.comp-stat-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.comp-stat-val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+
+.comp-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.comp-row {
+  display: grid;
+  grid-template-columns: 36px 44px 1fr 72px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--bot-color, var(--accent-cyan));
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.comp-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(2px);
+}
+
+.comp-row-leader {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), rgba(255, 255, 255, 0.02));
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 24px rgba(251, 191, 36, 0.08);
+}
+
+.comp-rank {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.comp-rank.rank-gold {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(251, 191, 36, 0.08));
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: var(--accent-gold);
+}
+
+.comp-rank.rank-silver {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #94a3b8;
+}
+
+.comp-rank.rank-bronze {
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  color: #d97706;
+}
+
+.comp-rank.rank-plain {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.comp-crown { color: var(--accent-gold); filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6)); }
+.comp-rank-num { line-height: 1; }
+
+.comp-avatar { flex-shrink: 0; }
+
+.comp-info { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.comp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comp-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--bot-color, var(--text-primary));
+}
+
+.comp-rank-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.comp-status {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.comp-status-broke { color: var(--accent-red); background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3); }
+.comp-status-idle { color: var(--accent-gold); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.25); }
+.comp-status-live { color: var(--accent-green); background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); }
+
+.comp-bar-track {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.comp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.comp-bar-fill.up {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bot-color) 60%, #34d399), var(--accent-green));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent-green) 40%, transparent);
+}
+
+.comp-bar-fill.down {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bot-color) 40%, #f43f5e), var(--accent-red));
+}
+
+.comp-bar-fill.neutral {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bot-color) 50%, transparent), color-mix(in srgb, var(--bot-color) 20%, transparent));
+}
+
+.comp-bar-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: comp-shine 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes comp-shine {
+  0%, 100% { transform: translateX(-100%); opacity: 0; }
+  50% { transform: translateX(100%); opacity: 1; }
+}
+
+.comp-metrics {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.comp-metric {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.comp-metric b {
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-left: 3px;
+}
+
+.comp-metric.up b { color: var(--accent-green); }
+.comp-metric.down b { color: var(--accent-red); }
+
+.comp-score-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.comp-score-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.comp-score-val {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--bot-color, var(--accent-cyan));
+  text-shadow: 0 0 16px color-mix(in srgb, var(--bot-color) 30%, transparent);
+}
+
+.comp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.comp-footer-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-green);
+}
+
+.comp-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0); }
+}
+
 /* ── trading responsive ── */
 
 @media (max-width: 1400px) {
@@ -2369,6 +2685,8 @@ body {
 @media (max-width: 1000px) {
   .tf-stations-grid { grid-template-columns: repeat(2, 1fr); }
   .trading-header-stats { margin-left: 0; width: 100%; justify-content: flex-start; }
+  .comp-row { grid-template-columns: 32px 40px 1fr 60px; gap: 8px; }
+  .comp-header-stats { width: 100%; }
 }
 
 @media (max-width: 640px) {
@@ -2378,4 +2696,17 @@ body {
   .trading-header-warn { width: 100%; text-align: center; }
   .tf-log-row { grid-template-columns: 48px 40px 1fr; }
   .tf-log-sol, .tf-log-tx { grid-column: 3; font-size: 8px; }
+  .comp-row {
+    grid-template-columns: 28px 36px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .comp-score-block {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .comp-metrics { gap: 8px; }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Character from './Character.jsx';
+import CompetitionChart from './CompetitionChart.jsx';
 import { IconMarket, IconCopy, IconLive } from './Icons.jsx';
 import { BOT_IDS } from '../lib/marketState.js';
 
@@ -249,6 +250,8 @@ export default function TradingFloor({ market }) {
               </article>
             ))}
         </div>
+
+        <CompetitionChart market={market} />
       </section>
     </div>
   );
