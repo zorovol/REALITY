@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install && npm install --prefix server && npm run build --prefix client
+    buildCommand: npm run setup && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -14,8 +14,6 @@ services:
         value: "20"
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: "4000"
       - key: CLIENT_ORIGIN
         value: https://ai-drama-island.vercel.app
       - key: SIMULATION_FALLBACK

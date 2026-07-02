@@ -140,27 +140,34 @@ io.on('connection', (socket) => {
 async function main() {
   await initDb();
 
+  server.on('error', (err) => {
+    console.error('[server] failed to bind:', err.message);
+    process.exit(1);
+  });
+
+  server.listen(config.port, '0.0.0.0', () => {
+    console.log(`[server] AI Drama Island world engine live on port ${config.port}`);
+    console.log(`[server] DB: ${dbReady() ? 'Neon PostgreSQL' : 'in-memory (set DATABASE_URL to persist)'}`);
+  });
+
   try {
     wallets.init();
     trading = new TradingEngine({ wallets, pump, world, dispatch: (event, payload) => io.emit(event, payload) });
     trading.start();
   } catch (err) {
     console.error('[solana] Wallet init failed:', err.message);
-    console.error('[solana] Set ENCRYPTION_KEY in .env or SIMULATION_FALLBACK=true for local dev without wallets.');
+    console.error('[solana] Set ENCRYPTION_KEY on Render (same as local .env).');
     process.exit(1);
   }
 
   // Patch world state broadcasts to include wallet/market data
   world.emitState = () => io.emit('world:state', publicState());
 
-  server.listen(config.port, () => {
-    console.log(`[server] AI Drama Island world engine live on http://localhost:${config.port}`);
-    console.log(`[server] DB: ${dbReady() ? 'Neon PostgreSQL' : 'in-memory (set DATABASE_URL to persist)'}`);
-    const providers = availableProviders().map((p) => p.id);
-    console.log(`[server] AI providers: ${providers.length ? providers.join(', ') : 'none (persona engine active)'}`);
-    console.log(`[server] Solana: ${solanaConfig.network} (${solanaConfig.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'})`);
-    console.log(`[server] Fund wallets: npm run wallets:addresses --prefix server`);
-  });
+  const providers = availableProviders().map((p) => p.id);
+  console.log(`[server] AI providers: ${providers.length ? providers.join(', ') : 'none (persona engine active)'}`);
+  console.log(`[server] Solana: ${solanaConfig.network} (${solanaConfig.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'})`);
+  console.log(`[server] Fund wallets: npm run wallets:addresses --prefix server`);
+
   await world.start();
   world.agents.forEach((a, i) => { a.provider = assignProvider(i); });
 }
