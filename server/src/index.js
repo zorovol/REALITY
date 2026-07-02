@@ -16,15 +16,16 @@ import { WalletManager } from './solana/wallets.js';
 import { TradingEngine } from './solana/trading.js';
 import { solanaConfig } from './solana/config.js';
 import { buildSkeletonMarket } from './solana/marketFallback.js';
+import { corsOriginCheck, socketCors } from './cors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: config.clientOrigin, methods: ['GET', 'POST'] },
+  cors: socketCors(),
 });
 
-app.use(cors({ origin: config.clientOrigin }));
+app.use(cors({ origin: corsOriginCheck }));
 app.use(express.json());
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

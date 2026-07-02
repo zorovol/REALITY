@@ -1,0 +1,34 @@
+# Backend for real trading + websockets (Vercel hosts the static UI only).
+# Deploy at https://dashboard.render.com → New → Blueprint → connect this repo.
+services:
+  - type: web
+    name: ai-drama-island-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm install --prefix server && npm run build --prefix client
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: CLIENT_ORIGIN
+        value: https://ai-drama-island.vercel.app
+      - key: SIMULATION_FALLBACK
+        value: "false"
+      - key: PUMP_DISCOVERY
+        value: "true"
+      - key: PUMP_AUTO_LAUNCH
+        value: "false"
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: SOLANA_NETWORK
+        value: mainnet-beta
+      - key: DATABASE_URL
+        sync: false
