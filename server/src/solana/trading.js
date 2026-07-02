@@ -21,10 +21,19 @@ function loadState() {
       state.agentPanels = Object.fromEntries(
         Object.entries(state.agentPanels ?? {}).filter(([id]) => validIds.has(id)),
       );
+      state.tradesByAgent = Object.fromEntries(
+        Object.entries(state.tradesByAgent ?? {}).filter(([id]) => validIds.has(id)),
+      );
+      if (!state.tradesByAgent || Object.keys(state.tradesByAgent).length === 0) {
+        state.tradesByAgent = {};
+        for (const [id, panel] of Object.entries(state.agentPanels ?? {})) {
+          if (panel.recentTrades?.length) state.tradesByAgent[id] = [...panel.recentTrades];
+        }
+      }
       return state;
     }
   } catch { /* ignore */ }
-  return { islandTokens: {}, recentTrades: [], txLog: [], agentPanels: {} };
+  return { islandTokens: {}, recentTrades: [], txLog: [], agentPanels: {}, tradesByAgent: {} };
 }
 
 function saveState(state) {
@@ -81,7 +90,24 @@ export class TradingEngine {
       recentTrades: this.state.recentTrades.slice(-40),
       wallets: this.wallets.allPublicWallets(),
       agentPanels: this.getAgentPanels(),
+      tradesByAgent: this.getTradesByAgent(),
     };
+  }
+
+  getTradesByAgent() {
+    const out = {};
+    for (const template of CAST_POOL) {
+      const id = template.name.toLowerCase();
+      out[id] = this.getTradesForAgent(id);
+    }
+    return out;
+  }
+
+  getTradesForAgent(agentId) {
+    const trades = this.state.tradesByAgent?.[agentId]
+      ?? this.state.agentPanels?.[agentId]?.recentTrades
+      ?? [];
+    return [...trades].reverse();
   }
 
   getAgentPanels() {
@@ -95,16 +121,20 @@ export class TradingEngine {
       };
       const islandMint = this.state.islandTokens[id];
       const netPnl = (panel.totalSold ?? 0) - (panel.totalBought ?? 0);
+      const allTrades = this.getTradesForAgent(id);
       return {
         id,
         name: template.name,
+        tagline: template.tagline,
+        modelLabel: template.modelLabel,
         color: agent?.color ?? template.color,
         wallet,
         islandToken: islandMint
           ? { mint: islandMint, symbol: this.pump.tokenSymbol(template.name) }
           : null,
         holdings: panel.holdings ?? [],
-        recentTrades: [...(panel.recentTrades ?? [])].slice(-6).reverse(),
+        trades: allTrades,
+        recentTrades: allTrades.slice(0, 50),
         pnlSol: Number(netPnl.toFixed(4)),
         positionStatus: (panel.holdings?.length ?? 0) > 0
           ? 'in_position'
@@ -132,8 +162,15 @@ export class TradingEngine {
     }
     const panel = this.state.agentPanels[agentId];
     panel.recentTrades.push(trade);
-    if (panel.recentTrades.length > 30) {
-      panel.recentTrades.splice(0, panel.recentTrades.length - 30);
+    if (panel.recentTrades.length > 100) {
+      panel.recentTrades.splice(0, panel.recentTrades.length - 100);
+    }
+
+    if (!this.state.tradesByAgent) this.state.tradesByAgent = {};
+    if (!this.state.tradesByAgent[agentId]) this.state.tradesByAgent[agentId] = [];
+    this.state.tradesByAgent[agentId].push(trade);
+    if (this.state.tradesByAgent[agentId].length > 500) {
+      this.state.tradesByAgent[agentId].splice(0, this.state.tradesByAgent[agentId].length - 500);
     }
 
     const sol = Number(trade.solAmount) || 0;
@@ -162,6 +199,7 @@ export class TradingEngine {
       });
     }
     panel.pnlSol = panel.totalSold - panel.totalBought;
+    saveState(this.state);
   }
 
   enrichAgent(agent) {
@@ -278,7 +316,7 @@ export class TradingEngine {
       saveState(this.state);
 
       const trade = {
-        id: `t${Date.now()}`,
+        id: `t${Date.now()}-${agent.id}`,
         ts: Date.now(),
         agentId: agent.id,
         agentName: agent.name,
@@ -291,6 +329,7 @@ export class TradingEngine {
       };
       this.pushTrade(trade);
       this.recordAgentPanel(agent.id, trade);
+      saveState(this.state);
 
       this.world.emitFeed({
         kind: 'trade',
@@ -360,12 +399,13 @@ export class TradingEngine {
 
   logTrade(agent, result) {
     const trade = {
-      id: `t${Date.now()}`,
+      id: `t${Date.now()}-${agent.id}`,
       ts: Date.now(),
       agentId: agent.id,
       agentName: agent.name,
       side: result.side,
       mint: result.mint,
+      symbol: result.symbol ?? this.symbolForMint(result.mint),
       solAmount: result.solAmount,
       signature: result.signature,
       explorerUrl: result.explorerUrl,

@@ -40,6 +40,9 @@ const world = new WorldEngine({
     if (event === 'feed:item' && payload.kind !== 'system') {
       insertEvent(1, world.arcNumber, payload.kind, payload);
     }
+    if (event === 'trade:item' && payload.signature) {
+      insertEvent(1, world.arcNumber, 'trade', payload);
+    }
   },
   gen: async (agent, intent, ctx, w) => {
     if (!agent.provider || agent.provider === 'persona') return personaLine(intent, agent, ctx);
@@ -99,7 +102,20 @@ app.get('/api/wallets', (req, res) => {
 });
 
 app.get('/api/market', (req, res) => {
-  res.json(trading?.getMarketState() ?? { recentTrades: [], islandTokens: {} });
+  res.json(trading?.getMarketState() ?? { recentTrades: [], islandTokens: {}, agentPanels: [], tradesByAgent: {} });
+});
+
+app.get('/api/trades', (req, res) => {
+  res.json(trading?.getTradesByAgent() ?? {});
+});
+
+app.get('/api/trades/:agentId', (req, res) => {
+  const id = req.params.agentId?.toLowerCase();
+  if (!id) return res.status(400).json({ error: 'agentId required' });
+  res.json({
+    agentId: id,
+    trades: trading?.getTradesForAgent(id) ?? [],
+  });
 });
 
 // Serve the built client in production (single-deploy setup)
