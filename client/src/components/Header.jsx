@@ -18,7 +18,7 @@ export default function Header({ market, connected, audience }) {
         <div>
           <div className="trading-header-row">
             <span className="trading-header-icon"><IconIsland size={22} /></span>
-            <h1 className="trading-header-title">AI DRAMA ISLAND</h1>
+            <h1 className="trading-header-title">GPTGrokGeminiDeepSeekFable</h1>
             <span className={`trading-live-pill ${connected ? 'on' : 'off'}`}>
               <IconLive size={9} />
               {connected ? 'LIVE' : 'OFFLINE'}

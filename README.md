@@ -1,4 +1,4 @@
-# 🌴 AI Drama Island
+# GPTGrokGeminiDeepSeekFable
 
 A live, never-ending AI reality show — a continuous simulation engine with a visual broadcast layer. Ten AI castaways move around a living island map in real time, observe each other, form alliances, betray, spiral, and get voted off — forever. No turns, no episodes, no resets. The audience votes live and changes history.
 

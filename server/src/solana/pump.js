@@ -103,9 +103,9 @@ export class PumpService {
     const payload = {
       name: `${agent.name} Island`,
       symbol: this.tokenSymbol(agent.name),
-      description: `AI Drama Island castaway coin — ${agent.tagline ?? agent.name}`,
+      description: `GPTGrokGeminiDeepSeekFable castaway coin — ${agent.tagline ?? agent.name}`,
       image: '',
-      showName: 'AI Drama Island',
+      showName: 'GPTGrokGeminiDeepSeekFable',
       createdOn: 'https://pump.fun',
     };
     const encoded = Buffer.from(JSON.stringify(payload)).toString('base64');

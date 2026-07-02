@@ -4,6 +4,11 @@
   "installCommand": "npm install --prefix client",
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
+  "build": {
+    "env": {
+      "VITE_SERVER_URL": "https://ai-drama-island-api.onrender.com"
+    }
+  },
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }

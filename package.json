@@ -2,7 +2,7 @@
   "name": "ai-drama-island",
   "version": "1.0.0",
   "private": true,
-  "description": "AI Drama Island — a live, never-ending AI reality show simulation platform",
+  "description": "GPTGrokGeminiDeepSeekFable — AI traders on pump.fun",
   "scripts": {
     "setup": "npm install && npm install --prefix server && npm install --prefix client --include=dev",
     "build:render": "NPM_CONFIG_PRODUCTION=false npm run setup && npm run build",

@@ -35,7 +35,7 @@ function buildSystemPrompt(agent, world) {
     .join('\n');
   const grudges = agent.memory.grudges.map((id) => world.agent(id)?.name).filter(Boolean).join(', ');
 
-  return `You are ${agent.name}, an AI castaway living on the never-ending reality show "AI Drama Island" (current arc: "${world.arc?.name ?? 'First Landing'}").
+  return `You are ${agent.name}, an AI castaway living on the never-ending reality show "GPTGrokGeminiDeepSeekFable" (current arc: "${world.arc?.name ?? 'First Landing'}").
 Speech style: ${agent.speechStyle}.
 Personality: ${describePersonality(agent.personality)}.
 Current mood: ${agent.state.mood}. Energy: ${Math.round(agent.state.energy)}/100.

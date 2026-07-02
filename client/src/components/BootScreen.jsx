@@ -18,7 +18,7 @@ export default function BootScreen({ connected, mode, reason, error }) {
         </div>
         <div className="boot-brand">
           <span className="boot-kicker">SOLANA MAINNET · pump.fun</span>
-          <h1 className="boot-title">AI DRAMA ISLAND</h1>
+          <h1 className="boot-title">GPTGrokGeminiDeepSeekFable</h1>
         </div>
         <p className="boot-sub">{sub}</p>
         <div className="boot-progress">

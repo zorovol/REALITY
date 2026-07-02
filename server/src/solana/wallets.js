@@ -152,7 +152,7 @@ export class WalletManager {
     const lines = [];
     lines.push('');
     lines.push('═'.repeat(72));
-    lines.push('  AI DRAMA ISLAND — AGENT WALLET FUNDING SHEET');
+    lines.push('  GPTGrokGeminiDeepSeekFable — AGENT WALLET FUNDING SHEET');
     lines.push(`  Network: ${solanaConfig.network}  |  RPC: ${solanaConfig.rpcUrl}`);
     lines.push(`  Min recommended per agent: ${solanaConfig.minSolForTrade}–${solanaConfig.minSolForLaunch} SOL`);
     lines.push('═'.repeat(72));

@@ -146,7 +146,7 @@ async function main() {
   });
 
   server.listen(config.port, '0.0.0.0', () => {
-    console.log(`[server] AI Drama Island world engine live on port ${config.port}`);
+    console.log(`[server] GPTGrokGeminiDeepSeekFable world engine live on port ${config.port}`);
     console.log(`[server] DB: ${dbReady() ? 'Neon PostgreSQL' : 'in-memory (set DATABASE_URL to persist)'}`);
   });
 
