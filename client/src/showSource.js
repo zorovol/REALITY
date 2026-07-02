@@ -12,14 +12,13 @@ import { buildFallbackMarket } from './lib/marketState.js';
  * shows up later, we switch to it seamlessly.
  */
 
-const PRODUCTION_SERVER = 'https://ai-drama-island-api.onrender.com';
-
 function resolveServerUrl() {
+  // On Vercel, /api + /socket.io proxy to Render (vercel.json) — use same origin.
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
+    return undefined;
+  }
   const fromEnv = import.meta.env.VITE_SERVER_URL?.trim();
   if (fromEnv) return fromEnv;
-  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
-    return PRODUCTION_SERVER;
-  }
   return undefined;
 }
 

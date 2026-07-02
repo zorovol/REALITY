@@ -10,6 +10,8 @@
     }
   },
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://ai-drama-island-api.onrender.com/api/:path*" },
+    { "source": "/socket.io/:path*", "destination": "https://ai-drama-island-api.onrender.com/socket.io/:path*" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
