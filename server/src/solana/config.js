@@ -16,6 +16,9 @@ export const solanaConfig = {
   autoLaunch: config.pumpAutoLaunch,
   discoveryEnabled: config.pumpDiscoveryEnabled,
   discoveryRefreshMs: config.pumpDiscoveryRefreshMs,
+  targetMcapUsd: config.pumpTargetMcapUsd,
+  mcapMinUsd: config.pumpMcapMinUsd || Math.round(config.pumpTargetMcapUsd * 0.625),
+  mcapMaxUsd: config.pumpMcapMaxUsd || Math.round(config.pumpTargetMcapUsd * 1.5),
   tradeUsdPerSide: config.tradeUsdPerSide,
   solUsdFallback: config.solUsdFallback,
 };

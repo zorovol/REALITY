@@ -30,6 +30,12 @@ services:
         value: "8"
       - key: MIN_SOL_FOR_TRADE
         value: "0.02"
+      - key: PUMP_TARGET_MCAP_USD
+        value: "4000"
+      - key: PUMP_MCAP_MIN_USD
+        value: "2500"
+      - key: PUMP_MCAP_MAX_USD
+        value: "6000"
       - key: ENCRYPTION_KEY
         sync: false
       - key: WALLETS_ENC_B64

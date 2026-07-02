@@ -38,6 +38,9 @@ export const config = {
   pumpAutoLaunch: process.env.PUMP_AUTO_LAUNCH === 'true',
   pumpDiscoveryEnabled: process.env.PUMP_DISCOVERY !== 'false',
   pumpDiscoveryRefreshMs: Number(process.env.PUMP_DISCOVERY_REFRESH_MS) || 60_000,
+  pumpTargetMcapUsd: Number(process.env.PUMP_TARGET_MCAP_USD) || 4_000,
+  pumpMcapMinUsd: Number(process.env.PUMP_MCAP_MIN_USD) || 0,
+  pumpMcapMaxUsd: Number(process.env.PUMP_MCAP_MAX_USD) || 0,
   // Phase durations in ms (divided by speed multiplier)
   phaseDurations: {
     interaction: Math.round(40_000 / speed),
