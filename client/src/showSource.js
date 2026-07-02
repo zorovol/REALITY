@@ -12,20 +12,23 @@ import { buildFallbackMarket } from './lib/marketState.js';
  * shows up later, we switch to it seamlessly.
  */
 
+const RENDER_SERVER = 'https://ai-drama-island-api.onrender.com';
+
+function isLocalDev() {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1';
+}
+
 function resolveServerUrl() {
-  // On Vercel, /api + /socket.io proxy to Render (vercel.json) — use same origin.
-  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
-    return undefined;
-  }
-  const fromEnv = import.meta.env.VITE_SERVER_URL?.trim();
-  if (fromEnv) return fromEnv;
-  return undefined;
+  if (isLocalDev()) return undefined;
+  return import.meta.env.VITE_SERVER_URL?.trim() || RENDER_SERVER;
 }
 
 const SERVER_URL = resolveServerUrl();
-const FALLBACK_AFTER_MS = 18000;
-const HARD_DEADLINE_MS = 25000;
-const HTTP_TIMEOUT_MS = 12000;
+const FALLBACK_AFTER_MS = 30000;
+const HARD_DEADLINE_MS = 45000;
+const HTTP_TIMEOUT_MS = 20000;
 const SIM_STORE_KEY = 'adi-world-v6';
 
 // Stable per-browser voter identity
@@ -160,8 +163,10 @@ function switchToServer() {
 }
 
 const socket = io(SERVER_URL, {
-  transports: ['websocket', 'polling'],
-  timeout: 12000,
+  transports: ['polling', 'websocket'],
+  timeout: 20000,
+  reconnection: true,
+  reconnectionAttempts: Infinity,
   reconnectionDelayMax: 15000,
 });
 
@@ -209,6 +214,12 @@ fallbackTimer = setTimeout(() => {
 hardDeadlineTimer = setTimeout(() => {
   if (!booted) startLocal('hard_deadline');
 }, HARD_DEADLINE_MS);
+
+if (!isLocalDev()) {
+  setInterval(() => {
+    if (mode === 'local') tryHttpBootstrap();
+  }, 12000);
+}
 
 export function castVote(contestantId, cb) {
   if (mode === 'local' && sim) {

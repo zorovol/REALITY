@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm install --prefix client",
-  "buildCommand": "npm run build --prefix client",
-  "outputDirectory": "client/dist",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "build": {
     "env": {
       "VITE_SERVER_URL": "https://ai-drama-island-api.onrender.com"
@@ -13,7 +13,6 @@
     { "source": "/api/(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/$1" },
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
     { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },
-    { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }
