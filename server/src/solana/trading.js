@@ -109,7 +109,7 @@ export class TradingEngine {
       console.log(`[trading] SOL/USD ~$${p.toFixed(2)} — $${solanaConfig.tradeUsdPerSide} per side, ~$${solanaConfig.targetMcapUsd} mcap band, tick every ${solanaConfig.tradeIntervalMs}ms`);
     });
     console.log(`[trading] Real on-chain mode — network=${solanaConfig.network}, fallback=${solanaConfig.simulationFallback}, discovery=${solanaConfig.discoveryEnabled}`);
-    setTimeout(() => this.tradingTick(), 3_000);
+    setTimeout(() => this.tradingTick(), 1_000);
     setInterval(() => {
       getSolUsdPrice(solanaConfig.solUsdFallback).then((p) => { this.solUsdPrice = p; });
     }, 60_000);
@@ -376,6 +376,79 @@ export class TradingEngine {
     return fallback.length ? pick(fallback) : null;
   }
 
+  planAgentAction({ agent, balance, chainHeld }, assignedMints) {
+    const tradeSol = usdToSol(solanaConfig.tradeUsdPerSide, this.solUsdPrice);
+    const feeReserve = 0.003;
+    const canSell = chainHeld.length > 0 && balance >= feeReserve;
+    const canBuy = balance >= tradeSol + feeReserve;
+
+    if (!canSell && !canBuy) {
+      this.emitBroke(agent);
+      return null;
+    }
+
+    const recentBuy = this.lastBuyMint.get(agent.id);
+    const recentMintHeld = recentBuy && chainHeld.find((h) => h.mint === recentBuy.mint);
+
+    if (canSell && chainHeld.length > 0) {
+      const target = recentMintHeld ?? pick(chainHeld);
+      return { side: 'sell', target, tradeSol };
+    }
+
+    if (!canBuy) return null;
+
+    const target = this.pickUniqueBuyTarget(agent.id, assignedMints);
+    if (!target) return null;
+    assignedMints.add(target.mint);
+    return { side: 'buy', target, tradeSol };
+  }
+
+  async executeAgentAction(agent, keypair, chainHeld, action) {
+    const { side, target, tradeSol } = action;
+
+    if (side === 'sell') {
+      console.log(`[trading] ${agent.name} selling $${target.symbol ?? '?'} (~$${solanaConfig.tradeUsdPerSide})`);
+      const result = await this.pump.sellToken({
+        keypair,
+        mintAddress: target.mint,
+        targetSol: tradeSol,
+      });
+      if (result) {
+        this.recordTrade(agent.id);
+        this.lastBuyMint.delete(agent.id);
+        this.logTrade(agent, {
+          ...result,
+          mint: target.mint,
+          symbol: target.symbol,
+          targetAgentId: target.agentId,
+          usdAmount: solanaConfig.tradeUsdPerSide,
+        });
+        void this.handleTradeDrama(agent, target, 'sell', result);
+        const remaining = await this.getChainHoldings(agent.id, keypair);
+        this.syncHoldingsPanel(agent.id, remaining);
+      } else {
+        console.warn(`[trading] ${agent.name} sell skipped — no on-chain balance for ${target.mint.slice(0, 8)}`);
+        this.dropTrackedMint(agent.id, target.mint);
+      }
+      return;
+    }
+
+    const mcap = this.discovery.get(target.mint)?.usdMarketCap;
+    const mcapLabel = mcap ? ` ~$${Math.round(mcap)} mcap` : '';
+    console.log(`[trading] ${agent.name} buying $${target.symbol ?? '?'}${mcapLabel} (~$${solanaConfig.tradeUsdPerSide} / ${tradeSol.toFixed(4)} SOL)`);
+    const result = await this.pump.buyToken({ keypair, mintAddress: target.mint, solAmount: tradeSol });
+    this.recordTrade(agent.id);
+    this.lastBuyMint.set(agent.id, { mint: target.mint, at: Date.now() });
+    this.logTrade(agent, {
+      ...result,
+      mint: target.mint,
+      symbol: target.symbol,
+      targetAgentId: target.agentId,
+      usdAmount: solanaConfig.tradeUsdPerSide,
+    });
+    void this.handleTradeDrama(agent, target, 'buy', result);
+  }
+
   async tradingTick() {
     if (this.busy || solanaConfig.simulationFallback) return;
     const active = this.world.activeAgents();
@@ -399,106 +472,33 @@ export class TradingEngine {
         await this.discovery.refresh();
       }
 
-      for (const agent of shuffle(funded)) {
-        await this.agentTradingTick(agent, assignedMints);
+      const snapshots = await Promise.all(funded.map(async (agent) => {
+        const keypair = this.wallets.getKeypair(agent.id);
+        if (!keypair) return null;
+        const balance = this.wallets.getBalance(agent.id);
+        const chainHeld = await this.getChainHoldings(agent.id, keypair);
+        this.syncHoldingsPanel(agent.id, chainHeld);
+        return { agent, keypair, balance, chainHeld };
+      }));
+
+      const jobs = [];
+      for (const snap of shuffle(snapshots.filter(Boolean))) {
+        const action = this.planAgentAction(snap, assignedMints);
+        if (action) jobs.push({ ...snap, action });
       }
+
+      await Promise.all(jobs.map(({ agent, keypair, chainHeld, action }) =>
+        this.executeAgentAction(agent, keypair, chainHeld, action).catch((err) => {
+          const msg = err.message ?? String(err);
+          if (msg.includes('Bonding curve account not found')) {
+            console.warn(`[trading] skipped graduated/invalid mint ${agent?.id}: ${msg}`);
+          } else {
+            console.error(`[trading] tick error (${agent?.name}):`, msg);
+          }
+        }),
+      ));
     } finally {
       this.busy = false;
-    }
-  }
-
-  async agentTradingTick(agent, assignedMints) {
-    try {
-      const balance = this.wallets.getBalance(agent.id);
-      const p = agent.personality;
-      const tradeChance = 0.55 + p.chaos * 0.25 + p.aggression * 0.15;
-      if (!chance(tradeChance)) return;
-
-      const keypair = this.wallets.getKeypair(agent.id);
-      if (!keypair) return;
-
-      const chainHeld = await this.getChainHoldings(agent.id, keypair);
-      this.syncHoldingsPanel(agent.id, chainHeld);
-      const tradeSol = usdToSol(solanaConfig.tradeUsdPerSide, this.solUsdPrice);
-      const feeReserve = 0.003;
-      const canSell = chainHeld.length > 0 && balance >= feeReserve;
-      if (balance < tradeSol + feeReserve && !canSell) {
-        this.emitBroke(agent);
-        return;
-      }
-
-      if (solanaConfig.autoLaunch && !this.state.islandTokens[agent.id] && balance >= solanaConfig.minSolForLaunch) {
-        if (chance(0.25 + p.chaos * 0.2)) {
-          await this.tryLaunch(agent, keypair, balance);
-          return;
-        }
-      }
-
-      const recentBuy = this.lastBuyMint.get(agent.id);
-      const justBought = recentBuy && Date.now() - recentBuy.at < 45_000;
-      const sellChance = canSell && (justBought ? 0.92 : 0.75 + p.aggression * 0.2);
-      const isSell = canSell && chance(sellChance);
-
-      if (isSell) {
-        const target = justBought && chainHeld.some((h) => h.mint === recentBuy.mint)
-          ? chainHeld.find((h) => h.mint === recentBuy.mint)
-          : pick(chainHeld);
-        console.log(`[trading] ${agent.name} selling $${target.symbol ?? '?'} (~$${solanaConfig.tradeUsdPerSide})`);
-        const result = await this.pump.sellToken({
-          keypair,
-          mintAddress: target.mint,
-          targetSol: tradeSol,
-        });
-        if (result) {
-          this.recordTrade(agent.id);
-          this.lastBuyMint.delete(agent.id);
-          this.logTrade(agent, {
-            ...result,
-            mint: target.mint,
-            symbol: target.symbol,
-            targetAgentId: target.agentId,
-            usdAmount: solanaConfig.tradeUsdPerSide,
-          });
-          await this.handleTradeDrama(agent, target, 'sell', result);
-          const remaining = await this.getChainHoldings(agent.id, keypair);
-          this.syncHoldingsPanel(agent.id, remaining);
-        } else {
-          console.warn(`[trading] ${agent.name} sell skipped — no on-chain balance for ${target.mint.slice(0, 8)}`);
-          this.dropTrackedMint(agent.id, target.mint);
-        }
-        return;
-      }
-
-      if (balance < tradeSol + feeReserve) return;
-
-      const target = this.pickUniqueBuyTarget(agent.id, assignedMints);
-      if (!target) {
-        console.warn(`[trading] no unique ~$${solanaConfig.targetMcapUsd} mcap target for ${agent.name}`);
-        return;
-      }
-      assignedMints.add(target.mint);
-
-      const mcap = this.discovery.get(target.mint)?.usdMarketCap;
-      const mcapLabel = mcap ? ` ~$${Math.round(mcap)} mcap` : '';
-      console.log(`[trading] ${agent.name} buying $${target.symbol ?? '?'}${mcapLabel} (~$${solanaConfig.tradeUsdPerSide} / ${tradeSol.toFixed(4)} SOL)`);
-      const result = await this.pump.buyToken({ keypair, mintAddress: target.mint, solAmount: tradeSol });
-      this.recordTrade(agent.id);
-      this.lastBuyMint.set(agent.id, { mint: target.mint, at: Date.now() });
-      this.logTrade(agent, {
-        ...result,
-        mint: target.mint,
-        symbol: target.symbol,
-        targetAgentId: target.agentId,
-        usdAmount: solanaConfig.tradeUsdPerSide,
-      });
-      await this.handleTradeDrama(agent, target, 'buy', result);
-    } catch (err) {
-      const msg = err.message ?? String(err);
-      if (msg.includes('Bonding curve account not found')) {
-        console.warn(`[trading] skipped graduated/invalid mint ${agent?.id}: ${msg}`);
-      } else {
-        console.error(`[trading] tick error (${agent?.name}):`, msg);
-      }
     }
   }
 

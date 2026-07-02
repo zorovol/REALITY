@@ -12,6 +12,7 @@ export const solanaConfig = {
   maxTradesPerMinute: config.maxTradesPerMinute,
   tradeIntervalMs: config.tradeIntervalMs,
   balanceRefreshMs: config.balanceRefreshMs,
+  sellAfterBuyMs: config.tradeSellAfterBuyMs,
   extraMints: config.pumpExtraMints,
   autoLaunch: config.pumpAutoLaunch,
   discoveryEnabled: config.pumpDiscoveryEnabled,
