@@ -94,6 +94,7 @@ export class TradingEngine {
     }
     this.refreshBalances();
     console.log(`[trading] Real on-chain mode — network=${solanaConfig.network}, fallback=${solanaConfig.simulationFallback}, discovery=${solanaConfig.discoveryEnabled}`);
+    setTimeout(() => this.tradingTick(), 5_000);
   }
 
   stop() {
@@ -213,9 +214,10 @@ export class TradingEngine {
     } else if (trade.side === 'sell') {
       panel.totalSold += sol;
       const h = panel.holdings.find((x) => x.mint === trade.mint);
+      const ratio = trade.sellRatio ?? 0.5;
       if (h) {
-        h.costSol = Math.max(0, (h.costSol ?? 0) * 0.4);
-        if (h.costSol < 0.001) {
+        h.costSol = Math.max(0, (h.costSol ?? 0) * (1 - ratio));
+        if (h.costSol < 0.001 || ratio >= 0.95) {
           panel.holdings = panel.holdings.filter((x) => x.mint !== trade.mint);
         }
       }
@@ -285,12 +287,75 @@ export class TradingEngine {
       }));
   }
 
+  trackedMints(agentId) {
+    const mints = new Set();
+    for (const h of this.state.agentPanels?.[agentId]?.holdings ?? []) {
+      if (h.mint) mints.add(h.mint);
+    }
+    for (const t of this.getTradesForAgent(agentId)) {
+      if ((t.side === 'buy' || t.side === 'launch') && t.mint) mints.add(t.mint);
+    }
+    return [...mints];
+  }
+
+  async getChainHoldings(agentId, keypair) {
+    const mints = this.trackedMints(agentId);
+    const held = [];
+    for (const mint of mints) {
+      const balance = await this.pump.getTokenBalanceRaw(keypair, mint);
+      if (balance > 0n) {
+        held.push({
+          agentId: 'held',
+          mint,
+          symbol: this.discovery.get(mint)?.symbol
+            ?? this.symbolForMint(mint).replace(/^\$/, ''),
+          tokenBalance: balance,
+        });
+      }
+    }
+    return held;
+  }
+
+  syncHoldingsPanel(agentId, chainHeld) {
+    if (!this.state.agentPanels) this.state.agentPanels = {};
+    if (!this.state.agentPanels[agentId]) {
+      this.state.agentPanels[agentId] = {
+        holdings: [], recentTrades: [], pnlSol: 0, totalBought: 0, totalSold: 0,
+      };
+    }
+    const panel = this.state.agentPanels[agentId];
+    const byMint = new Map((panel.holdings ?? []).map((h) => [h.mint, h]));
+    panel.holdings = chainHeld.map((h) => {
+      const existing = byMint.get(h.mint);
+      return {
+        mint: h.mint,
+        symbol: h.symbol ? `$${h.symbol.replace(/^\$/, '')}` : this.symbolForMint(h.mint),
+        costSol: existing?.costSol ?? 0,
+      };
+    });
+    saveState(this.state);
+  }
+
+  dropTrackedMint(agentId, mint) {
+    const panel = this.state.agentPanels?.[agentId];
+    if (panel?.holdings) {
+      panel.holdings = panel.holdings.filter((h) => h.mint !== mint);
+      saveState(this.state);
+    }
+  }
+
   async tradingTick() {
     if (this.busy || solanaConfig.simulationFallback) return;
     const active = this.world.activeAgents();
     if (!active.length) return;
 
-    const funded = active.filter((a) => this.wallets.hasFunds(a.id) && this.canTrade(a.id));
+    const candidates = active.filter((a) => this.canTrade(a.id));
+    const funded = candidates.filter((a) => {
+      if (this.wallets.hasFunds(a.id)) return true;
+      const panel = this.state.agentPanels?.[a.id];
+      if (panel?.holdings?.length) return true;
+      return this.getTradesForAgent(a.id).some((t) => t.side === 'buy' && t.mint);
+    });
     if (!funded.length) return;
     const agent = pick(funded);
     if (!agent) return;
@@ -300,15 +365,9 @@ export class TradingEngine {
       await this.wallets.refreshBalances();
 
       const balance = this.wallets.getBalance(agent.id);
-      if (balance < solanaConfig.minSolForTrade) {
-        this.emitBroke(agent);
-        return;
-      }
 
       const p = agent.personality;
-      const tradeChance = funded.length === 1
-        ? 0.85
-        : 0.15 + p.chaos * 0.35 + p.aggression * 0.2;
+      const tradeChance = funded.length === 1 ? 1 : 0.15 + p.chaos * 0.35 + p.aggression * 0.2;
       if (!chance(tradeChance)) return;
 
       const keypair = this.wallets.getKeypair(agent.id);
@@ -316,6 +375,15 @@ export class TradingEngine {
 
       if (solanaConfig.discoveryEnabled && !this.discovery.list().length) {
         await this.discovery.refresh();
+      }
+
+      const chainHeld = await this.getChainHoldings(agent.id, keypair);
+      this.syncHoldingsPanel(agent.id, chainHeld);
+      const feeReserve = 0.003;
+      const canSell = chainHeld.length > 0 && balance >= feeReserve;
+      if (balance < solanaConfig.minSolForTrade && !canSell) {
+        this.emitBroke(agent);
+        return;
       }
 
       // Optional: launch bot's own island coin (off by default)
@@ -326,25 +394,40 @@ export class TradingEngine {
         }
       }
 
-      const held = this.heldMints(agent.id);
-      const isSell = held.length > 0 && chance(0.25 + (1 - p.loyalty) * 0.2);
+      const sellChance = 0.6 + p.aggression * 0.3 + p.chaos * 0.1;
+      const isSell = canSell && chance(sellChance);
       const reserve = 0.005;
       const maxSpend = Math.max(0, balance - reserve);
 
       if (isSell) {
-        const target = pick(held);
+        const target = pick(chainHeld);
+        const sellRatio = 0.45 + p.aggression * 0.35;
+        console.log(`[trading] ${agent.name} selling $${target.symbol ?? '?'} (${Math.round(sellRatio * 100)}%)`);
         const result = await this.pump.sellToken({
           keypair,
           mintAddress: target.mint,
-          sellRatio: 0.3 + p.aggression * 0.4,
+          sellRatio,
         });
         if (result) {
           this.recordTrade(agent.id);
-          this.logTrade(agent, { ...result, mint: target.mint, symbol: target.symbol, targetAgentId: target.agentId });
+          this.logTrade(agent, {
+            ...result,
+            mint: target.mint,
+            symbol: target.symbol,
+            targetAgentId: target.agentId,
+            sellRatio,
+          });
           await this.handleTradeDrama(agent, target, 'sell', result);
+          const remaining = await this.getChainHoldings(agent.id, keypair);
+          this.syncHoldingsPanel(agent.id, remaining);
+        } else {
+          console.warn(`[trading] ${agent.name} sell skipped — no on-chain balance for ${target.mint.slice(0, 8)}`);
+          this.dropTrackedMint(agent.id, target.mint);
         }
         return;
       }
+
+      if (balance < solanaConfig.minSolForTrade) return;
 
       const targets = this.tradeableMints(agent.id);
       if (!targets.length) {
@@ -359,6 +442,7 @@ export class TradingEngine {
         return;
       }
 
+      console.log(`[trading] ${agent.name} buying $${target.symbol ?? '?'} for ${spend.toFixed(3)} SOL`);
       const result = await this.pump.buyToken({ keypair, mintAddress: target.mint, solAmount: spend });
       this.recordTrade(agent.id);
       this.logTrade(agent, { ...result, mint: target.mint, symbol: target.symbol, targetAgentId: target.agentId });
@@ -484,6 +568,7 @@ export class TradingEngine {
       mint: result.mint,
       symbol: result.symbol ?? this.symbolForMint(result.mint),
       solAmount: result.solAmount,
+      sellRatio: result.sellRatio,
       signature: result.signature,
       explorerUrl: result.explorerUrl,
     };

@@ -6,7 +6,7 @@ import {
   sendAndConfirmTransaction,
   ComputeBudgetProgram,
 } from '@solana/web3.js';
-import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
+import { getAssociatedTokenAddress, getAccount, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
   PumpSdk,
   OnlinePumpSdk,
@@ -25,6 +25,8 @@ export class PumpService {
     this.sdk = new PumpSdk();
     this.globalCache = null;
     this.globalCacheAt = 0;
+    this.feeConfigCache = null;
+    this.feeConfigCacheAt = 0;
   }
 
   async getGlobal() {
@@ -33,6 +35,46 @@ export class PumpService {
     this.globalCache = await this.online.fetchGlobal();
     this.globalCacheAt = now;
     return this.globalCache;
+  }
+
+  async getFeeConfig() {
+    const now = Date.now();
+    if (this.feeConfigCache && now - this.feeConfigCacheAt < 60_000) return this.feeConfigCache;
+    this.feeConfigCache = await this.online.fetchFeeConfig();
+    this.feeConfigCacheAt = now;
+    return this.feeConfigCache;
+  }
+
+  async getTradeContext() {
+    const [global, feeConfig] = await Promise.all([this.getGlobal(), this.getFeeConfig()]);
+    return { global, feeConfig };
+  }
+
+  calcBuyAmount(global, feeConfig, bondingCurve, solBn) {
+    return getBuyTokenAmountFromSolAmount({
+      global,
+      feeConfig,
+      mintSupply: bondingCurve?.tokenTotalSupply ?? null,
+      bondingCurve,
+      amount: solBn,
+      quoteMint: bondingCurve?.quoteMint ?? PublicKey.default,
+    });
+  }
+
+  calcSellAmount(global, feeConfig, bondingCurve, tokenAmount) {
+    return getSellSolAmountFromTokenAmount({
+      global,
+      feeConfig,
+      mintSupply: bondingCurve.tokenTotalSupply,
+      bondingCurve,
+      amount: tokenAmount,
+    });
+  }
+
+  async getMintTokenProgram(mint) {
+    const info = await this.connection.getAccountInfo(mint);
+    if (!info) throw new Error(`Mint account not found: ${mint.toBase58()}`);
+    return info.owner.equals(TOKEN_2022_PROGRAM_ID) ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
   }
 
   async sendInstructions(keypair, instructions, label = 'tx') {
@@ -72,9 +114,9 @@ export class PumpService {
 
   async launchIslandToken({ agent, keypair, solAmount }) {
     const mint = Keypair.generate();
-    const global = await this.getGlobal();
+    const { global, feeConfig } = await this.getTradeContext();
     const solBn = new BN(Math.floor(solAmount * LAMPORTS_PER_SOL));
-    const amount = getBuyTokenAmountFromSolAmount(global, null, solBn);
+    const amount = this.calcBuyAmount(global, feeConfig, null, solBn);
 
     const instructions = await this.sdk.createAndBuyInstructions({
       global,
@@ -114,11 +156,12 @@ export class PumpService {
   async buyToken({ keypair, mintAddress, solAmount }) {
     const mint = new PublicKey(mintAddress);
     const user = keypair.publicKey;
-    const global = await this.getGlobal();
+    const tokenProgram = await this.getMintTokenProgram(mint);
+    const { global, feeConfig } = await this.getTradeContext();
     const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } =
-      await this.online.fetchBuyState(mint, user);
+      await this.online.fetchBuyState(mint, user, tokenProgram);
     const solBn = new BN(Math.floor(solAmount * LAMPORTS_PER_SOL));
-    const amount = getBuyTokenAmountFromSolAmount(global, bondingCurve, solBn);
+    const amount = this.calcBuyAmount(global, feeConfig, bondingCurve, solBn);
 
     const instructions = await this.sdk.buyInstructions({
       global,
@@ -130,6 +173,7 @@ export class PumpService {
       solAmount: solBn,
       amount,
       slippage: SLIPPAGE,
+      tokenProgram,
     });
 
     const { signature, explorerUrl } = await this.sendInstructions(
@@ -143,10 +187,11 @@ export class PumpService {
   async sellToken({ keypair, mintAddress, sellRatio = 0.5 }) {
     const mint = new PublicKey(mintAddress);
     const user = keypair.publicKey;
-    const ata = await getAssociatedTokenAddress(mint, user);
+    const tokenProgram = await this.getMintTokenProgram(mint);
+    const ata = await getAssociatedTokenAddress(mint, user, false, tokenProgram);
     let tokenBalance;
     try {
-      const acct = await getAccount(this.connection, ata);
+      const acct = await getAccount(this.connection, ata, undefined, tokenProgram);
       tokenBalance = acct.amount;
     } catch {
       return null;
@@ -158,9 +203,9 @@ export class PumpService {
     );
     if (sellAmount.lte(new BN(0))) return null;
 
-    const global = await this.getGlobal();
-    const { bondingCurveAccountInfo, bondingCurve } = await this.online.fetchSellState(mint, user);
-    const solAmount = getSellSolAmountFromTokenAmount(global, bondingCurve, sellAmount);
+    const { global, feeConfig } = await this.getTradeContext();
+    const { bondingCurveAccountInfo, bondingCurve } = await this.online.fetchSellState(mint, user, tokenProgram);
+    const solAmount = this.calcSellAmount(global, feeConfig, bondingCurve, sellAmount);
 
     const instructions = await this.sdk.sellInstructions({
       global,
@@ -171,6 +216,7 @@ export class PumpService {
       amount: sellAmount,
       solAmount,
       slippage: SLIPPAGE,
+      tokenProgram,
     });
 
     const { signature, explorerUrl } = await this.sendInstructions(
@@ -187,13 +233,19 @@ export class PumpService {
   }
 
   async getTokenBalance(keypair, mintAddress) {
+    const raw = await this.getTokenBalanceRaw(keypair, mintAddress);
+    return Number(raw) / 1_000_000;
+  }
+
+  async getTokenBalanceRaw(keypair, mintAddress) {
     try {
       const mint = new PublicKey(mintAddress);
-      const ata = await getAssociatedTokenAddress(mint, keypair.publicKey);
-      const acct = await getAccount(this.connection, ata);
-      return Number(acct.amount) / 1_000_000;
+      const tokenProgram = await this.getMintTokenProgram(mint);
+      const ata = await getAssociatedTokenAddress(mint, keypair.publicKey, false, tokenProgram);
+      const acct = await getAccount(this.connection, ata, undefined, tokenProgram);
+      return acct.amount;
     } catch {
-      return 0;
+      return 0n;
     }
   }
 }
