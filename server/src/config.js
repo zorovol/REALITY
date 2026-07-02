@@ -33,7 +33,9 @@ export const config = {
   tradeIntervalMs: Number(process.env.TRADE_INTERVAL_MS) || 45_000,
   balanceRefreshMs: Number(process.env.BALANCE_REFRESH_MS) || 15_000,
   pumpExtraMints: (process.env.PUMP_EXTRA_MINTS || '').split(',').map((s) => s.trim()).filter(Boolean),
-  adminPassword: process.env.ADMIN_PASSWORD || '',
+  pumpAutoLaunch: process.env.PUMP_AUTO_LAUNCH === 'true',
+  pumpDiscoveryEnabled: process.env.PUMP_DISCOVERY !== 'false',
+  pumpDiscoveryRefreshMs: Number(process.env.PUMP_DISCOVERY_REFRESH_MS) || 60_000,
   // Phase durations in ms (divided by speed multiplier)
   phaseDurations: {
     interaction: Math.round(40_000 / speed),

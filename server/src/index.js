@@ -16,7 +16,6 @@ import { WalletManager } from './solana/wallets.js';
 import { TradingEngine } from './solana/trading.js';
 import { solanaConfig } from './solana/config.js';
 import { buildSkeletonMarket } from './solana/marketFallback.js';
-import { adminEnabled, login, logout, requireAdmin } from './admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -78,7 +77,6 @@ app.get('/api/health', (req, res) => {
     solana: {
       network: solanaConfig.network,
       mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
-      adminConfigured: adminEnabled(),
     },
   });
 });
@@ -111,38 +109,6 @@ app.get('/api/trades/:agentId', (req, res) => {
   res.json({
     agentId: id,
     trades: trading?.getTradesForAgent(id) ?? [],
-  });
-});
-
-// ── Admin (password-protected wallet key access) ─────────────────────────────
-
-app.get('/api/admin/status', (req, res) => {
-  res.json({ enabled: adminEnabled() });
-});
-
-app.post('/api/admin/login', (req, res) => {
-  const password = req.body?.password;
-  if (typeof password !== 'string') {
-    return res.status(400).json({ ok: false, error: 'Password required.' });
-  }
-  const result = login(password);
-  if (!result.ok) return res.status(result.error?.includes('not configured') ? 503 : 401).json(result);
-  res.json(result);
-});
-
-app.post('/api/admin/logout', requireAdmin, (req, res) => {
-  logout(req.adminToken);
-  res.json({ ok: true });
-});
-
-app.get('/api/admin/wallets', requireAdmin, (req, res) => {
-  if (solanaConfig.simulationFallback) {
-    return res.status(400).json({ error: 'No real wallets in SIMULATION_FALLBACK mode.' });
-  }
-  res.json({
-    network: solanaConfig.network,
-    warning: 'PRIVATE KEYS — never share or commit these. Anyone with a key controls the wallet.',
-    wallets: wallets.exportAllSecrets(),
   });
 });
 

@@ -9,6 +9,7 @@ import {
 import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 import {
   PumpSdk,
+  OnlinePumpSdk,
   getBuyTokenAmountFromSolAmount,
   getSellSolAmountFromTokenAmount,
 } from '@pump-fun/pump-sdk';
@@ -20,7 +21,8 @@ const SLIPPAGE = 5;
 export class PumpService {
   constructor(rpcUrl) {
     this.connection = new Connection(rpcUrl, 'confirmed');
-    this.sdk = new PumpSdk(this.connection);
+    this.online = new OnlinePumpSdk(this.connection);
+    this.sdk = new PumpSdk();
     this.globalCache = null;
     this.globalCacheAt = 0;
   }
@@ -28,7 +30,7 @@ export class PumpService {
   async getGlobal() {
     const now = Date.now();
     if (this.globalCache && now - this.globalCacheAt < 60_000) return this.globalCache;
-    this.globalCache = await this.sdk.fetchGlobal();
+    this.globalCache = await this.online.fetchGlobal();
     this.globalCacheAt = now;
     return this.globalCache;
   }
@@ -114,7 +116,7 @@ export class PumpService {
     const user = keypair.publicKey;
     const global = await this.getGlobal();
     const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } =
-      await this.sdk.fetchBuyState(mint, user);
+      await this.online.fetchBuyState(mint, user);
     const solBn = new BN(Math.floor(solAmount * LAMPORTS_PER_SOL));
     const amount = getBuyTokenAmountFromSolAmount(global, bondingCurve, solBn);
 
@@ -157,7 +159,7 @@ export class PumpService {
     if (sellAmount.lte(new BN(0))) return null;
 
     const global = await this.getGlobal();
-    const { bondingCurveAccountInfo, bondingCurve } = await this.sdk.fetchSellState(mint, user);
+    const { bondingCurveAccountInfo, bondingCurve } = await this.online.fetchSellState(mint, user);
     const solAmount = getSellSolAmountFromTokenAmount(global, bondingCurve, sellAmount);
 
     const instructions = await this.sdk.sellInstructions({

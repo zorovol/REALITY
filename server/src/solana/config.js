@@ -13,6 +13,9 @@ export const solanaConfig = {
   tradeIntervalMs: config.tradeIntervalMs,
   balanceRefreshMs: config.balanceRefreshMs,
   extraMints: config.pumpExtraMints,
+  autoLaunch: config.pumpAutoLaunch,
+  discoveryEnabled: config.pumpDiscoveryEnabled,
+  discoveryRefreshMs: config.pumpDiscoveryRefreshMs,
 };
 
 export function solscanTxUrl(signature) {
