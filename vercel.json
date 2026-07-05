@@ -1,23 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm install && npm install --prefix client && npm install --prefix server",
+  "installCommand": "npm install --prefix client",
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
-  "functions": {
-    "api/[...path].js": {
-      "includeFiles": "api/lib/**"
-    }
-  },
   "rewrites": [
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
     { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },
-    { "source": "/api/state", "destination": "https://ai-drama-island-api.onrender.com/api/state" },
-    { "source": "/api/health", "destination": "https://ai-drama-island-api.onrender.com/api/health" },
-    { "source": "/api/market", "destination": "https://ai-drama-island-api.onrender.com/api/market" },
-    { "source": "/api/wallets", "destination": "https://ai-drama-island-api.onrender.com/api/wallets" },
-    { "source": "/api/trades/(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/trades/$1" },
-    { "source": "/api/face-merge", "destination": "https://ai-drama-island-api.onrender.com/api/face-merge" },
+    { "source": "/api/(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/$1" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/((?!assets/|api/).*)", "destination": "/index.html" }
   ]

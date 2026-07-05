@@ -22,26 +22,47 @@ const TICKER = [
   'ENCRYPTED KEYS',
 ];
 
+const STRATEGIES = [
+  { id: 'sniper', name: 'Sniper', desc: 'First in on fresh bonding-curve launches.', color: '#34d399' },
+  { id: 'momentum', name: 'Momentum', desc: 'Rides volatility and volume spikes.', color: '#22d3ee' },
+  { id: 'lowcap', name: 'Low Cap', desc: 'Targets the smallest mcap in your band.', color: '#a78bfa' },
+  { id: 'whale', name: 'Whale', desc: 'Prefers deeper liquidity at the top of range.', color: '#fbbf24' },
+  { id: 'meme', name: 'Meme', desc: 'Random picks — chaos mode.', color: '#fb7185' },
+];
+
+const TERMINAL_LINES = [
+  { time: '04:12:01', agent: 'SNIPER', msg: 'BUY 0.015 SOL → $PEPE2', type: 'buy' },
+  { time: '04:12:04', agent: 'ENGINE', msg: 'mcap $3.8k · TP +8% · SL -5%', type: 'info' },
+  { time: '04:12:18', agent: 'SNIPER', msg: 'SELL +6.2% · sig 5xK…9mQ', type: 'sell' },
+  { time: '04:12:22', agent: 'MOMENTUM', msg: 'scanning 284 tokens…', type: 'info' },
+  { time: '04:12:25', agent: 'MOMENTUM', msg: 'BUY 0.015 SOL → $WOJAK', type: 'buy' },
+  { time: '04:12:41', agent: 'MOMENTUM', msg: 'SELL -2.1% · time limit', type: 'sell' },
+];
+
 const BENTO = [
   {
     title: 'Zero setup wallet',
     desc: 'Sign up → Solana keypair generated instantly. Your address is your username.',
     span: 'wide',
+    icon: '◈',
   },
   {
     title: '5 strategies',
-    desc: 'Sniper · Momentum · Low cap · Whale · Meme',
+    desc: 'Sniper · Momentum · Low cap · Whale · Meme — same rules, different pick logic.',
     span: 'narrow',
+    icon: '⚡',
   },
   {
     title: 'Your rules',
-    desc: 'Set market cap range, buy size, take profit & stop loss. Same engine, your config.',
+    desc: 'Market cap range, buy size, take profit & stop loss. You configure, the engine executes.',
     span: 'narrow',
+    icon: '◎',
   },
   {
     title: 'Fort Knox keys',
-    desc: 'Encrypted at rest. Never touch your browser. Server-side execution only.',
+    desc: 'Dual-encrypted at rest. Never touch your browser. Server-side execution only.',
     span: 'wide',
+    icon: '⛨',
   },
 ];
 
@@ -71,7 +92,7 @@ export default function Home() {
           <div className="home-v2-copy">
             <div className="home-v2-live">
               <span className="home-v2-live-dot" />
-              {BRAND.name.toUpperCase()} · SOLANA
+              {BRAND.name.toUpperCase()} · SOLANA MAINNET
             </div>
             <h1>
               Forge your bots.
@@ -79,45 +100,97 @@ export default function Home() {
               <em>Trade on autopilot.</em>
             </h1>
             <p className="home-v2-lead">
-              {BRAND.description}
+              {BRAND.description} No seed phrase. No manual keys. Just fund, configure, and let the engine run.
             </p>
             <div className="home-v2-cta">
               <Link to="/signup" className="home-v2-btn primary">
                 Launch your bot
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </Link>
-              <Link to="/docs" className="home-v2-btn ghost">Read the docs</Link>
+              <Link to="/live" className="home-v2-btn ghost">Watch live floor</Link>
+              <Link to="/docs" className="home-v2-btn ghost subtle">Docs</Link>
             </div>
             <div className="home-v2-metrics">
-              <div><strong>5</strong><span>AI agents</span></div>
-              <div><strong>24/7</strong><span>Bot engine</span></div>
-              <div><strong>3s</strong><span>Trade ticks</span></div>
+              <div><strong>5</strong><span>Strategies</span></div>
+              <div><strong>24/7</strong><span>Engine</span></div>
+              <div><strong>~3s</strong><span>Trade ticks</span></div>
               <div><strong>100%</strong><span>On-chain</span></div>
             </div>
           </div>
 
-          <div className="home-v2-stage">
-            <div className="home-v2-stage-ring" />
-            <div className="home-v2-stage-core">
-              <img src="/logo.png" alt={BRAND.name} className="home-v2-logo" />
-            </div>
-            {BOTS.map((bot, i) => (
-              <div
-                key={bot.id}
-                className="home-v2-agent"
-                style={{
-                  '--i': i,
-                  '--c': bot.color,
-                  transform: `rotate(${i * 72}deg) translateY(-130px) rotate(${-i * 72}deg)`,
-                }}
-              >
-                <Character id={bot.id} size={56} className="home-v2-agent-char" />
-                <span>{bot.label}</span>
+          <div className="home-v2-stage-wrap">
+            <div className="home-v2-stage">
+              <div className="home-v2-stage-ring" />
+              <div className="home-v2-stage-core">
+                <img src="/logo.png" alt={BRAND.name} className="home-v2-logo" />
               </div>
-            ))}
-            <div className="home-v2-stage-badge">pump.fun</div>
+              {BOTS.map((bot, i) => (
+                <div
+                  key={bot.id}
+                  className="home-v2-agent"
+                  style={{
+                    '--i': i,
+                    '--c': bot.color,
+                    transform: `rotate(${i * 72}deg) translateY(-130px) rotate(${-i * 72}deg)`,
+                  }}
+                >
+                  <Character id={bot.id} size={56} className="home-v2-agent-char" />
+                  <span>{bot.label}</span>
+                </div>
+              ))}
+              <div className="home-v2-stage-badge">pump.fun</div>
+            </div>
+
+            <div className="home-v2-terminal" aria-hidden="true">
+              <div className="home-v2-terminal-bar">
+                <span /><span /><span />
+                <p>botforge-engine · live</p>
+              </div>
+              <div className="home-v2-terminal-body">
+                {TERMINAL_LINES.map((line) => (
+                  <div key={`${line.time}-${line.msg}`} className={`home-v2-terminal-line ${line.type}`}>
+                    <span className="home-v2-terminal-time">{line.time}</span>
+                    <span className="home-v2-terminal-agent">{line.agent}</span>
+                    <span className="home-v2-terminal-msg">{line.msg}</span>
+                  </div>
+                ))}
+                <span className="home-v2-terminal-cursor">▊</span>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+
+      <section className="home-v2-strategies">
+        <div className="home-v2-strategies-head">
+          <p className="home-v2-eyebrow">Pick your edge</p>
+          <h2>Five bot types. One engine.</h2>
+          <p>Every strategy uses your mcap band and TP/SL rules — only the token selection logic changes.</p>
+        </div>
+        <div className="home-v2-strategy-grid">
+          {STRATEGIES.map((s) => (
+            <article key={s.id} className="home-v2-strategy-card" style={{ '--accent': s.color }}>
+              <div className="home-v2-strategy-dot" />
+              <h3>{s.name}</h3>
+              <p>{s.desc}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-v2-split">
+        <article className="home-v2-split-card">
+          <span className="home-v2-split-tag">Your dashboard</span>
+          <h3>Personal trading bots</h3>
+          <p>Create bots tied to your wallet. Set rules, start/stop anytime, track every trade on your dashboard.</p>
+          <Link to="/signup" className="home-v2-link">Create account →</Link>
+        </article>
+        <article className="home-v2-split-card accent">
+          <span className="home-v2-split-tag">Public broadcast</span>
+          <h3>Live AI trading floor</h3>
+          <p>Five AI agents trade pump.fun in real time — drama, speech bubbles, and on-chain txs on a shared stage.</p>
+          <Link to="/live" className="home-v2-link">Watch live →</Link>
+        </article>
       </section>
 
       <section className="home-v2-bento-wrap">
@@ -125,6 +198,7 @@ export default function Home() {
         <div className="home-v2-bento">
           {BENTO.map((b) => (
             <article key={b.title} className={`home-v2-bento-card ${b.span}`}>
+              <span className="home-v2-bento-icon">{b.icon}</span>
               <h3>{b.title}</h3>
               <p>{b.desc}</p>
             </article>
@@ -145,9 +219,11 @@ export default function Home() {
       </section>
 
       <section className="home-v2-final">
+        <div className="home-v2-final-glow" aria-hidden="true" />
         <h2>Stop watching. Start trading.</h2>
+        <p className="home-v2-final-sub">Free to sign up. Real SOL. Real pump.fun trades.</p>
         <Link to="/signup" className="home-v2-btn primary large">Create free account</Link>
-        <p className="home-v2-disclaimer">Real money. Real Solana. Not financial advice.</p>
+        <p className="home-v2-disclaimer">Not financial advice. You can lose funds. Trade responsibly.</p>
       </section>
 
       <footer className="home-v2-footer">

@@ -67,28 +67,31 @@ export default function Docs() {
 
           <section id="architecture" className="docs-section">
             <h2>Architecture</h2>
-            <p>The platform splits into a frontend, auth API, and trading backend:</p>
+            <p>The platform splits into a frontend on Vercel and a unified backend on Render:</p>
             <div className="docs-diagram">
               <pre>{`┌─────────────────────────────────────────────────────────────┐
-│  Browser (Vercel)                                           │
+│  Browser (Vercel — static UI)                               │
 │  Homepage · Docs · Signup · Login · Dashboard · Live Floor  │
 └───────────────┬─────────────────────────┬───────────────────┘
                 │                         │
-        POST /api/auth/*          WebSocket /api/state
-        POST /api/bots/*          (proxied to Render)
+        All /api/* requests       WebSocket /socket.io
+        (proxied to Render)       (proxied to Render)
                 │                         │
-                ▼                         ▼
-┌───────────────────────┐   ┌───────────────────────────────┐
-│  Vercel Serverless    │   │  Render Backend               │
-│  · Signup / login     │   │  · Live AI trading floor      │
-│  · Bot CRUD           │   │  · 5 agent wallets            │
-│  · Wallet balance     │   │  · User bot execution engine  │
-│  · Encrypted keys DB  │   │  · pump.fun buy/sell          │
-└───────────┬───────────┘   └───────────────┬───────────────┘
-            │                               │
-            ▼                               ▼
-     PostgreSQL (optional)          Solana Mainnet RPC
-     Users · Sessions · Bots        pump.fun program
+                └────────────┬────────────┘
+                             ▼
+              ┌───────────────────────────────┐
+              │  Render Backend               │
+              │  · Signup / login / sessions  │
+              │  · Bot CRUD + execution       │
+              │  · Live AI trading floor      │
+              │  · pump.fun buy/sell          │
+              │  · Encrypted wallet keys      │
+              └───────────────┬───────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+       PostgreSQL (optional)          Solana Mainnet RPC
+       Users · Sessions · Bots        pump.fun program
 `}</pre>
             </div>
             <h3>Data flow for a user bot trade</h3>
