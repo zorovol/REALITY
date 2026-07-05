@@ -17,8 +17,8 @@ async function request(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    if (res.status === 500) throw new Error('Server error — check AUTH_SERVER_KEY is set in Vercel env vars.');
-    if (res.status === 503) throw new Error('Server not configured — set AUTH_SERVER_KEY in Vercel.');
+    if (res.status === 503) throw new Error('Server not configured — set AUTH_SERVER_KEY in Vercel env vars.');
+    if (res.status === 404) throw new Error('API route not found — wait for deploy to finish, then try again.');
     throw new Error(`Server error (${res.status}). Try again after deploy finishes.`);
   }
 

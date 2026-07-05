@@ -6,6 +6,7 @@ services:
     runtime: node
     plan: free
     region: oregon
+    branch: main
     buildCommand: npm install --prefix server
     startCommand: npm start --prefix server
     healthCheckPath: /api/health
