@@ -12,6 +12,7 @@ export default function PlatformNav({ user }) {
         {BRAND.name}
       </Link>
       <div className="platform-nav-links">
+        <Link to="/docs">Docs</Link>
         <Link to="/live">Live Floor</Link>
         {user ? (
           <>

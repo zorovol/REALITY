@@ -3,6 +3,7 @@ import Home from './pages/Home.jsx';
 import Signup from './pages/Signup.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Docs from './pages/Docs.jsx';
 import TradingApp from './TradingApp.jsx';
 
 export default function App() {
@@ -10,6 +11,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/docs" element={<Docs />} />
         <Route path="/live" element={<TradingApp />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />

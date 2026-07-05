@@ -53,6 +53,7 @@ export default function Header({ market, connected, audience }) {
         </div>
 
         <Link to="/" className="trading-header-nav">Home</Link>
+        <Link to="/docs" className="trading-header-nav">Docs</Link>
         <Link to="/dashboard" className="trading-header-nav">Dashboard</Link>
         <Link to="/login" className="trading-header-nav">Log in</Link>
 

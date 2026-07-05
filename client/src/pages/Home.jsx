@@ -86,7 +86,7 @@ export default function Home() {
                 Launch your bot
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </Link>
-              <Link to="/live" className="home-v2-btn ghost">Watch live floor</Link>
+              <Link to="/docs" className="home-v2-btn ghost">Read the docs</Link>
             </div>
             <div className="home-v2-metrics">
               <div><strong>5</strong><span>AI agents</span></div>
@@ -151,6 +151,7 @@ export default function Home() {
       </section>
 
       <footer className="home-v2-footer">
+        <Link to="/docs">Docs</Link>
         <Link to="/live">Live floor</Link>
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/login">Log in</Link>
