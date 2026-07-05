@@ -70,6 +70,12 @@ export async function requireAuth(req, res, next) {
 export function mountAuthRoutes(app) {
   app.post('/api/auth/signup', async (req, res) => {
     try {
+      if (!config.authServerKey || config.authServerKey.length < 16) {
+        return res.status(503).json({
+          error: 'Server not configured for signup. Set AUTH_SERVER_KEY or ENCRYPTION_KEY on the backend.',
+        });
+      }
+
       const { password } = req.body ?? {};
       if (!password || typeof password !== 'string' || password.length < 8) {
         return res.status(400).json({ error: 'Password must be at least 8 characters.' });

@@ -26,7 +26,8 @@ export const config = {
   // Solana / pump.fun (real on-chain trading)
   solanaRpcUrl: process.env.SOLANA_RPC_URL || defaultRpc,
   solanaNetwork: network,
-  authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY || '',
+  authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY
+    || (process.env.NODE_ENV !== 'production' ? 'local-dev-auth-key-32chars!!' : ''),
   simulationFallback: process.env.SIMULATION_FALLBACK === 'true',
   minSolForTrade: Number(process.env.MIN_SOL_FOR_TRADE) || 0.02,
   minSolForLaunch: Number(process.env.MIN_SOL_FOR_LAUNCH) || 0.2,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PlatformNav from '../components/PlatformNav.jsx';
 import { api } from '../lib/api.js';
 
 export default function Signup() {
@@ -19,7 +20,7 @@ export default function Signup() {
     try {
       const res = await api.signup(password);
       setWallet(res.walletAddress);
-      setTimeout(() => nav('/dashboard'), 2500);
+      setTimeout(() => nav('/dashboard'), 3000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -27,34 +28,66 @@ export default function Signup() {
     }
   }
 
+  function copyWallet() {
+    if (wallet) navigator.clipboard?.writeText(wallet);
+  }
+
   return (
-    <div className="platform-page">
-      <div className="platform-card">
-        <h1>Create Account</h1>
-        <p className="platform-sub">A Solana wallet is generated automatically. Your wallet address becomes your username.</p>
-
-        {wallet ? (
-          <div className="platform-success">
-            <p>Account created!</p>
-            <code className="platform-wallet">{wallet}</code>
-            <p className="platform-hint">Save this address — it is your login username. Redirecting to dashboard…</p>
+    <div className="auth-shell">
+      <PlatformNav />
+      <div className="auth-center">
+        <div className="auth-card">
+          <div className="auth-card-head">
+            <h1>Create account</h1>
+            <p>A Solana wallet is generated automatically. Save your address — it&apos;s your login username.</p>
           </div>
-        ) : (
-          <form onSubmit={submit} className="platform-form">
-            <label>
-              Password
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
-            </label>
-            <label>
-              Confirm password
-              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
-            </label>
-            {error && <p className="platform-error">{error}</p>}
-            <button type="submit" disabled={loading}>{loading ? 'Creating…' : 'Sign up'}</button>
-          </form>
-        )}
 
-        <p className="platform-footer-link">Already have an account? <Link to="/login">Log in</Link></p>
+          {wallet ? (
+            <div className="auth-success">
+              <div className="auth-success-icon">✓</div>
+              <h2>You&apos;re in!</h2>
+              <p>Your wallet address (username):</p>
+              <div className="auth-wallet-box">
+                <code>{wallet}</code>
+                <button type="button" className="auth-copy-btn" onClick={copyWallet}>Copy</button>
+              </div>
+              <p className="auth-hint">Fund this wallet with SOL, then create a bot on your dashboard. Redirecting…</p>
+            </div>
+          ) : (
+            <form onSubmit={submit} className="auth-form">
+              <label>
+                <span>Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 8 characters"
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+              <label>
+                <span>Confirm password</span>
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="Repeat password"
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+              {error && <div className="auth-error">{error}</div>}
+              <button type="submit" className="auth-submit" disabled={loading}>
+                {loading ? 'Creating wallet…' : 'Sign up'}
+              </button>
+            </form>
+          )}
+
+          <p className="auth-switch">
+            Already have an account? <Link to="/login">Log in</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
