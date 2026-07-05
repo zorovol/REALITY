@@ -5,9 +5,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/$1" },
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
     { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    { "source": "/api/state", "destination": "https://ai-drama-island-api.onrender.com/api/state" },
+    { "source": "/api/health", "destination": "https://ai-drama-island-api.onrender.com/api/health" },
+    { "source": "/api/market", "destination": "https://ai-drama-island-api.onrender.com/api/market" },
+    { "source": "/api/wallets", "destination": "https://ai-drama-island-api.onrender.com/api/wallets" },
+    { "source": "/api/trades/(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/trades/$1" },
+    { "source": "/api/face-merge", "destination": "https://ai-drama-island-api.onrender.com/api/face-merge" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/((?!assets/|api/).*)", "destination": "/index.html" }
   ]
 }
