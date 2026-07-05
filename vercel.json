@@ -4,6 +4,11 @@
   "installCommand": "npm install && npm install --prefix client && npm install --prefix server",
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
+  "functions": {
+    "api/[[...path]].js": {
+      "includeFiles": "api/lib/**"
+    }
+  },
   "rewrites": [
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
     { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },
