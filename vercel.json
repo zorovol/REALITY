@@ -1,14 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm install --prefix client && npm install --prefix server",
+  "installCommand": "npm install && npm install --prefix client && npm install --prefix server",
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
-  "functions": {
-    "api/**/*.js": {
-      "includeFiles": "server/src/**"
-    }
-  },
   "rewrites": [
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
     { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },

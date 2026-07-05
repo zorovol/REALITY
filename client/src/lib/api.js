@@ -17,13 +17,14 @@ async function request(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(res.ok ? 'Invalid server response.' : `Server error (${res.status}). Auth API may not be deployed yet.`);
+    if (res.status === 500) throw new Error('Server error — check AUTH_SERVER_KEY is set in Vercel env vars.');
+    if (res.status === 503) throw new Error('Server not configured — set AUTH_SERVER_KEY in Vercel.');
+    throw new Error(`Server error (${res.status}). Try again after deploy finishes.`);
   }
 
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
-
 export const api = {
   signup: (password) => request('/api/auth/signup', { method: 'POST', body: JSON.stringify({ password }) }),
   login: (username, password) => request('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
