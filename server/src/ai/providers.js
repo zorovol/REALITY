@@ -76,9 +76,9 @@ async function callGemini(system, user) {
 }
 
 const PROVIDERS = [
-  { id: 'openai', hasKey: () => !!config.openaiKey, call: callOpenAI },
-  { id: 'anthropic', hasKey: () => !!config.anthropicKey, call: callAnthropic },
-  { id: 'gemini', hasKey: () => !!config.geminiKey, call: callGemini },
+  { id: 'openai', hasKey: () => config.contestantAiEnabled && !!config.openaiKey, call: callOpenAI },
+  { id: 'anthropic', hasKey: () => config.contestantAiEnabled && !!config.anthropicKey, call: callAnthropic },
+  { id: 'gemini', hasKey: () => config.contestantAiEnabled && !!config.geminiKey, call: callGemini },
 ];
 
 export function availableProviders() {

@@ -1,12 +1,18 @@
 import express from 'express';
 import http from 'node:http';
 import cors from 'cors';
+import multer from 'multer';
 import { Server } from 'socket.io';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { initDb, dbReady, saveSnapshot, loadSnapshot, insertEvent, insertVote } from './db.js';
+import { initPlatformStore } from './auth/store.js';
+import { mountAuthRoutes } from './auth/routes.js';
+import { mountWalletRoutes } from './auth/wallet.js';
+import { mountBotRoutes } from './bots/routes.js';
+import { UserBotEngine } from './bots/engine.js';
 import { WorldEngine } from './engine/world.js';
 import { speak } from './ai/brain.js';
 import { personaLine } from './ai/persona.js';
@@ -17,12 +23,19 @@ import { TradingEngine } from './solana/trading.js';
 import { solanaConfig } from './solana/config.js';
 import { buildSkeletonMarket } from './solana/marketFallback.js';
 import { corsOriginCheck, socketCors } from './cors.js';
+import { mergeImagesWithModel } from './ai/imageMerge.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: socketCors(),
+});
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 12 * 1024 * 1024,
+  },
 });
 
 app.use(cors({ origin: corsOriginCheck }));
@@ -34,6 +47,7 @@ const pump = new PumpService(solanaConfig.rpcUrl);
 const wallets = new WalletManager({ connection: pump.connection });
 
 let trading = null;
+let userBotEngine = null;
 
 const world = new WorldEngine({
   speed: config.speed,
@@ -65,6 +79,10 @@ function publicState() {
     agents: base.agents.map((a) => trading ? trading.enrichAgent(a) : { ...a, wallet: wallets.getPublicWallet(a.id) }),
   };
 }
+
+mountAuthRoutes(app);
+mountWalletRoutes(app);
+mountBotRoutes(app);
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -113,6 +131,27 @@ app.get('/api/trades/:agentId', (req, res) => {
   });
 });
 
+app.post('/api/face-merge', upload.fields([
+  { name: 'face', maxCount: 1 },
+  { name: 'template', maxCount: 1 },
+]), async (req, res) => {
+  try {
+    const faceFile = req.files?.face?.[0];
+    const templateFile = req.files?.template?.[0];
+
+    if (!faceFile || !templateFile) {
+      return res.status(400).json({ error: 'Both face and template images are required.' });
+    }
+
+    const result = await mergeImagesWithModel({ faceFile, templateFile });
+    return res.json(result);
+  } catch (err) {
+    const status = err.status || 500;
+    console.error('[face-merge] failed:', err.message);
+    return res.status(status).json({ error: err.message || 'Image merge failed.' });
+  }
+});
+
 // Serve the built client in production (single-deploy setup)
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
@@ -139,6 +178,7 @@ io.on('connection', (socket) => {
 
 async function main() {
   await initDb();
+  await initPlatformStore();
 
   server.on('error', (err) => {
     console.error('[server] failed to bind:', err.message);
@@ -154,6 +194,8 @@ async function main() {
     wallets.init();
     trading = new TradingEngine({ wallets, pump, world, dispatch: (event, payload) => io.emit(event, payload) });
     trading.start();
+    userBotEngine = new UserBotEngine(pump);
+    userBotEngine.start();
   } catch (err) {
     console.error('[solana] Wallet init failed:', err.message);
     console.error('[solana] Set ENCRYPTION_KEY on Render (same as local .env).');

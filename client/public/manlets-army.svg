@@ -1,0 +1,66 @@
+<svg width="1500" height="500" viewBox="0 0 1500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1500" height="500" fill="#12002C"/>
+  <defs>
+    <linearGradient id="body" x1="-60" y1="-80" x2="120" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff2cf4"/>
+      <stop offset="0.58" stop-color="#08eaff"/>
+      <stop offset="1" stop-color="#2df5c9"/>
+    </linearGradient>
+    <radialGradient id="lights" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(735 146) scale(725 250)">
+      <stop stop-color="#ffb05e" stop-opacity="0.6"/>
+      <stop offset="0.5" stop-color="#7c3cff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#00eaff" stop-opacity="0.2"/>
+    </radialGradient>
+    <filter id="glow" x="-80" y="-120" width="250" height="310" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <symbol id="manlet" viewBox="-90 -130 180 240">
+      <g filter="url(#glow)">
+        <path d="M-45 -12C-45 -82 -3 -125 58 -125C128 -125 166 -78 166 -10V110H93V52H20V110H-50V-4C-50 -7 -48 -10 -45 -12Z" transform="translate(-38 18) scale(.72)" fill="url(#body)"/>
+        <path d="M-65 -15C-98 -12 -118 18 -118 66V110H-48V-15H-65Z" transform="translate(-38 18) scale(.72)" fill="url(#body)"/>
+        <ellipse cx="-16" cy="-34" rx="5" ry="7" fill="#040010"/>
+        <ellipse cx="31" cy="-34" rx="5" ry="7" fill="#040010"/>
+        <path d="M43 -20C43 12 28 26 1 24" stroke="#040010" stroke-width="7" stroke-linecap="round"/>
+      </g>
+    </symbol>
+  </defs>
+  <rect width="1500" height="500" fill="url(#lights)"/>
+  <path d="M0 376C172 314 302 316 452 350C650 395 807 306 1006 329C1195 351 1305 410 1500 350V500H0V376Z" fill="#05020D" opacity="0.54"/>
+  <g opacity="0.72">
+    <use href="#manlet" x="90" y="248"/>
+    <use href="#manlet" x="215" y="220"/>
+    <use href="#manlet" x="350" y="250"/>
+    <use href="#manlet" x="475" y="215"/>
+    <use href="#manlet" x="610" y="252"/>
+    <use href="#manlet" x="745" y="210"/>
+    <use href="#manlet" x="875" y="250"/>
+    <use href="#manlet" x="1010" y="222"/>
+    <use href="#manlet" x="1138" y="252"/>
+    <use href="#manlet" x="1275" y="218"/>
+    <use href="#manlet" x="1405" y="254"/>
+  </g>
+  <g>
+    <use href="#manlet" x="40" y="328"/>
+    <use href="#manlet" x="170" y="314"/>
+    <use href="#manlet" x="302" y="330"/>
+    <use href="#manlet" x="432" y="306"/>
+    <use href="#manlet" x="563" y="330"/>
+    <use href="#manlet" x="695" y="302"/>
+    <use href="#manlet" x="828" y="330"/>
+    <use href="#manlet" x="960" y="310"/>
+    <use href="#manlet" x="1092" y="330"/>
+    <use href="#manlet" x="1224" y="306"/>
+    <use href="#manlet" x="1355" y="330"/>
+  </g>
+  <g opacity="0.56" fill="#261522" stroke="#8B5B3C" stroke-width="5">
+    <circle cx="86" cy="397" r="44"/>
+    <circle cx="498" cy="386" r="46"/>
+    <circle cx="772" cy="385" r="49"/>
+    <circle cx="1188" cy="397" r="45"/>
+    <circle cx="1430" cy="390" r="42"/>
+  </g>
+</svg>

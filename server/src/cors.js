@@ -6,7 +6,12 @@ const PRODUCTION_ORIGINS = [
   'https://ai-drama-island.vercel.app',
 ];
 
+function isLocalDevOrigin(origin) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+}
+
 function isAllowedOrigin(origin, allowed) {
+  if (isLocalDevOrigin(origin)) return true;
   if (allowed.includes(origin)) return true;
   if (allowed.some((o) => o.includes('vercel.app')) && /\.vercel\.app$/.test(origin)) {
     return true;

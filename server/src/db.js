@@ -68,6 +68,51 @@ CREATE TABLE IF NOT EXISTS snapshots (
   state       JSONB NOT NULL,
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS users (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wallet_address          TEXT NOT NULL UNIQUE,
+  password_hash           TEXT NOT NULL,
+  user_salt               TEXT NOT NULL,
+  encrypted_private_key   TEXT NOT NULL,
+  server_encrypted_key    TEXT NOT NULL,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token       TEXT PRIMARY KEY,
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS bots (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  bot_type        TEXT NOT NULL,
+  trading_rules   JSONB NOT NULL,
+  is_active       BOOLEAN NOT NULL DEFAULT false,
+  position        JSONB,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS bot_trades (
+  id           BIGSERIAL PRIMARY KEY,
+  bot_id       UUID NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  side         TEXT NOT NULL,
+  mint         TEXT,
+  symbol       TEXT,
+  sol_amount   DOUBLE PRECISION,
+  signature    TEXT,
+  explorer_url TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_bots_user ON bots(user_id);
+CREATE INDEX IF NOT EXISTS idx_bots_active ON bots(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_bot_trades_bot ON bot_trades(bot_id);
 `;
 
 export async function initDb() {
@@ -95,6 +140,10 @@ export async function initDb() {
 
 export function dbReady() {
   return ready;
+}
+
+export function dbPool() {
+  return pool;
 }
 
 async function safeQuery(text, params) {

@@ -1,0 +1,32 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="900" fill="#330075"/>
+  <defs>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(455 455) rotate(90) scale(390)">
+      <stop stop-color="#20f1ff" stop-opacity="0.9"/>
+      <stop offset="0.48" stop-color="#c026ff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#330075" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="body" x1="245" y1="175" x2="690" y2="695" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff28f4"/>
+      <stop offset="0.52" stop-color="#00eaff"/>
+      <stop offset="1" stop-color="#20f5c4"/>
+    </linearGradient>
+    <filter id="neon" x="130" y="90" width="690" height="760" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="900" height="900" fill="url(#halo)"/>
+  <g filter="url(#neon)">
+    <path d="M277 342C277 223 348 148 462 148C583 148 661 232 661 354V655H550V780H442V655H333V780H224V455C224 392 244 358 277 342Z" fill="url(#body)"/>
+    <path d="M245 444C190 449 158 493 158 565V665H269V444H245Z" fill="url(#body)"/>
+    <path d="M658 444C713 449 742 493 742 565V665H635V444H658Z" fill="url(#body)"/>
+    <ellipse cx="421" cy="360" rx="14" ry="20" fill="#040010"/>
+    <ellipse cx="533" cy="360" rx="14" ry="20" fill="#040010"/>
+    <path d="M558 397C558 470 523 504 466 501" stroke="#040010" stroke-width="18" stroke-linecap="round"/>
+    <path d="M467 531C506 547 552 540 587 512" stroke="#040010" stroke-width="15" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { IconIsland, IconLive, IconMarket, IconX } from './Icons.jsx';
 import Character from './Character.jsx';
 
@@ -49,6 +50,9 @@ export default function Header({ market, connected, audience }) {
         <div className="trading-header-warn">
           REAL TRADING — Not financial advice
         </div>
+
+        <Link to="/dashboard" className="trading-header-nav">Dashboard</Link>
+        <Link to="/login" className="trading-header-nav">Log in</Link>
 
         <a
           href={X_URL}

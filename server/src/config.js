@@ -21,11 +21,12 @@ export const config = {
   openaiKey: process.env.OPENAI_API_KEY || '',
   anthropicKey: process.env.ANTHROPIC_API_KEY || '',
   geminiKey: process.env.GEMINI_API_KEY || '',
+  contestantAiEnabled: process.env.ENABLE_CONTESTANT_AI === 'true',
   speed,
   // Solana / pump.fun (real on-chain trading)
   solanaRpcUrl: process.env.SOLANA_RPC_URL || defaultRpc,
   solanaNetwork: network,
-  encryptionKey: process.env.ENCRYPTION_KEY || '',
+  authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY || '',
   simulationFallback: process.env.SIMULATION_FALLBACK === 'true',
   minSolForTrade: Number(process.env.MIN_SOL_FOR_TRADE) || 0.02,
   minSolForLaunch: Number(process.env.MIN_SOL_FOR_LAUNCH) || 0.2,

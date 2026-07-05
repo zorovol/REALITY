@@ -1,0 +1,27 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="900" fill="#020006"/>
+  <defs>
+    <linearGradient id="body" x1="250" y1="220" x2="650" y2="690" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff2cf4"/>
+      <stop offset="0.55" stop-color="#08eaff"/>
+      <stop offset="1" stop-color="#2df5c9"/>
+    </linearGradient>
+    <filter id="glow" x="120" y="120" width="660" height="690" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="22" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="450" cy="455" r="250" fill="url(#body)" opacity="0.12"/>
+  <g filter="url(#glow)">
+    <path d="M305 377C305 262 365 188 466 188C568 188 633 264 633 375V649H542V758H448V649H358V758H269V476C269 420 284 389 305 377Z" fill="url(#body)"/>
+    <path d="M285 455C239 458 212 497 212 560V650H306V455H285Z" fill="url(#body)"/>
+    <path d="M629 455C674 459 699 497 699 560V650H609V455H629Z" fill="url(#body)"/>
+    <ellipse cx="429" cy="374" rx="13" ry="18" fill="#05020D"/>
+    <ellipse cx="520" cy="374" rx="13" ry="18" fill="#05020D"/>
+    <path d="M543 404C543 466 513 493 463 489" stroke="#05020D" stroke-width="16" stroke-linecap="round"/>
+    <path d="M465 510C499 523 538 517 568 494" stroke="#05020D" stroke-width="13" stroke-linecap="round"/>
+  </g>
+</svg>

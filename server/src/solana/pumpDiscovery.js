@@ -12,6 +12,8 @@ function normalizeCoin(item) {
     symbol: coin.symbol || '?',
     name: coin.name || coin.symbol || 'Unknown',
     usdMarketCap: Number(coin.usd_market_cap ?? coin.market_cap ?? 0) || 0,
+    createdAt: Number(coin.created_timestamp ?? coin.created_at ?? 0) || 0,
+    volatility: Number(coin.volatility_score ?? 0) || 0,
     source: 'pumpfun',
   };
 }
