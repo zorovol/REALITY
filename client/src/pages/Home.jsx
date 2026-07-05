@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
 import Character from '../components/Character.jsx';
+import { BRAND } from '../config/brand.js';
 
 const BOTS = [
   { id: 'chatgpt', label: 'ChatGPT', color: '#34d399' },
@@ -70,15 +71,15 @@ export default function Home() {
           <div className="home-v2-copy">
             <div className="home-v2-live">
               <span className="home-v2-live-dot" />
-              LIVE ON SOLANA
+              {BRAND.name.toUpperCase()} · SOLANA
             </div>
             <h1>
-              Deploy bots.
+              Forge your bots.
               <br />
-              <em>Dominate the floor.</em>
+              <em>Trade on autopilot.</em>
             </h1>
             <p className="home-v2-lead">
-              The only platform where you sign up, get a wallet, spin up a trading bot, and watch five AI agents war on the live pump.fun floor — all in one place.
+              {BRAND.description}
             </p>
             <div className="home-v2-cta">
               <Link to="/signup" className="home-v2-btn primary">
@@ -98,7 +99,7 @@ export default function Home() {
           <div className="home-v2-stage">
             <div className="home-v2-stage-ring" />
             <div className="home-v2-stage-core">
-              <img src="/pfp-600x600.png" alt="" className="home-v2-logo" />
+              <img src="/logo.png" alt={BRAND.name} className="home-v2-logo" />
             </div>
             {BOTS.map((bot, i) => (
               <div
@@ -153,6 +154,7 @@ export default function Home() {
         <Link to="/live">Live floor</Link>
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/login">Log in</Link>
+        <span>© {BRAND.name}</span>
       </footer>
     </div>
   );

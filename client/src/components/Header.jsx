@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { IconIsland, IconLive, IconMarket, IconX } from './Icons.jsx';
+import { IconLive, IconMarket, IconX } from './Icons.jsx';
 import Character from './Character.jsx';
+import { BRAND } from '../config/brand.js';
 
 const BOTS = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgdsfable?s=11';
@@ -19,14 +20,14 @@ export default function Header({ market, connected, audience }) {
         </div>
         <div>
           <div className="trading-header-row">
-            <span className="trading-header-icon"><IconIsland size={22} /></span>
-            <h1 className="trading-header-title">GPTGrokGeminiDeepSeekFable</h1>
+            <img src="/logo.png" alt="" className="trading-header-logo" width={28} height={28} />
+            <h1 className="trading-header-title">{BRAND.name}</h1>
             <span className={`trading-live-pill ${connected ? 'on' : 'off'}`}>
               <IconLive size={9} />
               {connected ? 'LIVE' : 'OFFLINE'}
             </span>
           </div>
-          <p className="trading-header-tagline">Live AI Trading Floor · pump.fun · Solana Mainnet</p>
+          <p className="trading-header-tagline">{BRAND.kicker}</p>
         </div>
       </div>
 

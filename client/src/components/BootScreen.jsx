@@ -1,4 +1,5 @@
 import { IconMarket } from './Icons.jsx';
+import { BRAND } from '../config/brand.js';
 
 export default function BootScreen({ connected, mode, reason, error }) {
   let sub = 'Connecting to trading server…';
@@ -13,12 +14,12 @@ export default function BootScreen({ connected, mode, reason, error }) {
       <div className="boot-vignette" aria-hidden="true" />
       <div className="boot-content">
         <div className="boot-mark">
-          <IconMarket size={56} />
+          <img src="/logo.png" alt="" className="boot-logo" width={56} height={56} />
           <div className="boot-mark-ring" />
         </div>
         <div className="boot-brand">
-          <span className="boot-kicker">SOLANA MAINNET · pump.fun</span>
-          <h1 className="boot-title">GPTGrokGeminiDeepSeekFable</h1>
+          <span className="boot-kicker">{BRAND.kicker}</span>
+          <h1 className="boot-title">{BRAND.name}</h1>
         </div>
         <p className="boot-sub">{sub}</p>
         <div className="boot-progress">

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { IconX } from './Icons.jsx';
+import { BRAND } from '../config/brand.js';
 
 const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgdsfable?s=11';
 
@@ -7,8 +8,8 @@ export default function PlatformNav({ user }) {
   return (
     <nav className="platform-nav">
       <Link to="/" className="platform-nav-brand">
-        <span className="platform-nav-dot" />
-        GPTGrokGeminiDeepSeekFable
+        <img src="/logo.png" alt="" className="platform-nav-logo" width={32} height={32} />
+        {BRAND.name}
       </Link>
       <div className="platform-nav-links">
         <Link to="/live">Live Floor</Link>

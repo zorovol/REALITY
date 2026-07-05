@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   GPTGrokGeminiDeepSeekFable — Premium Broadcast UI
+   BotForge — Premium Trading UI
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -1724,7 +1724,17 @@ body {
 }
 .trading-header-avatars .header-avatar:first-child { margin-left: 0; }
 
-.trading-header-icon { color: var(--accent-green); flex-shrink: 0; }
+.trading-header-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.boot-logo {
+  border-radius: 14px;
+  position: relative;
+  z-index: 1;
+}
 
 .trading-stat-highlight .trading-stat-val { color: var(--accent-green); }
 
@@ -8309,6 +8319,12 @@ body {
   backdrop-filter: blur(16px);
   background: rgba(2, 4, 6, 0.75);
   border-bottom: 1px solid var(--border-bright);
+}
+.platform-nav-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 .platform-nav-brand {
   display: flex;
