@@ -1,31 +1,19 @@
-import {
-  initOnce,
-  getAuthUser,
-  sendJson,
-  handleSignup,
-  handleLogin,
-  handleLogout,
-  handleMe,
-  handleBotTypes,
-  handleListBots,
-  handleCreateBot,
-  handleUpdateBot,
-  handleStartBot,
-  handleStopBot,
-  handleDeleteBot,
-  handleBotTrades,
-  handleWalletBalance,
-} from './lib/handlers.js';
-
 const RENDER_API = 'https://ai-drama-island-api.onrender.com';
 
 function routePath(req) {
-  const parts = req.query.path;
+  const parts = req.query?.path;
   if (Array.isArray(parts) && parts.length) return parts.join('/');
   if (parts) return String(parts);
   const url = (req.url || '').split('?')[0];
-  const match = url.match(/^\/api\/(.+)/);
+  const match = url.match(/\/api\/(.+)/);
   return match ? match[1] : '';
+}
+
+function isPlatformRoute(route) {
+  return route.startsWith('auth/')
+    || route === 'bots/types'
+    || route.startsWith('bots')
+    || route === 'wallet/balance';
 }
 
 async function proxyToRender(req, res, route) {
@@ -43,10 +31,10 @@ async function proxyToRender(req, res, route) {
 
   const upstream = await fetch(url, init);
   const text = await upstream.text();
+  const ct = upstream.headers.get('content-type') || 'application/json';
   res.status(upstream.status);
-  const ct = upstream.headers.get('content-type');
-  if (ct) res.setHeader('Content-Type', ct);
-  res.send(text);
+  res.setHeader('Content-Type', ct);
+  res.end(text);
 }
 
 export default async function handler(req, res) {
@@ -54,20 +42,18 @@ export default async function handler(req, res) {
   const method = req.method;
 
   try {
-    await initOnce();
+    if (!isPlatformRoute(route)) {
+      return proxyToRender(req, res, route);
+    }
 
-    if (route === 'auth/signup' && method === 'POST') {
-      return sendJson(res, await handleSignup(req.body));
-    }
-    if (route === 'auth/login' && method === 'POST') {
-      return sendJson(res, await handleLogin(req.body));
-    }
-    if (route === 'auth/logout' && method === 'POST') {
-      return sendJson(res, await handleLogout(await getAuthUser(req)));
-    }
-    if (route === 'auth/me' && method === 'GET') {
-      return sendJson(res, await handleMe(await getAuthUser(req)));
-    }
+    const {
+      initOnce, getAuthUser, sendJson,
+      handleBotTypes, handleListBots, handleCreateBot,
+      handleUpdateBot, handleStartBot, handleStopBot,
+      handleDeleteBot, handleBotTrades, handleWalletBalance,
+    } = await import('./lib/handlers.js');
+
+    await initOnce();
 
     if (route === 'bots/types' && method === 'GET') {
       return sendJson(res, await handleBotTypes());
@@ -96,6 +82,7 @@ export default async function handler(req, res) {
     if (startMatch && method === 'POST') {
       return sendJson(res, await handleStartBot(await getAuthUser(req), startMatch[1]));
     }
+
     const stopMatch = route.match(/^bots\/([^/]+)\/stop$/);
     if (stopMatch && method === 'POST') {
       return sendJson(res, await handleStopBot(await getAuthUser(req), stopMatch[1]));
@@ -105,7 +92,7 @@ export default async function handler(req, res) {
       return sendJson(res, await handleWalletBalance(await getAuthUser(req)));
     }
 
-    return proxyToRender(req, res, route);
+    return res.status(404).json({ error: route ? `Unknown route: /api/${route}` : 'Not found' });
   } catch (err) {
     console.error('[api]', route, err);
     res.status(500).json({ error: err.message || 'Internal server error.' });

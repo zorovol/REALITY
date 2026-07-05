@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import pg from 'pg';
 import { getDatabaseUrl } from './config.js';
 
 let pool = null;
@@ -52,7 +51,8 @@ export async function initStore() {
     return;
   }
   try {
-    pool = new pg.Pool({
+    const pg = await import('pg');
+    pool = new pg.default.Pool({
       connectionString: databaseUrl,
       ssl: { rejectUnauthorized: false },
       max: 2,

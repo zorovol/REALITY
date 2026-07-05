@@ -5,7 +5,7 @@
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
   "functions": {
-    "api/[...path].js": {
+    "api/**/*.js": {
       "includeFiles": "api/lib/**"
     }
   },

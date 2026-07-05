@@ -1,6 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import { Keypair } from '@solana/web3.js';
-import bs58 from 'bs58';
 import { getAuthServerKey, getSolanaRpcUrl, isProduction } from './config.js';
 import {
   createUser, findUserByWallet, findUserById, createSession, findSession, deleteSession,
@@ -55,6 +53,8 @@ export async function handleSignup(body) {
     return { status: 400, body: { error: 'Password must be at least 8 characters.' } };
   }
 
+  const { Keypair } = await import('@solana/web3.js');
+  const bs58 = (await import('bs58')).default;
   const keypair = Keypair.generate();
   const walletAddress = keypair.publicKey.toBase58();
   const secretKey = bs58.encode(keypair.secretKey);
