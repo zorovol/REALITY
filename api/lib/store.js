@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
-import { config } from './config.js';
+import { getDatabaseUrl } from './config.js';
 
 let pool = null;
 let ready = false;
@@ -46,13 +46,14 @@ CREATE TABLE IF NOT EXISTS bot_trades (
 
 export async function initStore() {
   if (ready) return;
-  if (!config.databaseUrl) {
+  const databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) {
     ready = false;
     return;
   }
   try {
     pool = new pg.Pool({
-      connectionString: config.databaseUrl,
+      connectionString: databaseUrl,
       ssl: { rejectUnauthorized: false },
       max: 2,
     });

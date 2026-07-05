@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { config } from './config.js';
+import { getAuthServerKey, getSolanaRpcUrl, isProduction } from './config.js';
 import {
   createUser, findUserByWallet, findUserById, createSession, findSession, deleteSession,
   createBot, listBotsForUser, findBot, updateBot, deleteBot, listBotTrades,
@@ -24,7 +24,7 @@ export function parseCookies(req) {
 
 function sessionCookieHeader(token) {
   const maxAge = SESSION_DAYS * 86400;
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const secure = isProduction() ? '; Secure' : '';
   return `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
 }
 
@@ -46,7 +46,8 @@ export async function getAuthUser(req) {
 }
 
 export async function handleSignup(body) {
-  if (!config.authServerKey || config.authServerKey.length < 16) {
+  const authServerKey = getAuthServerKey();
+  if (!authServerKey || authServerKey.length < 16) {
     return { status: 503, body: { error: 'Server not configured. Set AUTH_SERVER_KEY in Vercel env vars.' } };
   }
   const { password } = body ?? {};
@@ -64,7 +65,7 @@ export async function handleSignup(body) {
     passwordHash: hashPassword(password),
     userSalt,
     encryptedPrivateKey: encryptWithPassword(secretKey, password, userSalt),
-    serverEncryptedKey: encryptWithServerKey(secretKey, config.authServerKey),
+    serverEncryptedKey: encryptWithServerKey(secretKey, authServerKey),
   });
 
   const token = newSessionToken();
@@ -167,7 +168,7 @@ export async function handleBotTrades(auth, botId) {
 export async function handleWalletBalance(auth) {
   if (!auth) return { status: 401, body: { error: 'Not authenticated.' } };
   const { Connection, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
-  const connection = new Connection(config.solanaRpcUrl, 'confirmed');
+  const connection = new Connection(getSolanaRpcUrl(), 'confirmed');
   const bal = await connection.getBalance(new PublicKey(auth.user.walletAddress));
   return { status: 200, body: { balanceSol: bal / LAMPORTS_PER_SOL, walletAddress: auth.user.walletAddress } };
 }
