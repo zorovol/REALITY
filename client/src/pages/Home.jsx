@@ -2,112 +2,157 @@ import { Link } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
 import Character from '../components/Character.jsx';
 
-const BOTS = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
-
-const FEATURES = [
-  {
-    title: 'Auto wallet on signup',
-    desc: 'A Solana wallet is generated instantly. Your address is your username — no seed phrase to manage.',
-  },
-  {
-    title: '5 bot strategies',
-    desc: 'Sniper, momentum, low cap, whale follower, and meme rotation — each picks tokens differently.',
-  },
-  {
-    title: 'pump.fun scalping',
-    desc: 'Bots scan bonding-curve coins, filter by market cap, and execute fast buy/sell on Solana mainnet.',
-  },
-  {
-    title: 'Server-side security',
-    desc: 'Private keys encrypted at rest. Never sent to your browser. Decrypted only during trades.',
-  },
+const BOTS = [
+  { id: 'chatgpt', label: 'ChatGPT', color: '#34d399' },
+  { id: 'grok', label: 'Grok', color: '#fb7185' },
+  { id: 'fable', label: 'Fable', color: '#fbbf24' },
+  { id: 'gemini', label: 'Gemini', color: '#a78bfa' },
+  { id: 'deepseek', label: 'DeepSeek', color: '#38bdf8' },
 ];
 
-const STEPS = [
-  'Sign up with a password',
-  'Fund your auto-generated wallet',
-  'Create a bot and set your rules',
-  'Start it — backend trades 24/7',
+const TICKER = [
+  'SNIPER BOT LIVE',
+  'MOMENTUM SCAN',
+  'PUMP.FUN EXECUTE',
+  'SOLANA MAINNET',
+  'AUTO WALLET',
+  '5 AI AGENTS',
+  '24/7 ENGINE',
+  'ENCRYPTED KEYS',
+];
+
+const BENTO = [
+  {
+    title: 'Zero setup wallet',
+    desc: 'Sign up → Solana keypair generated instantly. Your address is your username.',
+    span: 'wide',
+  },
+  {
+    title: '5 strategies',
+    desc: 'Sniper · Momentum · Low cap · Whale · Meme',
+    span: 'narrow',
+  },
+  {
+    title: 'Your rules',
+    desc: 'Set market cap range, buy size, take profit & stop loss. Same engine, your config.',
+    span: 'narrow',
+  },
+  {
+    title: 'Fort Knox keys',
+    desc: 'Encrypted at rest. Never touch your browser. Server-side execution only.',
+    span: 'wide',
+  },
 ];
 
 export default function Home() {
   return (
-    <div className="home">
-      <div className="home-bg" aria-hidden="true">
-        <div className="home-bg-grid" />
-        <div className="home-bg-glow" />
+    <div className="home-v2">
+      <div className="home-v2-bg" aria-hidden="true">
+        <div className="home-v2-orb home-v2-orb-a" />
+        <div className="home-v2-orb home-v2-orb-b" />
+        <div className="home-v2-orb home-v2-orb-c" />
+        <div className="home-v2-grid" />
+        <div className="home-v2-noise" />
       </div>
 
       <PlatformNav />
 
-      <section className="home-hero">
-        <div className="home-hero-copy">
-          <p className="home-eyebrow">Solana · pump.fun · Automated</p>
-          <h1>
-            AI-powered trading bots
-            <span> on autopilot</span>
-          </h1>
-          <p className="home-lead">
-            Sign up, get a wallet, create a bot, and let the backend scalp memecoins while you watch the live AI trading floor.
-          </p>
-          <div className="home-cta-row">
-            <Link to="/signup" className="home-btn primary">Get started free</Link>
-            <Link to="/live" className="home-btn secondary">Watch live floor</Link>
-          </div>
-          <p className="home-disclaimer">Real on-chain trading. Not financial advice.</p>
-        </div>
-
-        <div className="home-hero-visual">
-          <div className="home-bot-ring">
-            {BOTS.map((id) => (
-              <Character key={id} id={id} size={52} className="home-bot-avatar" />
-            ))}
-          </div>
-          <div className="home-stat-card">
-            <span className="home-stat-label">Tick speed</span>
-            <span className="home-stat-val">~3s</span>
-          </div>
-          <div className="home-stat-card home-stat-card-2">
-            <span className="home-stat-label">Target mcap</span>
-            <span className="home-stat-val">~$4k</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-section">
-        <h2>How it works</h2>
-        <ol className="home-steps">
-          {STEPS.map((step, i) => (
-            <li key={step}>
-              <span className="home-step-num">{i + 1}</span>
-              {step}
-            </li>
+      <div className="home-v2-ticker" aria-hidden="true">
+        <div className="home-v2-ticker-track">
+          {[...TICKER, ...TICKER].map((t, i) => (
+            <span key={`${t}-${i}`}>{t}<i>◆</i></span>
           ))}
-        </ol>
+        </div>
+      </div>
+
+      <section className="home-v2-hero">
+        <div className="home-v2-hero-inner">
+          <div className="home-v2-copy">
+            <div className="home-v2-live">
+              <span className="home-v2-live-dot" />
+              LIVE ON SOLANA
+            </div>
+            <h1>
+              Deploy bots.
+              <br />
+              <em>Dominate the floor.</em>
+            </h1>
+            <p className="home-v2-lead">
+              The only platform where you sign up, get a wallet, spin up a trading bot, and watch five AI agents war on the live pump.fun floor — all in one place.
+            </p>
+            <div className="home-v2-cta">
+              <Link to="/signup" className="home-v2-btn primary">
+                Launch your bot
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </Link>
+              <Link to="/live" className="home-v2-btn ghost">Watch live floor</Link>
+            </div>
+            <div className="home-v2-metrics">
+              <div><strong>5</strong><span>AI agents</span></div>
+              <div><strong>24/7</strong><span>Bot engine</span></div>
+              <div><strong>3s</strong><span>Trade ticks</span></div>
+              <div><strong>100%</strong><span>On-chain</span></div>
+            </div>
+          </div>
+
+          <div className="home-v2-stage">
+            <div className="home-v2-stage-ring" />
+            <div className="home-v2-stage-core">
+              <img src="/pfp-600x600.png" alt="" className="home-v2-logo" />
+            </div>
+            {BOTS.map((bot, i) => (
+              <div
+                key={bot.id}
+                className="home-v2-agent"
+                style={{
+                  '--i': i,
+                  '--c': bot.color,
+                  transform: `rotate(${i * 72}deg) translateY(-130px) rotate(${-i * 72}deg)`,
+                }}
+              >
+                <Character id={bot.id} size={56} className="home-v2-agent-char" />
+                <span>{bot.label}</span>
+              </div>
+            ))}
+            <div className="home-v2-stage-badge">pump.fun</div>
+          </div>
+        </div>
       </section>
 
-      <section className="home-section">
-        <h2>Built for speed & security</h2>
-        <div className="home-features">
-          {FEATURES.map((f) => (
-            <article key={f.title} className="home-feature-card">
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
+      <section className="home-v2-bento-wrap">
+        <h2>Everything you need. Nothing you don&apos;t.</h2>
+        <div className="home-v2-bento">
+          {BENTO.map((b) => (
+            <article key={b.title} className={`home-v2-bento-card ${b.span}`}>
+              <h3>{b.title}</h3>
+              <p>{b.desc}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="home-cta-banner">
-        <h2>Ready to deploy your first bot?</h2>
-        <p>Create an account in under a minute.</p>
-        <Link to="/signup" className="home-btn primary">Sign up now</Link>
+      <section className="home-v2-flow">
+        <h2>Live in 60 seconds</h2>
+        <div className="home-v2-steps">
+          {['Sign up + password', 'Fund your wallet', 'Create & start bot', 'Watch it run'].map((s, i) => (
+            <div key={s} className="home-v2-step">
+              <span>{String(i + 1).padStart(2, '0')}</span>
+              <p>{s}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <footer className="home-footer">
-        <Link to="/live">Live trading floor</Link>
+      <section className="home-v2-final">
+        <h2>Stop watching. Start trading.</h2>
+        <Link to="/signup" className="home-v2-btn primary large">Create free account</Link>
+        <p className="home-v2-disclaimer">Real money. Real Solana. Not financial advice.</p>
+      </section>
+
+      <footer className="home-v2-footer">
+        <Link to="/live">Live floor</Link>
+        <Link to="/dashboard">Dashboard</Link>
         <Link to="/login">Log in</Link>
-        <span>© GPTGrokGeminiDeepSeekFable</span>
       </footer>
     </div>
   );

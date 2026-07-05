@@ -1,23 +1,18 @@
 import { randomBytes } from 'node:crypto';
-import { config } from '../config.js';
 import {
-  createUser,
-  findUserByWallet,
   findUserById,
-  createSession,
   findSession,
   deleteSession,
 } from './store.js';
 import {
-  hashPassword,
-  verifyPassword,
-  encryptWithPassword,
-  encryptWithServerKey,
-  newUserSalt,
-} from './crypto.js';
+  handleSignup,
+  handleLogin,
+  handleLogout,
+  handleMe,
+  sendJson,
+} from './handlers.js';
 
 const SESSION_COOKIE = 'adi_session';
-const SESSION_DAYS = 7;
 
 export function parseCookies(req) {
   const header = req.headers.cookie || '';
@@ -30,7 +25,7 @@ export function parseCookies(req) {
 }
 
 export function setSessionCookie(res, token) {
-  const maxAge = SESSION_DAYS * 86400;
+  const maxAge = 7 * 86400;
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
@@ -40,10 +35,6 @@ export function setSessionCookie(res, token) {
 
 export function clearSessionCookie(res) {
   res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`);
-}
-
-function newSessionToken() {
-  return randomBytes(32).toString('hex');
 }
 
 export async function requireAuth(req, res, next) {
@@ -70,45 +61,7 @@ export async function requireAuth(req, res, next) {
 export function mountAuthRoutes(app) {
   app.post('/api/auth/signup', async (req, res) => {
     try {
-      if (!config.authServerKey || config.authServerKey.length < 16) {
-        return res.status(503).json({
-          error: 'Server not configured for signup. Set AUTH_SERVER_KEY or ENCRYPTION_KEY on the backend.',
-        });
-      }
-
-      const { password } = req.body ?? {};
-      if (!password || typeof password !== 'string' || password.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-      }
-
-      const { Keypair } = await import('@solana/web3.js');
-      const bs58 = (await import('bs58')).default;
-      const keypair = Keypair.generate();
-      const walletAddress = keypair.publicKey.toBase58();
-      const secretKey = bs58.encode(keypair.secretKey);
-
-      const userSalt = newUserSalt();
-      const passwordHash = hashPassword(password);
-      const encryptedPrivateKey = encryptWithPassword(secretKey, password, userSalt);
-      const serverEncryptedKey = encryptWithServerKey(secretKey, config.authServerKey);
-
-      const user = await createUser({
-        walletAddress,
-        passwordHash,
-        userSalt,
-        encryptedPrivateKey,
-        serverEncryptedKey,
-      });
-
-      const token = newSessionToken();
-      const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400_000);
-      await createSession(token, user.id, expiresAt);
-      setSessionCookie(res, token);
-
-      res.status(201).json({
-        walletAddress: user.walletAddress,
-        message: 'Account created. Your wallet address is your username.',
-      });
+      sendJson(res, await handleSignup(req.body));
     } catch (err) {
       console.error('[auth] signup error:', err.message);
       res.status(500).json({ error: err.message || 'Signup failed.' });
@@ -117,25 +70,7 @@ export function mountAuthRoutes(app) {
 
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { username, password } = req.body ?? {};
-      if (!username || !password) {
-        return res.status(400).json({ error: 'Wallet address and password required.' });
-      }
-
-      const user = await findUserByWallet(String(username).trim());
-      if (!user || !verifyPassword(password, user.passwordHash)) {
-        return res.status(401).json({ error: 'Invalid wallet address or password.' });
-      }
-
-      const token = newSessionToken();
-      const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400_000);
-      await createSession(token, user.id, expiresAt);
-      setSessionCookie(res, token);
-
-      res.json({
-        walletAddress: user.walletAddress,
-        message: 'Logged in.',
-      });
+      sendJson(res, await handleLogin(req.body));
     } catch (err) {
       console.error('[auth] login error:', err.message);
       res.status(500).json({ error: 'Login failed.' });
@@ -143,15 +78,12 @@ export function mountAuthRoutes(app) {
   });
 
   app.post('/api/auth/logout', requireAuth, async (req, res) => {
-    await deleteSession(req.sessionToken);
-    clearSessionCookie(res);
-    res.json({ ok: true });
+    sendJson(res, await handleLogout({ user: req.user, sessionToken: req.sessionToken }));
   });
 
   app.get('/api/auth/me', requireAuth, async (req, res) => {
-    res.json({
-      walletAddress: req.user.walletAddress,
-      createdAt: req.user.createdAt,
-    });
+    sendJson(res, await handleMe({ user: req.user }));
   });
 }
+
+void randomBytes;
