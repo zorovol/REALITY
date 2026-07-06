@@ -8811,12 +8811,19 @@ body {
 }
 .dash-diagnostics {
   margin-bottom: 16px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-radius: 10px;
   font-size: 13px;
   color: #94a3b8;
   background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.dash-diagnostics-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #93c5fd;
+  font-family: var(--font-display);
 }
 .dash-bot-status-line {
   margin: 8px 0 0;

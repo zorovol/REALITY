@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [syncPassword, setSyncPassword] = useState('');
   const [syncLoading, setSyncLoading] = useState(false);
   const [diagnostics, setDiagnostics] = useState(null);
+  const [diagError, setDiagError] = useState('');
 
   const load = useCallback(async () => {
     const session = getSession();
@@ -43,17 +44,21 @@ export default function Dashboard() {
         api.me(),
         api.listBots(),
         api.walletBalance().catch(() => ({ balanceSol: null })),
-        api.tradingDiagnostics().catch(() => null),
+        api.tradingDiagnostics().catch((err) => {
+          setDiagError(err.message);
+          return null;
+        }),
       ]);
       setUser({ walletAddress: me.walletAddress, createdAt: me.createdAt });
       setTradingReady(me.tradingReady !== false);
       setBots(botRes.bots);
       setBalance(bal.balanceSol);
       setDiagnostics(diag);
-      setSyncWarning('');
+      if (diag) setDiagError('');
     } catch (err) {
       setSyncWarning(err.message);
       setBots([]);
+      setDiagnostics(null);
     }
     setLoading(false);
   }, [nav]);
@@ -212,6 +217,39 @@ export default function Dashboard() {
         </aside>
 
         <main className="dash-main">
+          <div className="dash-diagnostics">
+            <h3 className="dash-diagnostics-title">Trading engine</h3>
+            {diagError ? (
+              <p className="dash-bot-status-line">
+                Could not load engine status: {diagError}
+                {' '}(Render may still be deploying — hard refresh in a minute)
+              </p>
+            ) : diagnostics ? (
+              <>
+                <p>
+                  <strong>Status:</strong>{' '}
+                  {diagnostics.engineRunning ? 'running' : 'offline'}
+                  {' · '}
+                  <strong>Mode:</strong>{' '}
+                  {diagnostics.simulationFallback ? 'simulation — set SIMULATION_FALLBACK=false on Render' : 'live'}
+                  {' · '}
+                  <strong>Wallet synced:</strong>{' '}
+                  {diagnostics.tradingReady ? 'yes' : 'no — sync below'}
+                  {' · '}
+                  <strong>Tokens in your mcap range:</strong> {diagnostics.candidatesInRange ?? '—'}
+                </p>
+                {diagnostics.botStatus?.map((b) => (
+                  <p key={b.id} className="dash-bot-status-line">
+                    <em>{b.name}</em>
+                    {b.lastStatus ? `: ${b.lastStatus.reason}` : b.isActive ? ': scanning for trades…' : ': stopped'}
+                  </p>
+                ))}
+              </>
+            ) : (
+              <p>Loading engine status…</p>
+            )}
+          </div>
+
           {(!tradingReady || syncWarning) && (
             <div className="dash-local-notice">
               <p>{syncWarning || 'Wallet not synced for on-chain trading — bots cannot sign transactions.'}</p>
@@ -228,22 +266,6 @@ export default function Dashboard() {
                   {syncLoading ? 'Syncing…' : 'Sync wallet for trading'}
                 </button>
               </form>
-            </div>
-          )}
-
-          {diagnostics && (
-            <div className="dash-diagnostics">
-              <strong>Engine:</strong>{' '}
-              {diagnostics.engineRunning ? 'running' : 'offline'}
-              {' · '}
-              <strong>Mode:</strong> {diagnostics.simulationFallback ? 'simulation (not trading)' : 'live'}
-              {' · '}
-              <strong>Tokens in range:</strong> {diagnostics.candidatesInRange ?? '—'}
-              {diagnostics.botStatus?.map((b) => b.lastStatus && (
-                <p key={b.id} className="dash-bot-status-line">
-                  <em>{b.name}</em>: {b.lastStatus.reason}
-                </p>
-              ))}
             </div>
           )}
 
