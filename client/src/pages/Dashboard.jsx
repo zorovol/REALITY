@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [syncWarning, setSyncWarning] = useState('');
+  const [tradingReady, setTradingReady] = useState(true);
 
   const load = useCallback(async () => {
     const session = getSession();
@@ -41,6 +42,7 @@ export default function Dashboard() {
         api.walletBalance().catch(() => ({ balanceSol: null })),
       ]);
       setUser({ walletAddress: me.walletAddress, createdAt: me.createdAt });
+      setTradingReady(me.tradingReady !== false);
       setBots(botRes.bots);
       setBalance(bal.balanceSol);
       setSyncWarning('');
@@ -179,9 +181,10 @@ export default function Dashboard() {
         </aside>
 
         <main className="dash-main">
-          {syncWarning && (
+          {(!tradingReady || syncWarning) && (
             <div className="dash-local-notice">
-              {syncWarning} — log out and log in again to re-sync your wallet for trading.
+              {syncWarning || 'Wallet not synced for on-chain trading.'}
+              {' '}Log out and log in again to re-sync your wallet, then restart the bot.
             </div>
           )}
 

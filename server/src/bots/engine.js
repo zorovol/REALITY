@@ -17,6 +17,16 @@ export class UserBotEngine {
     this.busy = false;
     this.timers = [];
     this.keypairCache = new Map();
+    /** @type {Map<string, number>} botId -> last skip log time */
+    this.skipLogAt = new Map();
+  }
+
+  logSkip(bot, reason) {
+    const now = Date.now();
+    const last = this.skipLogAt.get(bot.id) ?? 0;
+    if (now - last < 60_000) return;
+    this.skipLogAt.set(bot.id, now);
+    console.log(`[user-bots] ${bot.name || bot.botType} (${bot.id}) skip: ${reason}`);
   }
 
   start() {
@@ -66,7 +76,11 @@ export class UserBotEngine {
   }
 
   async tick() {
-    if (this.busy || config.simulationFallback) return;
+    if (this.busy) return;
+    if (config.simulationFallback) {
+      console.log('[user-bots] SIMULATION_FALLBACK=true — user bots disabled');
+      return;
+    }
     this.busy = true;
     try {
       const bots = await listActiveBots();
@@ -82,9 +96,22 @@ export class UserBotEngine {
     }
   }
 
+  async clearGhostPosition(bot, keypair) {
+    if (!bot.position?.mint) return false;
+    const held = await this.pump.getTokenBalanceRaw(keypair, bot.position.mint);
+    if (held > 0n) return false;
+    await updateBot(bot.id, bot.userId, { position: null });
+    console.log(`[user-bots] ${bot.name || bot.botType} cleared stale position (no on-chain balance)`);
+    bot.position = null;
+    return true;
+  }
+
   async runBot(bot) {
     const keypair = await this.getKeypair(bot.userId);
-    if (!keypair) return;
+    if (!keypair) {
+      this.logSkip(bot, 'wallet not synced to server — log out and log in again');
+      return;
+    }
 
     const rules = bot.tradingRules;
     const balance = await this.pump.connection.getBalance(keypair.publicKey);
@@ -92,15 +119,25 @@ export class UserBotEngine {
     const feeReserve = 0.004;
 
     if (bot.position?.mint) {
+      await this.clearGhostPosition(bot, keypair);
+
       const token = this.discovery.get(bot.position.mint);
       const currentMcap = token?.usdMarketCap ?? 0;
       const takeProfit = this.shouldTakeProfit(bot.position, currentMcap, rules);
       const stopLoss = this.shouldStopLoss(bot.position, currentMcap, rules);
       const stale = Date.now() - (bot.position.boughtAt ?? 0) > 30_000;
 
+      if (!takeProfit && !stopLoss && !stale) {
+        this.logSkip(bot, `holding $${bot.position.symbol} — waiting for TP/SL or 30s timeout`);
+        return;
+      }
+
       if (takeProfit || stopLoss || stale) {
         const sellSol = Math.min(rules.buyAmountSol, balanceSol);
-        if (balanceSol < feeReserve) return;
+        if (balanceSol < feeReserve) {
+          this.logSkip(bot, `balance too low to sell (${balanceSol.toFixed(4)} SOL)`);
+          return;
+        }
 
         const result = await this.pump.sellToken({
           keypair,
@@ -121,22 +158,40 @@ export class UserBotEngine {
           });
           await updateBot(bot.id, bot.userId, { position: null });
           console.log(`[user-bots] ${bot.name || bot.botType} sold $${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
+        } else {
+          this.logSkip(bot, 'sell failed — no token balance or bonding curve error');
         }
       }
       return;
     }
 
-    if (balanceSol < rules.buyAmountSol + feeReserve) return;
+    const minRequired = rules.buyAmountSol + feeReserve;
+    if (balanceSol < minRequired) {
+      this.logSkip(bot, `need ${minRequired.toFixed(4)} SOL, have ${balanceSol.toFixed(4)}`);
+      return;
+    }
 
     const candidates = this.filterCandidates(rules);
+    if (!candidates.length) {
+      const pool = this.discovery.list().length;
+      this.logSkip(bot, `no tokens in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap range (${pool} coins discovered)`);
+      return;
+    }
+
     const target = selectToken(bot.botType, candidates);
     if (!target) return;
 
-    const result = await this.pump.buyToken({
-      keypair,
-      mintAddress: target.mint,
-      solAmount: rules.buyAmountSol,
-    });
+    let result;
+    try {
+      result = await this.pump.buyToken({
+        keypair,
+        mintAddress: target.mint,
+        solAmount: rules.buyAmountSol,
+      });
+    } catch (err) {
+      console.error(`[user-bots] ${bot.name || bot.botType} buy failed on $${target.symbol}:`, err.message);
+      return;
+    }
 
     if (result) {
       await insertBotTrade({

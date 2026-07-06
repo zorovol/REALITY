@@ -68,6 +68,11 @@ export function mountBotRoutes(app) {
   });
 
   app.post('/api/bots/:id/start', requireAuth, async (req, res) => {
+    if (!req.user.serverEncryptedKey) {
+      return res.status(400).json({
+        error: 'Wallet not synced for trading. Log out and log in again to re-sync your wallet.',
+      });
+    }
     const updated = await updateBot(req.params.id, req.user.id, { isActive: true });
     if (!updated) return res.status(404).json({ error: 'Bot not found.' });
     res.json({ bot: publicBot(updated) });

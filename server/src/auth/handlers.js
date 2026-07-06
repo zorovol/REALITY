@@ -189,7 +189,11 @@ export async function handleMe(auth) {
   if (!auth) return { status: 401, body: { error: 'Not authenticated.' } };
   return {
     status: 200,
-    body: { walletAddress: auth.user.walletAddress, createdAt: auth.user.createdAt },
+    body: {
+      walletAddress: auth.user.walletAddress,
+      createdAt: auth.user.createdAt,
+      tradingReady: Boolean(auth.user.serverEncryptedKey),
+    },
   };
 }
 
