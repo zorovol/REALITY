@@ -34,11 +34,12 @@ export function listBots(walletAddress) {
   return userBots(walletAddress);
 }
 
-export function createBot(walletAddress, { botType, tradingRules }) {
+export function createBot(walletAddress, { name, botType, tradingRules }) {
   const all = readAll();
   const bots = userBots(walletAddress);
   const bot = {
     id: crypto.randomUUID(),
+    name: String(name || '').trim(),
     botType,
     tradingRules: { ...defaultTradingRules(), ...tradingRules },
     isActive: false,

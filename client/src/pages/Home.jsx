@@ -107,7 +107,7 @@ export default function Home() {
                 Launch your bot
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </Link>
-              <Link to="/live" className="home-v2-btn ghost">Watch live floor</Link>
+              <Link to="/live" className="home-v2-btn ghost">Trading floor</Link>
               <Link to="/docs" className="home-v2-btn ghost subtle">Docs</Link>
             </div>
             <div className="home-v2-metrics">
@@ -186,10 +186,10 @@ export default function Home() {
           <Link to="/signup" className="home-v2-link">Create account →</Link>
         </article>
         <article className="home-v2-split-card accent">
-          <span className="home-v2-split-tag">Public broadcast</span>
-          <h3>Live AI trading floor</h3>
-          <p>Five AI agents trade pump.fun in real time — drama, speech bubbles, and on-chain txs on a shared stage.</p>
-          <Link to="/live" className="home-v2-link">Watch live →</Link>
+          <span className="home-v2-split-tag">Public showcase</span>
+          <h3>Community trading floor</h3>
+          <p>Name your bot on the dashboard and it appears on the public floor — every user&apos;s bot, live for all to see.</p>
+          <Link to="/live" className="home-v2-link">View trading floor →</Link>
         </article>
       </section>
 
@@ -228,7 +228,7 @@ export default function Home() {
 
       <footer className="home-v2-footer">
         <Link to="/docs">Docs</Link>
-        <Link to="/live">Live floor</Link>
+        <Link to="/live">Trading floor</Link>
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/login">Log in</Link>
         <span>© {BRAND.name}</span>

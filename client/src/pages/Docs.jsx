@@ -244,16 +244,16 @@ export default function Docs() {
           </section>
 
           <section id="live-floor" className="docs-section">
-            <h2>Live trading floor</h2>
+            <h2>Trading floor</h2>
             <p>
-              The <Link to="/live">Live Floor</Link> is a separate broadcast UI showing five AI agents
-              trading autonomously with their own server-managed wallets. It uses WebSockets for
-              real-time trade feeds, drama events, and market state.
+              The <Link to="/live">Trading Floor</Link> is a public showcase of every user&apos;s
+              <strong> named</strong> bot. When you create a bot on your dashboard, give it a name (min 2 characters)
+              and it appears on the floor for everyone to see — AI type, rules, and live/stopped status.
             </p>
             <ul>
-              <li>Agents scalp ~$2 per side with fast in-and-out trades.</li>
-              <li>Each agent targets unique pump.fun tokens per tick.</li>
-              <li>This is independent of your personal dashboard bots.</li>
+              <li>Unnamed bots stay private on your dashboard only.</li>
+              <li>Rename anytime — updates sync to the floor on blur.</li>
+              <li>Delete a bot to remove it from the floor.</li>
             </ul>
           </section>
 

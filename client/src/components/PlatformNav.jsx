@@ -13,7 +13,7 @@ export default function PlatformNav({ user }) {
       </Link>
       <div className="platform-nav-links">
         <Link to="/docs">Docs</Link>
-        <Link to="/live">Live Floor</Link>
+        <Link to="/live">Trading Floor</Link>
         {user ? (
           <>
             <Link to="/dashboard">Dashboard</Link>
