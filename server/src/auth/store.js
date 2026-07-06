@@ -57,13 +57,15 @@ function rowUser(r) {
   };
 }
 
+import { normalizeRules } from '../bots/strategies.js';
+
 function rowBot(r) {
   return {
     id: r.id,
     userId: r.user_id,
     name: r.name ?? '',
     botType: r.bot_type,
-    tradingRules: r.trading_rules,
+    tradingRules: normalizeRules(r.trading_rules),
     isActive: r.is_active,
     position: r.position ?? null,
     createdAt: r.created_at,

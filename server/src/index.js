@@ -13,6 +13,7 @@ import { mountAuthRoutes } from './auth/routes.js';
 import { mountWalletRoutes } from './auth/wallet.js';
 import { mountBotRoutes } from './bots/routes.js';
 import { UserBotEngine } from './bots/engine.js';
+import { setUserBotEngine } from './bots/engineHolder.js';
 import { WorldEngine } from './engine/world.js';
 import { speak } from './ai/brain.js';
 import { personaLine } from './ai/persona.js';
@@ -203,6 +204,7 @@ async function main() {
   try {
     userBotEngine = new UserBotEngine(pump);
     userBotEngine.start();
+    setUserBotEngine(userBotEngine);
   } catch (err) {
     console.error('[user-bots] Engine failed to start:', err.message);
   }

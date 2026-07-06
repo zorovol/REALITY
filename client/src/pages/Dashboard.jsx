@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
-import { getSession, clearSession } from '../lib/walletAuth.js';
+import { getSession, clearSession, getWalletSecretKey } from '../lib/walletAuth.js';
 import { api } from '../lib/api.js';
-import { syncBotToFloor } from '../lib/serverSync.js';
+import { syncBotToFloor, syncWalletToServer } from '../lib/serverSync.js';
 import { BOT_TYPES, defaultTradingRules } from '../lib/localBots.js';
 import { BOT_META, botMeta } from '../lib/botTypes.js';
 import Character from '../components/Character.jsx';
@@ -27,6 +27,9 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [syncWarning, setSyncWarning] = useState('');
   const [tradingReady, setTradingReady] = useState(true);
+  const [syncPassword, setSyncPassword] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [diagnostics, setDiagnostics] = useState(null);
 
   const load = useCallback(async () => {
     const session = getSession();
@@ -36,15 +39,17 @@ export default function Dashboard() {
     }
     setUser(session);
     try {
-      const [me, botRes, bal] = await Promise.all([
+      const [me, botRes, bal, diag] = await Promise.all([
         api.me(),
         api.listBots(),
         api.walletBalance().catch(() => ({ balanceSol: null })),
+        api.tradingDiagnostics().catch(() => null),
       ]);
       setUser({ walletAddress: me.walletAddress, createdAt: me.createdAt });
       setTradingReady(me.tradingReady !== false);
       setBots(botRes.bots);
       setBalance(bal.balanceSol);
+      setDiagnostics(diag);
       setSyncWarning('');
     } catch (err) {
       setSyncWarning(err.message);
@@ -58,6 +63,32 @@ export default function Dashboard() {
     const t = setInterval(load, 15_000);
     return () => clearInterval(t);
   }, [load]);
+
+  async function resyncWallet(e) {
+    e.preventDefault();
+    setSyncLoading(true);
+    setError('');
+    try {
+      const secretKey = await getWalletSecretKey(user.walletAddress, syncPassword);
+      if (!secretKey) throw new Error('Wrong password for this wallet.');
+      await syncWalletToServer({ walletAddress: user.walletAddress, password: syncPassword, secretKey });
+      setSyncPassword('');
+      await load();
+    } catch (err) {
+      setSyncWarning(err.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  }
+
+  async function clearPosition(bot) {
+    try {
+      await api.clearBotPosition(bot.id);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
 
   async function logout() {
     try { await api.logout(); } catch { /* local ok */ }
@@ -183,8 +214,36 @@ export default function Dashboard() {
         <main className="dash-main">
           {(!tradingReady || syncWarning) && (
             <div className="dash-local-notice">
-              {syncWarning || 'Wallet not synced for on-chain trading.'}
-              {' '}Log out and log in again to re-sync your wallet, then restart the bot.
+              <p>{syncWarning || 'Wallet not synced for on-chain trading — bots cannot sign transactions.'}</p>
+              <form onSubmit={resyncWallet} className="dash-sync-form">
+                <input
+                  type="password"
+                  value={syncPassword}
+                  onChange={(e) => setSyncPassword(e.target.value)}
+                  placeholder="Enter your password to sync wallet"
+                  autoComplete="current-password"
+                  required
+                />
+                <button type="submit" className="home-btn primary" disabled={syncLoading}>
+                  {syncLoading ? 'Syncing…' : 'Sync wallet for trading'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {diagnostics && (
+            <div className="dash-diagnostics">
+              <strong>Engine:</strong>{' '}
+              {diagnostics.engineRunning ? 'running' : 'offline'}
+              {' · '}
+              <strong>Mode:</strong> {diagnostics.simulationFallback ? 'simulation (not trading)' : 'live'}
+              {' · '}
+              <strong>Tokens in range:</strong> {diagnostics.candidatesInRange ?? '—'}
+              {diagnostics.botStatus?.map((b) => b.lastStatus && (
+                <p key={b.id} className="dash-bot-status-line">
+                  <em>{b.name}</em>: {b.lastStatus.reason}
+                </p>
+              ))}
             </div>
           )}
 
@@ -296,6 +355,9 @@ export default function Dashboard() {
                     <div className="dash-position">
                       Holding <strong>${bot.position.symbol}</strong>
                       {bot.position.entryMcap && ` · ~$${Math.round(bot.position.entryMcap)} mcap`}
+                      <button type="button" className="dash-clear-pos" onClick={() => clearPosition(bot)}>
+                        Clear stuck position
+                      </button>
                     </div>
                   )}
 

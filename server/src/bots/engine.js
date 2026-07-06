@@ -2,10 +2,10 @@ import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { config } from '../config.js';
 import { decryptWithServerKey } from '../auth/crypto.js';
-import { findUserById, listActiveBots, updateBot, insertBotTrade } from '../auth/store.js';
+import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
 import { PumpDiscovery } from '../solana/pumpDiscovery.js';
 import { solscanTxUrl } from '../solana/config.js';
-import { selectToken } from './strategies.js';
+import { selectToken, normalizeRules, defaultTradingRules } from './strategies.js';
 
 export class UserBotEngine {
   /**
@@ -17,10 +17,26 @@ export class UserBotEngine {
     this.busy = false;
     this.timers = [];
     this.keypairCache = new Map();
-    /** @type {Map<string, number>} botId -> last skip log time */
+    /** @type {Map<string, number>} */
     this.skipLogAt = new Map();
+    /** @type {Map<string, { reason: string, at: number }>} */
+    this.botStatus = new Map();
+    this.sellFailCounts = new Map();
+    this.simulationLogged = false;
   }
 
+  setStatus(bot, reason) {
+    this.botStatus.set(String(bot.id), { reason, at: Date.now() });
+    this.logSkip(bot, reason);
+  }
+
+  getStatus(botId) {
+    return this.botStatus.get(String(botId)) ?? null;
+  }
+
+  getAllStatus() {
+    return Object.fromEntries(this.botStatus);
+  }
   logSkip(bot, reason) {
     const now = Date.now();
     const last = this.skipLogAt.get(bot.id) ?? 0;
@@ -53,7 +69,7 @@ export class UserBotEngine {
       return kp;
     } catch (err) {
       console.error(`[user-bots] wallet decrypt failed for ${userId}:`, err.message);
-      return null;
+      return { decryptFailed: true };
     }
   }
 
@@ -78,7 +94,10 @@ export class UserBotEngine {
   async tick() {
     if (this.busy) return;
     if (config.simulationFallback) {
-      console.log('[user-bots] SIMULATION_FALLBACK=true — user bots disabled');
+      if (!this.simulationLogged) {
+        console.log('[user-bots] SIMULATION_FALLBACK=true — user bots disabled');
+        this.simulationLogged = true;
+      }
       return;
     }
     this.busy = true;
@@ -107,13 +126,18 @@ export class UserBotEngine {
   }
 
   async runBot(bot) {
-    const keypair = await this.getKeypair(bot.userId);
-    if (!keypair) {
-      this.logSkip(bot, 'wallet not synced to server — log out and log in again');
+    const keypairResult = await this.getKeypair(bot.userId);
+    if (!keypairResult) {
+      this.setStatus(bot, 'wallet not synced — use Sync wallet on dashboard');
       return;
     }
+    if (keypairResult.decryptFailed) {
+      this.setStatus(bot, 'AUTH_SERVER_KEY mismatch — log out, log in again to re-sync');
+      return;
+    }
+    const keypair = keypairResult;
 
-    const rules = bot.tradingRules;
+    const rules = normalizeRules(bot.tradingRules);
     const balance = await this.pump.connection.getBalance(keypair.publicKey);
     const balanceSol = balance / LAMPORTS_PER_SOL;
     const feeReserve = 0.004;
@@ -128,14 +152,14 @@ export class UserBotEngine {
       const stale = Date.now() - (bot.position.boughtAt ?? 0) > 30_000;
 
       if (!takeProfit && !stopLoss && !stale) {
-        this.logSkip(bot, `holding $${bot.position.symbol} — waiting for TP/SL or 30s timeout`);
+        this.setStatus(bot, `holding $${bot.position.symbol} — waiting for TP/SL or 30s`);
         return;
       }
 
       if (takeProfit || stopLoss || stale) {
         const sellSol = Math.min(rules.buyAmountSol, balanceSol);
         if (balanceSol < feeReserve) {
-          this.logSkip(bot, `balance too low to sell (${balanceSol.toFixed(4)} SOL)`);
+          this.setStatus(bot, `balance too low to sell (${balanceSol.toFixed(4)} SOL)`);
           return;
         }
 
@@ -158,8 +182,18 @@ export class UserBotEngine {
           });
           await updateBot(bot.id, bot.userId, { position: null });
           console.log(`[user-bots] ${bot.name || bot.botType} sold $${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
+          this.botStatus.delete(String(bot.id));
         } else {
-          this.logSkip(bot, 'sell failed — no token balance or bonding curve error');
+          const fails = (this.sellFailCounts.get(bot.id) ?? 0) + 1;
+          this.sellFailCounts.set(bot.id, fails);
+          if (fails >= 3) {
+            await updateBot(bot.id, bot.userId, { position: null });
+            bot.position = null;
+            this.sellFailCounts.delete(bot.id);
+            this.setStatus(bot, 'cleared stuck position after sell failures — will buy again');
+          } else {
+            this.setStatus(bot, `sell failed (${fails}/3) — retrying`);
+          }
         }
       }
       return;
@@ -167,14 +201,14 @@ export class UserBotEngine {
 
     const minRequired = rules.buyAmountSol + feeReserve;
     if (balanceSol < minRequired) {
-      this.logSkip(bot, `need ${minRequired.toFixed(4)} SOL, have ${balanceSol.toFixed(4)}`);
+      this.setStatus(bot, `need ${minRequired.toFixed(4)} SOL, have ${balanceSol.toFixed(4)}`);
       return;
     }
 
     const candidates = this.filterCandidates(rules);
     if (!candidates.length) {
       const pool = this.discovery.list().length;
-      this.logSkip(bot, `no tokens in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap range (${pool} coins discovered)`);
+      this.setStatus(bot, `no tokens in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} discovered)`);
       return;
     }
 
@@ -190,6 +224,7 @@ export class UserBotEngine {
       });
     } catch (err) {
       console.error(`[user-bots] ${bot.name || bot.botType} buy failed on $${target.symbol}:`, err.message);
+      this.setStatus(bot, `buy failed: ${err.message.slice(0, 120)}`);
       return;
     }
 
@@ -214,6 +249,33 @@ export class UserBotEngine {
         },
       });
       console.log(`[user-bots] ${bot.name || bot.botType} bought $${target.symbol} (~$${Math.round(target.usdMarketCap)} mcap)`);
+      this.botStatus.delete(String(bot.id));
     }
+  }
+
+  async getDiagnostics(userId) {
+    const bots = await listBotsForUser(userId);
+    const active = bots.filter((b) => b.isActive);
+    const pool = this.discovery.list();
+    const rules = normalizeRules(active[0]?.tradingRules ?? defaultTradingRules());
+    const candidates = pool.filter(
+      (t) => t.usdMarketCap >= rules.minMarketCap && t.usdMarketCap <= rules.maxMarketCap,
+    );
+    return {
+      engineRunning: true,
+      simulationFallback: config.simulationFallback,
+      authConfigured: Boolean(config.authServerKey),
+      discoveryPool: pool.length,
+      candidatesInRange: candidates.length,
+      mcapRange: { min: rules.minMarketCap, max: rules.maxMarketCap },
+      activeBots: active.length,
+      botStatus: active.map((b) => ({
+        id: b.id,
+        name: b.name || b.botType,
+        isActive: b.isActive,
+        position: b.position,
+        lastStatus: this.getStatus(b.id),
+      })),
+    };
   }
 }

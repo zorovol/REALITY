@@ -39,5 +39,7 @@ export const api = {
   stopBot: (id) => request(`/api/bots/${id}/stop`, { method: 'POST' }),
   deleteBot: (id) => request(`/api/bots/${id}`, { method: 'DELETE' }),
   botTrades: (id) => request(`/api/bots/${id}/trades`),
+  tradingDiagnostics: () => request('/api/bots/trading-diagnostics'),
+  clearBotPosition: (id) => request(`/api/bots/${id}/clear-position`, { method: 'POST' }),
   walletBalance: () => request('/api/wallet/balance'),
 };

@@ -8,6 +8,8 @@ import {
   listBotTrades,
 } from '../auth/store.js';
 import { BOT_TYPES, defaultTradingRules, normalizeRules } from './strategies.js';
+import { getUserBotEngine } from './engineHolder.js';
+import { config } from '../config.js';
 
 export function mountBotRoutes(app) {
   app.get('/api/bots/types', (_req, res) => {
@@ -88,6 +90,27 @@ export function mountBotRoutes(app) {
     const ok = await deleteBot(req.params.id, req.user.id);
     if (!ok) return res.status(404).json({ error: 'Bot not found.' });
     res.json({ ok: true });
+  });
+
+  app.post('/api/bots/:id/clear-position', requireAuth, async (req, res) => {
+    const updated = await updateBot(req.params.id, req.user.id, { position: null });
+    if (!updated) return res.status(404).json({ error: 'Bot not found.' });
+    res.json({ bot: publicBot(updated) });
+  });
+
+  app.get('/api/bots/trading-diagnostics', requireAuth, async (req, res) => {
+    const engine = getUserBotEngine();
+    if (!engine) {
+      return res.json({
+        engineRunning: false,
+        simulationFallback: config.simulationFallback,
+        authConfigured: Boolean(config.authServerKey),
+        tradingReady: Boolean(req.user.serverEncryptedKey),
+        message: 'User bot engine not running on this server instance.',
+      });
+    }
+    const diag = await engine.getDiagnostics(req.user.id);
+    res.json({ ...diag, tradingReady: Boolean(req.user.serverEncryptedKey) });
   });
 
   app.get('/api/bots/:id/trades', requireAuth, async (req, res) => {
