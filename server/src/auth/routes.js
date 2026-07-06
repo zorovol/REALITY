@@ -7,6 +7,7 @@ import {
 import {
   handleSignup,
   handleLogin,
+  handleRegisterWallet,
   handleLogout,
   handleMe,
   sendJson,
@@ -74,6 +75,15 @@ export function mountAuthRoutes(app) {
     } catch (err) {
       console.error('[auth] login error:', err.message);
       res.status(500).json({ error: 'Login failed.' });
+    }
+  });
+
+  app.post('/api/auth/register-wallet', async (req, res) => {
+    try {
+      sendJson(res, await handleRegisterWallet(req.body));
+    } catch (err) {
+      console.error('[auth] register-wallet error:', err.message);
+      res.status(500).json({ error: err.message || 'Wallet sync failed.' });
     }
   });
 

@@ -5,13 +5,14 @@
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
   "functions": {
-    "api/**/*.js": {
-      "includeFiles": "api/lib/**"
+    "api/floor/**/*.js": {
+      "includeFiles": "api/lib/floorStore.js"
     }
   },
   "rewrites": [
     { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
     { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },
+    { "source": "/api/(?!floor/)(.*)", "destination": "https://ai-drama-island-api.onrender.com/api/$1" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/((?!assets/|api/).*)", "destination": "/index.html" }
   ]

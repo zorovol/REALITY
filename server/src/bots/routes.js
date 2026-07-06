@@ -21,7 +21,7 @@ export function mountBotRoutes(app) {
 
   app.post('/api/bots', requireAuth, async (req, res) => {
     try {
-      const { botType, tradingRules } = req.body ?? {};
+      const { botType, tradingRules, name } = req.body ?? {};
       if (!BOT_TYPES.includes(botType)) {
         return res.status(400).json({ error: `Invalid bot type. Choose: ${BOT_TYPES.join(', ')}` });
       }
@@ -29,7 +29,7 @@ export function mountBotRoutes(app) {
       if (rules.minMarketCap >= rules.maxMarketCap) {
         return res.status(400).json({ error: 'minMarketCap must be less than maxMarketCap.' });
       }
-      const bot = await createBot({ userId: req.user.id, botType, tradingRules: rules });
+      const bot = await createBot({ userId: req.user.id, name, botType, tradingRules: rules });
       res.status(201).json({ bot: publicBot(bot) });
     } catch (err) {
       console.error('[bots] create error:', err.message);
@@ -51,6 +51,9 @@ export function mountBotRoutes(app) {
       }
       if (req.body?.tradingRules !== undefined) {
         patch.tradingRules = normalizeRules(req.body.tradingRules);
+      }
+      if (req.body?.name !== undefined) {
+        patch.name = String(req.body.name).trim();
       }
       if (req.body?.isActive !== undefined) {
         patch.isActive = Boolean(req.body.isActive);
@@ -93,6 +96,7 @@ export function mountBotRoutes(app) {
 function publicBot(bot) {
   return {
     id: bot.id,
+    name: bot.name ?? '',
     botType: bot.botType,
     tradingRules: bot.tradingRules,
     isActive: bot.isActive,

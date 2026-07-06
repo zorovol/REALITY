@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
-import { getSession, clearSession, getWalletBalance } from '../lib/walletAuth.js';
-import {
-  BOT_TYPES, defaultTradingRules, listBots, createBot, updateBot, deleteBot,
-} from '../lib/localBots.js';
-import { syncFloorBot, unpublishFloorBot } from '../lib/floorApi.js';
+import { getSession, clearSession } from '../lib/walletAuth.js';
+import { api } from '../lib/api.js';
+import { syncBotToFloor } from '../lib/serverSync.js';
+import { BOT_TYPES, defaultTradingRules } from '../lib/localBots.js';
 import { BOT_META, botMeta } from '../lib/botTypes.js';
 import Character from '../components/Character.jsx';
 
@@ -26,6 +25,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [syncWarning, setSyncWarning] = useState('');
 
   const load = useCallback(async () => {
     const session = getSession();
@@ -34,23 +34,31 @@ export default function Dashboard() {
       return;
     }
     setUser(session);
-    setBots(listBots(session.walletAddress));
     try {
-      const bal = await getWalletBalance(session.walletAddress);
-      setBalance(bal);
-    } catch {
-      setBalance(null);
+      const [me, botRes, bal] = await Promise.all([
+        api.me(),
+        api.listBots(),
+        api.walletBalance().catch(() => ({ balanceSol: null })),
+      ]);
+      setUser({ walletAddress: me.walletAddress, createdAt: me.createdAt });
+      setBots(botRes.bots);
+      setBalance(bal.balanceSol);
+      setSyncWarning('');
+    } catch (err) {
+      setSyncWarning(err.message);
+      setBots([]);
     }
     setLoading(false);
   }, [nav]);
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 20_000);
+    const t = setInterval(load, 15_000);
     return () => clearInterval(t);
   }, [load]);
 
-  function logout() {
+  async function logout() {
+    try { await api.logout(); } catch { /* local ok */ }
     clearSession();
     nav('/');
   }
@@ -58,42 +66,51 @@ export default function Dashboard() {
   async function createBotSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!user) return;
     const trimmed = form.name.trim();
     if (trimmed.length < 2) {
-      return setError('Name your bot (min 2 characters) — it appears on the public trading floor.');
+      return setError('Name your bot (min 2 characters) — required for the trading floor.');
     }
     try {
-      const bot = createBot(user.walletAddress, { ...form, name: trimmed });
-      await syncFloorBot(bot, user.walletAddress);
+      const { bot } = await api.createBot({ ...form, name: trimmed });
+      await syncBotToFloor(bot, user.walletAddress);
       setForm(emptyForm());
       setShowCreate(false);
-      setBots(listBots(user.walletAddress));
+      await load();
     } catch (err) {
       setError(err.message);
     }
   }
 
   async function toggleBot(bot) {
-    if (!user) return;
-    const updated = updateBot(user.walletAddress, bot.id, { isActive: !bot.isActive });
-    if (updated) await syncFloorBot(updated, user.walletAddress).catch(() => {});
-    setBots(listBots(user.walletAddress));
+    try {
+      const res = bot.isActive ? await api.stopBot(bot.id) : await api.startBot(bot.id);
+      await syncBotToFloor(res.bot, user.walletAddress);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   async function saveBotName(bot, name) {
-    if (!user) return;
-    const trimmed = name.trim();
-    const updated = updateBot(user.walletAddress, bot.id, { name: trimmed });
-    if (updated) await syncFloorBot(updated, user.walletAddress).catch(() => {});
-    setBots(listBots(user.walletAddress));
+    try {
+      const { bot: updated } = await api.updateBot(bot.id, { name: name.trim() });
+      await syncBotToFloor(updated, user.walletAddress);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   async function removeBot(id) {
-    if (!user || !confirm('Delete this bot permanently?')) return;
-    await unpublishFloorBot(id, user.walletAddress).catch(() => {});
-    deleteBot(user.walletAddress, id);
-    setBots(listBots(user.walletAddress));
+    if (!confirm('Delete this bot permanently?')) return;
+    try {
+      const { unpublishFloorBot } = await import('../lib/floorApi.js');
+      await api.deleteBot(id);
+      await unpublishFloorBot(id, user.walletAddress).catch(() => {});
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   function copyWallet() {
@@ -149,12 +166,12 @@ export default function Dashboard() {
               <code>{user?.walletAddress}</code>
               <button type="button" onClick={copyWallet}>{copied ? 'Copied!' : 'Copy'}</button>
             </div>
-            <p className="dash-hint">Send SOL to this address to fund bot trades.</p>
+            <p className="dash-hint">Fund with SOL — bots trade on pump.fun mainnet when started.</p>
           </div>
 
           <div className="dash-sidebar-stats">
             <div><span>{bots.length}</span><small>Bots</small></div>
-            <div><span>{activeCount}</span><small>Active</small></div>
+            <div><span>{activeCount}</span><small>Trading</small></div>
             <div><span>{onFloorCount}</span><small>On floor</small></div>
           </div>
 
@@ -162,10 +179,16 @@ export default function Dashboard() {
         </aside>
 
         <main className="dash-main">
+          {syncWarning && (
+            <div className="dash-local-notice">
+              {syncWarning} — log out and log in again to re-sync your wallet for trading.
+            </div>
+          )}
+
           <header className="dash-header">
             <div>
               <h1>Trading bots</h1>
-              <p>Name each bot to show it on the public <Link to="/live">trading floor</Link>.</p>
+              <p>Name each bot, hit Start — the server trades on-chain every ~3s. Named bots appear on the <Link to="/live">trading floor</Link>.</p>
             </div>
             <button type="button" className="home-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); }}>
               + Create bot
@@ -232,7 +255,7 @@ export default function Dashboard() {
           {!bots.length && !showCreate && (
             <div className="dash-empty">
               <h3>No bots yet</h3>
-              <p>Create a named bot — it goes live on the trading floor for everyone to see.</p>
+              <p>Create a named bot, fund your wallet with SOL, then hit Start to trade on-chain.</p>
               <button type="button" className="home-btn primary" onClick={() => setShowCreate(true)}>Create bot</button>
             </div>
           )}
@@ -248,7 +271,7 @@ export default function Dashboard() {
                       {meta.label}
                     </span>
                     <span className={`dash-bot-pill ${bot.isActive ? 'on' : 'off'}`}>
-                      {bot.isActive ? '● LIVE' : '○ STOPPED'}
+                      {bot.isActive ? '● TRADING' : '○ STOPPED'}
                     </span>
                   </div>
 
@@ -266,6 +289,13 @@ export default function Dashboard() {
                     <p className="dash-bot-name-hint">Add a name (2+ chars) to appear on the trading floor.</p>
                   )}
 
+                  {bot.position && (
+                    <div className="dash-position">
+                      Holding <strong>${bot.position.symbol}</strong>
+                      {bot.position.entryMcap && ` · ~$${Math.round(bot.position.entryMcap)} mcap`}
+                    </div>
+                  )}
+
                   <ul className="dash-bot-rules">
                     <li><strong>MCap</strong> ${bot.tradingRules.minMarketCap?.toLocaleString()} – ${bot.tradingRules.maxMarketCap?.toLocaleString()}</li>
                     <li><strong>Buy</strong> {bot.tradingRules.buyAmountSol} SOL</li>
@@ -278,7 +308,7 @@ export default function Dashboard() {
                       className={bot.isActive ? 'home-btn secondary' : 'home-btn primary'}
                       onClick={() => toggleBot(bot)}
                     >
-                      {bot.isActive ? 'Stop' : 'Start'}
+                      {bot.isActive ? 'Stop' : 'Start trading'}
                     </button>
                     <button type="button" className="dash-delete" onClick={() => removeBot(bot.id)}>Delete</button>
                   </div>

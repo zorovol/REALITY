@@ -58,7 +58,7 @@ async function encryptSecret(secret, password, salt) {
   return `${toHex(iv)}:${toHex(new Uint8Array(cipher))}`;
 }
 
-async function decryptSecret(encryptedKey, password, salt) {
+export async function decryptSecret(encryptedKey, password, salt) {
   const [ivHex, cipherHex] = encryptedKey.split(':');
   if (!ivHex || !cipherHex) throw new Error('Invalid wallet data.');
   const key = await deriveKey(password, salt);
@@ -124,6 +124,17 @@ export async function createAccount(password) {
   setSession(walletAddress);
 
   return { walletAddress, secretKey };
+}
+
+export async function getWalletSecretKey(walletAddress, password) {
+  const wallets = readWallets();
+  const record = wallets[String(walletAddress).trim()];
+  if (!record) return null;
+  try {
+    return await decryptSecret(record.encryptedKey, password, fromHex(record.salt));
+  } catch {
+    return null;
+  }
 }
 
 export async function loginAccount(walletAddress, password) {

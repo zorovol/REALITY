@@ -61,6 +61,7 @@ function rowBot(r) {
   return {
     id: r.id,
     userId: r.user_id,
+    name: r.name ?? '',
     botType: r.bot_type,
     tradingRules: r.trading_rules,
     isActive: r.is_active,
@@ -68,6 +69,25 @@ function rowBot(r) {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
+}
+
+export async function updateUserKeys(userId, { serverEncryptedKey, encryptedPrivateKey }) {
+  if (!ready) {
+    const user = mem.users.get(userId);
+    if (!user) return null;
+    if (serverEncryptedKey) user.serverEncryptedKey = serverEncryptedKey;
+    if (encryptedPrivateKey) user.encryptedPrivateKey = encryptedPrivateKey;
+    return user;
+  }
+  const fields = [];
+  const vals = [];
+  let i = 1;
+  if (serverEncryptedKey !== undefined) { fields.push(`server_encrypted_key = $${i++}`); vals.push(serverEncryptedKey); }
+  if (encryptedPrivateKey !== undefined) { fields.push(`encrypted_private_key = $${i++}`); vals.push(encryptedPrivateKey); }
+  if (!fields.length) return findUserById(userId);
+  vals.push(userId);
+  const res = await q(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`, vals);
+  return res.rows[0] ? rowUser(res.rows[0]) : null;
 }
 
 export async function createUser({ walletAddress, passwordHash, userSalt, encryptedPrivateKey, serverEncryptedKey }) {
@@ -143,13 +163,15 @@ export async function deleteSession(token) {
   await q('DELETE FROM sessions WHERE token = $1', [token]);
 }
 
-export async function createBot({ userId, botType, tradingRules }) {
+export async function createBot({ userId, name, botType, tradingRules }) {
   const rules = { ...tradingRules };
+  const botName = String(name || '').trim();
   if (!ready) {
     const id = randomUUID();
     const bot = {
       id,
       userId,
+      name: botName,
       botType,
       tradingRules: rules,
       isActive: false,
@@ -161,8 +183,8 @@ export async function createBot({ userId, botType, tradingRules }) {
     return bot;
   }
   const res = await q(
-    `INSERT INTO bots (user_id, bot_type, trading_rules) VALUES ($1, $2, $3) RETURNING *`,
-    [userId, botType, rules],
+    `INSERT INTO bots (user_id, name, bot_type, trading_rules) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [userId, botName, botType, rules],
   );
   return rowBot(res.rows[0]);
 }
@@ -195,6 +217,7 @@ export async function updateBot(botId, userId, patch) {
   const vals = [];
   let i = 1;
   if (patch.botType !== undefined) { fields.push(`bot_type = $${i++}`); vals.push(patch.botType); }
+  if (patch.name !== undefined) { fields.push(`name = $${i++}`); vals.push(String(patch.name).trim()); }
   if (patch.tradingRules !== undefined) { fields.push(`trading_rules = $${i++}`); vals.push(patch.tradingRules); }
   if (patch.isActive !== undefined) { fields.push(`is_active = $${i++}`); vals.push(patch.isActive); }
   if (patch.position !== undefined) { fields.push(`position = $${i++}`); vals.push(patch.position); }

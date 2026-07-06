@@ -13,6 +13,7 @@ import {
   updateBot,
   deleteBot,
   listBotTrades,
+  updateUserKeys,
 } from './store.js';
 import {
   hashPassword,
@@ -127,6 +128,57 @@ export async function handleLogin(body) {
   };
 }
 
+/** Sync a browser-generated wallet to the server for automated trading. */
+export async function handleRegisterWallet(body) {
+  const keyErr = requireServerKey();
+  if (keyErr) return { status: 503, body: { error: keyErr } };
+
+  const { walletAddress, password, secretKey } = body ?? {};
+  if (!walletAddress || !password || !secretKey) {
+    return { status: 400, body: { error: 'walletAddress, password, and secretKey are required.' } };
+  }
+  if (password.length < 8) {
+    return { status: 400, body: { error: 'Password must be at least 8 characters.' } };
+  }
+
+  try {
+    new PublicKey(String(walletAddress).trim());
+  } catch {
+    return { status: 400, body: { error: 'Invalid Solana wallet address.' } };
+  }
+
+  const addr = String(walletAddress).trim();
+  let user = await findUserByWallet(addr);
+
+  if (user) {
+    if (!verifyPassword(password, user.passwordHash)) {
+      return { status: 401, body: { error: 'Wallet already registered with a different password.' } };
+    }
+    await updateUserKeys(user.id, {
+      serverEncryptedKey: encryptWithServerKey(secretKey, config.authServerKey),
+      encryptedPrivateKey: encryptWithPassword(secretKey, password, user.userSalt),
+    });
+  } else {
+    const userSalt = newUserSalt();
+    user = await createUser({
+      walletAddress: addr,
+      passwordHash: hashPassword(password),
+      userSalt,
+      encryptedPrivateKey: encryptWithPassword(secretKey, password, userSalt),
+      serverEncryptedKey: encryptWithServerKey(secretKey, config.authServerKey),
+    });
+  }
+
+  const token = newSessionToken();
+  await createSession(token, user.id, new Date(Date.now() + SESSION_DAYS * 86400_000));
+
+  return {
+    status: 200,
+    cookie: sessionCookieHeader(token),
+    body: { walletAddress: user.walletAddress, message: 'Wallet synced — bots can trade on-chain.' },
+  };
+}
+
 export async function handleLogout(auth) {
   if (!auth) return { status: 401, body: { error: 'Not authenticated.' } };
   await deleteSession(auth.sessionToken);
@@ -153,7 +205,7 @@ export async function handleListBots(auth) {
 
 export async function handleCreateBot(auth, body) {
   if (!auth) return { status: 401, body: { error: 'Not authenticated.' } };
-  const { botType, tradingRules } = body ?? {};
+  const { botType, tradingRules, name } = body ?? {};
   if (!BOT_TYPES.includes(botType)) {
     return { status: 400, body: { error: `Invalid bot type. Choose: ${BOT_TYPES.join(', ')}` } };
   }
@@ -161,7 +213,7 @@ export async function handleCreateBot(auth, body) {
   if (rules.minMarketCap >= rules.maxMarketCap) {
     return { status: 400, body: { error: 'minMarketCap must be less than maxMarketCap.' } };
   }
-  const bot = await createBot({ userId: auth.user.id, botType, tradingRules: rules });
+  const bot = await createBot({ userId: auth.user.id, name, botType, tradingRules: rules });
   return { status: 201, body: { bot: publicBot(bot) } };
 }
 
@@ -175,6 +227,7 @@ export async function handleUpdateBot(auth, botId, body) {
     if (!BOT_TYPES.includes(body.botType)) return { status: 400, body: { error: 'Invalid bot type.' } };
     patch.botType = body.botType;
   }
+  if (body?.name !== undefined) patch.name = String(body.name).trim();
   if (body?.tradingRules !== undefined) patch.tradingRules = normalizeRules(body.tradingRules);
   if (body?.isActive !== undefined) patch.isActive = Boolean(body.isActive);
 
@@ -224,6 +277,7 @@ export async function handleWalletBalance(auth) {
 function publicBot(bot) {
   return {
     id: bot.id,
+    name: bot.name ?? '',
     botType: bot.botType,
     tradingRules: bot.tradingRules,
     isActive: bot.isActive,

@@ -17,8 +17,8 @@ async function request(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    if (res.status === 503) throw new Error('Server not configured — set AUTH_SERVER_KEY in Vercel env vars.');
-    if (res.status === 404) throw new Error('API route not found — wait for deploy to finish, then try again.');
+    if (res.status === 503) throw new Error('Trading server not configured — set AUTH_SERVER_KEY on Render.');
+    if (res.status === 404) throw new Error('API not found — redeploy Render backend with latest code.');
     throw new Error(`Server error (${res.status}). Try again after deploy finishes.`);
   }
 
@@ -26,6 +26,7 @@ async function request(path, options = {}) {
   return data;
 }
 export const api = {
+  registerWallet: (body) => request('/api/auth/register-wallet', { method: 'POST', body: JSON.stringify(body) }),
   signup: (password) => request('/api/auth/signup', { method: 'POST', body: JSON.stringify({ password }) }),
   login: (username, password) => request('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),

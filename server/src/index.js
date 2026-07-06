@@ -38,7 +38,7 @@ const upload = multer({
   },
 });
 
-app.use(cors({ origin: corsOriginCheck }));
+app.use(cors({ origin: corsOriginCheck, credentials: true }));
 app.use(express.json());
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

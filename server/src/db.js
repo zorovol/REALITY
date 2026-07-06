@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS bots (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name            TEXT NOT NULL DEFAULT '',
   bot_type        TEXT NOT NULL,
   trading_rules   JSONB NOT NULL,
   is_active       BOOLEAN NOT NULL DEFAULT false,
@@ -127,6 +128,7 @@ export async function initDb() {
       max: 5,
     });
     await pool.query(SCHEMA);
+    await pool.query(`ALTER TABLE bots ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT ''`);
     ready = true;
     console.log('[db] Connected to Neon PostgreSQL, schema ready.');
     return true;

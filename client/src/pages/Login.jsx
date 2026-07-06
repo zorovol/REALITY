@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
 import { loginAccount } from '../lib/walletAuth.js';
+import { ensureServerSession } from '../lib/serverSync.js';
 
 export default function Login() {
   const nav = useNavigate();
@@ -16,6 +17,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginAccount(username.trim(), password);
+      await ensureServerSession(username.trim(), password);
       nav('/dashboard');
     } catch (err) {
       setError(err.message);

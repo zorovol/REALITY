@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
 import { createAccount } from '../lib/walletAuth.js';
+import { syncWalletToServer } from '../lib/serverSync.js';
 
 export default function Signup() {
   const nav = useNavigate();
@@ -20,6 +21,11 @@ export default function Signup() {
     setLoading(true);
     try {
       const res = await createAccount(password);
+      await syncWalletToServer({
+        walletAddress: res.walletAddress,
+        password,
+        secretKey: res.secretKey,
+      });
       setResult(res);
     } catch (err) {
       setError(err.message);

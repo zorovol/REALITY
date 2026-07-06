@@ -120,7 +120,7 @@ export class UserBotEngine {
             explorerUrl: solscanTxUrl(result.signature),
           });
           await updateBot(bot.id, bot.userId, { position: null });
-          console.log(`[user-bots] ${bot.botType} sold $${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
+          console.log(`[user-bots] ${bot.name || bot.botType} sold $${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
         }
       }
       return;
@@ -158,7 +158,7 @@ export class UserBotEngine {
           boughtAt: Date.now(),
         },
       });
-      console.log(`[user-bots] ${bot.botType} bought $${target.symbol} (~$${Math.round(target.usdMarketCap)} mcap)`);
+      console.log(`[user-bots] ${bot.name || bot.botType} bought $${target.symbol} (~$${Math.round(target.usdMarketCap)} mcap)`);
     }
   }
 }
