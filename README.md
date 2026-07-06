@@ -65,7 +65,7 @@ The repo includes a `vercel.json` that builds and serves the client as a static 
 
 **Note:** On-chain Solana trading only runs on the Node server. The browser fallback does not execute real pump.fun transactions.
 
-To get the real shared multi-viewer broadcast on a Vercel frontend, host the server on Render/Railway/Fly and point your custom domain (or Vercel URL) at the static client. The repo’s `vercel.json` proxies `/api` and `/socket.io` to your Render backend — **do not** set `VITE_SERVER_URL` for production (cross-origin calls fail CORS on custom domains). Set `CLIENT_ORIGIN` on the server to your production domain(s), e.g. `https://gptgrokgeminideepseekfable.com,https://ai-drama-island.vercel.app`.
+To get the real shared multi-viewer broadcast on a Vercel frontend, host the server on Render/Railway/Fly and point your custom domain (or Vercel URL) at the static client. The repo’s `vercel.json` proxies `/api` and `/socket.io` to your Render backend — **do not** set `VITE_SERVER_URL` for production (cross-origin calls fail CORS on custom domains). Set `CLIENT_ORIGIN` on the server to your production domain(s), e.g. `https://botsforge.tech,https://www.botsforge.tech`.
 
 ## Solana + pump.fun (REAL on-chain trading)
 

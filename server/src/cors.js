@@ -1,6 +1,8 @@
 import { config } from './config.js';
 
 const PRODUCTION_ORIGINS = [
+  'https://botsforge.tech',
+  'https://www.botsforge.tech',
   'https://gptgrokgeminideepseekfable.com',
   'https://www.gptgrokgeminideepseekfable.com',
   'https://ai-drama-island.vercel.app',
@@ -14,6 +16,10 @@ function isAllowedOrigin(origin, allowed) {
   if (isLocalDevOrigin(origin)) return true;
   if (allowed.includes(origin)) return true;
   if (allowed.some((o) => o.includes('vercel.app')) && /\.vercel\.app$/.test(origin)) {
+    return true;
+  }
+  if (allowed.some((o) => o.includes('botsforge.tech'))
+    && /^https:\/\/([a-z0-9-]+\.)?botsforge\.tech$/.test(origin)) {
     return true;
   }
   if (allowed.some((o) => o.includes('gptgrokgeminideepseekfable.com'))
