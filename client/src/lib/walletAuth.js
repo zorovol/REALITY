@@ -46,12 +46,6 @@ async function deriveKey(password, salt) {
   );
 }
 
-async function hashPassword(password, salt) {
-  const key = await deriveKey(password, salt);
-  const raw = await crypto.subtle.exportKey('raw', key);
-  return toHex(raw);
-}
-
 async function encryptSecret(secret, password, salt) {
   const key = await deriveKey(password, salt);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -62,6 +56,18 @@ async function encryptSecret(secret, password, salt) {
     enc.encode(secret),
   );
   return `${toHex(iv)}:${toHex(new Uint8Array(cipher))}`;
+}
+
+async function decryptSecret(encryptedKey, password, salt) {
+  const [ivHex, cipherHex] = encryptedKey.split(':');
+  if (!ivHex || !cipherHex) throw new Error('Invalid wallet data.');
+  const key = await deriveKey(password, salt);
+  const plain = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: fromHex(ivHex) },
+    key,
+    fromHex(cipherHex),
+  );
+  return new TextDecoder().decode(plain);
 }
 
 export function getSession() {
@@ -101,7 +107,6 @@ export async function createAccount(password) {
   const secretKey = bs58.encode(keypair.secretKey);
 
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const passwordHash = await hashPassword(password, salt);
   const encryptedKey = await encryptSecret(secretKey, password, salt);
 
   const wallets = readWallets();
@@ -111,7 +116,6 @@ export async function createAccount(password) {
 
   wallets[walletAddress] = {
     walletAddress,
-    passwordHash,
     salt: toHex(salt),
     encryptedKey,
     createdAt: new Date().toISOString(),
@@ -130,9 +134,9 @@ export async function loginAccount(walletAddress, password) {
     throw new Error('Wallet not found on this device. Sign up here first, or use the browser where you created it.');
   }
 
-  const salt = fromHex(record.salt);
-  const passwordHash = await hashPassword(password, salt);
-  if (passwordHash !== record.passwordHash) {
+  try {
+    await decryptSecret(record.encryptedKey, password, fromHex(record.salt));
+  } catch {
     throw new Error('Invalid wallet address or password.');
   }
 
