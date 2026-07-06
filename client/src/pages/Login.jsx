@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
-import { api } from '../lib/api.js';
+import { loginAccount } from '../lib/walletAuth.js';
 
 export default function Login() {
   const nav = useNavigate();
@@ -15,7 +15,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await api.login(username.trim(), password);
+      await loginAccount(username.trim(), password);
       nav('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -31,7 +31,7 @@ export default function Login() {
         <div className="auth-card">
           <div className="auth-card-head">
             <h1>Welcome back</h1>
-            <p>Log in with your wallet address and password.</p>
+            <p>Log in with your Solana wallet address and the password you chose at signup.</p>
           </div>
 
           <form onSubmit={submit} className="auth-form">
@@ -64,7 +64,7 @@ export default function Login() {
           </form>
 
           <p className="auth-switch">
-            No account? <Link to="/signup">Sign up</Link>
+            New here? <Link to="/signup">Create wallet</Link>
           </p>
         </div>
       </div>

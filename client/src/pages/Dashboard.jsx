@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
-import { api } from '../lib/api.js';
+import { getSession, clearSession, getWalletBalance } from '../lib/walletAuth.js';
+import {
+  BOT_TYPES, defaultTradingRules, listBots, createBot, updateBot, deleteBot,
+} from '../lib/localBots.js';
 
 const BOT_META = {
   sniper: { label: 'Sniper', desc: 'Prioritizes newest tokens', color: '#34d399' },
@@ -16,64 +19,64 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(null);
   const [bots, setBots] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [defaults, setDefaults] = useState(null);
+  const [defaults] = useState(defaultTradingRules());
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ botType: 'sniper', tradingRules: {} });
+  const [form, setForm] = useState({ botType: 'sniper', tradingRules: defaultTradingRules() });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const [me, botRes, typeRes, bal] = await Promise.all([
-        api.me(),
-        api.listBots(),
-        api.botTypes(),
-        api.walletBalance().catch(() => ({ balanceSol: null })),
-      ]);
-      setUser(me);
-      setBots(botRes.bots);
-      setTypes(typeRes.types);
-      setDefaults(typeRes.defaultRules);
-      setForm((f) => ({ ...f, tradingRules: typeRes.defaultRules }));
-      setBalance(bal.balanceSol);
-    } catch {
+    const session = getSession();
+    if (!session) {
       nav('/login');
-    } finally {
-      setLoading(false);
+      return;
     }
+    setUser(session);
+    setBots(listBots(session.walletAddress));
+    try {
+      const bal = await getWalletBalance(session.walletAddress);
+      setBalance(bal);
+    } catch {
+      setBalance(null);
+    }
+    setLoading(false);
   }, [nav]);
 
-  useEffect(() => { load(); const t = setInterval(load, 15_000); return () => clearInterval(t); }, [load]);
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 20_000);
+    return () => clearInterval(t);
+  }, [load]);
 
-  async function logout() {
-    await api.logout();
+  function logout() {
+    clearSession();
     nav('/');
   }
 
-  async function createBot(e) {
+  function createBotSubmit(e) {
     e.preventDefault();
     setError('');
+    if (!user) return;
     try {
-      await api.createBot(form);
+      createBot(user.walletAddress, form);
       setShowCreate(false);
-      await load();
+      setBots(listBots(user.walletAddress));
     } catch (err) {
       setError(err.message);
     }
   }
 
-  async function toggleBot(bot) {
-    if (bot.isActive) await api.stopBot(bot.id);
-    else await api.startBot(bot.id);
-    await load();
+  function toggleBot(bot) {
+    if (!user) return;
+    updateBot(user.walletAddress, bot.id, { isActive: !bot.isActive });
+    setBots(listBots(user.walletAddress));
   }
 
-  async function removeBot(id) {
-    if (!confirm('Delete this bot permanently?')) return;
-    await api.deleteBot(id);
-    await load();
+  function removeBot(id) {
+    if (!user || !confirm('Delete this bot permanently?')) return;
+    deleteBot(user.walletAddress, id);
+    setBots(listBots(user.walletAddress));
   }
 
   function copyWallet() {
@@ -91,7 +94,7 @@ export default function Dashboard() {
         <input
           type="number"
           step={step}
-          value={form.tradingRules[key] ?? defaults?.[key] ?? ''}
+          value={form.tradingRules[key] ?? defaults[key] ?? ''}
           onChange={(e) => setForm({
             ...form,
             tradingRules: { ...form.tradingRules, [key]: Number(e.target.value) },
@@ -140,6 +143,10 @@ export default function Dashboard() {
         </aside>
 
         <main className="dash-main">
+          <div className="dash-local-notice">
+            Wallet and bots are saved on this browser. Server auto-trading connects when backend deploy is live.
+          </div>
+
           <header className="dash-header">
             <div>
               <h1>Trading bots</h1>
@@ -158,7 +165,7 @@ export default function Dashboard() {
               </div>
 
               <div className="dash-type-grid">
-                {types.map((t) => {
+                {BOT_TYPES.map((t) => {
                   const meta = BOT_META[t] ?? { label: t, desc: '', color: '#94a3b8' };
                   return (
                     <button
@@ -175,7 +182,7 @@ export default function Dashboard() {
                 })}
               </div>
 
-              <form onSubmit={createBot} className="dash-rules-form">
+              <form onSubmit={createBotSubmit} className="dash-rules-form">
                 <h3>Trading rules</h3>
                 <div className="dash-rules-grid">
                   {ruleInput('minMarketCap', 'Min market cap ($)', 100)}
@@ -220,13 +227,6 @@ export default function Dashboard() {
                     <li><strong>Buy</strong> {bot.tradingRules.buyAmountSol} SOL</li>
                     <li><strong>TP / SL</strong> {bot.tradingRules.takeProfitPercent}% / {bot.tradingRules.stopLossPercent}%</li>
                   </ul>
-
-                  {bot.position && (
-                    <div className="dash-position">
-                      Holding <strong>${bot.position.symbol}</strong>
-                      {bot.position.entryMcap && ` · ~$${Math.round(bot.position.entryMcap)} mcap`}
-                    </div>
-                  )}
 
                   <div className="dash-bot-actions">
                     <button

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
-import { api } from '../lib/api.js';
+import { createAccount } from '../lib/walletAuth.js';
 
 export default function Signup() {
   const nav = useNavigate();
@@ -9,7 +9,8 @@ export default function Signup() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [wallet, setWallet] = useState('');
+  const [result, setResult] = useState(null);
+  const [savedKey, setSavedKey] = useState(false);
 
   async function submit(e) {
     e.preventDefault();
@@ -18,9 +19,8 @@ export default function Signup() {
     if (password !== confirm) return setError('Passwords do not match.');
     setLoading(true);
     try {
-      const res = await api.signup(password);
-      setWallet(res.walletAddress);
-      setTimeout(() => nav('/dashboard'), 3000);
+      const res = await createAccount(password);
+      setResult(res);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -28,30 +28,62 @@ export default function Signup() {
     }
   }
 
-  function copyWallet() {
-    if (wallet) navigator.clipboard?.writeText(wallet);
+  function copy(text) {
+    navigator.clipboard?.writeText(text);
+  }
+
+  function goDashboard() {
+    if (!savedKey) return setError('Confirm you saved your private key before continuing.');
+    nav('/dashboard');
   }
 
   return (
     <div className="auth-shell">
       <PlatformNav />
       <div className="auth-center">
-        <div className="auth-card">
+        <div className="auth-card auth-card-wide">
           <div className="auth-card-head">
-            <h1>Create account</h1>
-            <p>A Solana wallet is generated automatically. Save your address — it&apos;s your login username.</p>
+            <h1>Create wallet</h1>
+            <p>
+              Pick a password — we generate a fresh Solana wallet in your browser.
+              Log in anytime with your <strong>wallet address + password</strong>.
+            </p>
           </div>
 
-          {wallet ? (
-            <div className="auth-success">
+          {result ? (
+            <div className="auth-success auth-success-left">
               <div className="auth-success-icon">✓</div>
-              <h2>You&apos;re in!</h2>
-              <p>Your wallet address (username):</p>
+              <h2>Wallet created</h2>
+
+              <p className="auth-label">Wallet address (your username)</p>
               <div className="auth-wallet-box">
-                <code>{wallet}</code>
-                <button type="button" className="auth-copy-btn" onClick={copyWallet}>Copy</button>
+                <code>{result.walletAddress}</code>
+                <button type="button" className="auth-copy-btn" onClick={() => copy(result.walletAddress)}>Copy</button>
               </div>
-              <p className="auth-hint">Fund this wallet with SOL, then create a bot on your dashboard. Redirecting…</p>
+
+              <p className="auth-label auth-label-warn">Private key — save this now</p>
+              <div className="auth-wallet-box auth-key-box">
+                <code>{result.secretKey}</code>
+                <button type="button" className="auth-copy-btn" onClick={() => copy(result.secretKey)}>Copy</button>
+              </div>
+              <p className="auth-hint auth-hint-warn">
+                Stored encrypted on this device only. If you clear browser data, you need this key to recover access.
+              </p>
+
+              <label className="auth-confirm-save">
+                <input
+                  type="checkbox"
+                  checked={savedKey}
+                  onChange={(e) => setSavedKey(e.target.checked)}
+                />
+                I saved my wallet address and private key
+              </label>
+
+              {error && <div className="auth-error">{error}</div>}
+
+              <button type="button" className="auth-submit" onClick={goDashboard}>
+                Go to dashboard
+              </button>
             </div>
           ) : (
             <form onSubmit={submit} className="auth-form">
@@ -79,13 +111,13 @@ export default function Signup() {
               </label>
               {error && <div className="auth-error">{error}</div>}
               <button type="submit" className="auth-submit" disabled={loading}>
-                {loading ? 'Creating wallet…' : 'Sign up'}
+                {loading ? 'Generating wallet…' : 'Generate wallet'}
               </button>
             </form>
           )}
 
           <p className="auth-switch">
-            Already have an account? <Link to="/login">Log in</Link>
+            Already have a wallet? <Link to="/login">Log in</Link>
           </p>
         </div>
       </div>

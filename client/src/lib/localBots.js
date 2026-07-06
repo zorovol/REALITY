@@ -1,0 +1,71 @@
+const BOTS_KEY = 'botforge_bots';
+
+export const BOT_TYPES = ['sniper', 'momentum', 'lowcap', 'whale', 'meme'];
+
+export function defaultTradingRules() {
+  return {
+    minMarketCap: 2500,
+    maxMarketCap: 6000,
+    buyAmountSol: 0.015,
+    takeProfitPercent: 8,
+    stopLossPercent: 5,
+  };
+}
+
+function readAll() {
+  try {
+    return JSON.parse(localStorage.getItem(BOTS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function writeAll(map) {
+  localStorage.setItem(BOTS_KEY, JSON.stringify(map));
+}
+
+function userBots(walletAddress) {
+  const all = readAll();
+  if (!all[walletAddress]) all[walletAddress] = [];
+  return all[walletAddress];
+}
+
+export function listBots(walletAddress) {
+  return userBots(walletAddress);
+}
+
+export function createBot(walletAddress, { botType, tradingRules }) {
+  const all = readAll();
+  const bots = userBots(walletAddress);
+  const bot = {
+    id: crypto.randomUUID(),
+    botType,
+    tradingRules: { ...defaultTradingRules(), ...tradingRules },
+    isActive: false,
+    position: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  bots.unshift(bot);
+  all[walletAddress] = bots;
+  writeAll(all);
+  return bot;
+}
+
+export function updateBot(walletAddress, botId, patch) {
+  const all = readAll();
+  const bots = userBots(walletAddress);
+  const idx = bots.findIndex((b) => b.id === botId);
+  if (idx === -1) return null;
+  bots[idx] = { ...bots[idx], ...patch, updatedAt: new Date().toISOString() };
+  all[walletAddress] = bots;
+  writeAll(all);
+  return bots[idx];
+}
+
+export function deleteBot(walletAddress, botId) {
+  const all = readAll();
+  const bots = userBots(walletAddress).filter((b) => b.id !== botId);
+  all[walletAddress] = bots;
+  writeAll(all);
+}
