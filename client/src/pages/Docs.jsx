@@ -186,11 +186,11 @@ export default function Docs() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td><code>sniper</code></td><td>Prioritizes the newest tokens (most recent created timestamp).</td></tr>
-                  <tr><td><code>momentum</code></td><td>Prioritizes tokens with highest volatility / activity score.</td></tr>
-                  <tr><td><code>lowcap</code></td><td>Always picks the smallest market cap in your configured range.</td></tr>
-                  <tr><td><code>whale</code></td><td>Prioritizes highest market cap tokens in range (more liquidity/activity).</td></tr>
-                  <tr><td><code>meme</code></td><td>Random selection from tokens passing your filters.</td></tr>
+                  <tr><td><code>chatgpt</code></td><td>Prioritizes the newest tokens (fresh bonding-curve launches).</td></tr>
+                  <tr><td><code>grok</code></td><td>Prioritizes tokens with highest volatility / activity score.</td></tr>
+                  <tr><td><code>fable</code></td><td>Random selection — chaos mode.</td></tr>
+                  <tr><td><code>gemini</code></td><td>Prioritizes highest market cap tokens in range (more liquidity).</td></tr>
+                  <tr><td><code>deepseek</code></td><td>Always picks the smallest market cap in your configured range.</td></tr>
                 </tbody>
               </table>
             </div>

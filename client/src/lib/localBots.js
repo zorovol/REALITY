@@ -1,6 +1,6 @@
 const BOTS_KEY = 'botforge_bots';
 
-export const BOT_TYPES = ['sniper', 'momentum', 'lowcap', 'whale', 'meme'];
+export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
 export function defaultTradingRules() {
   return {

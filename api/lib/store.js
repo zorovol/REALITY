@@ -212,7 +212,7 @@ export async function listBotTrades(botId, userId, limit = 50) {
   return res?.rows ?? [];
 }
 
-export const BOT_TYPES = ['sniper', 'momentum', 'lowcap', 'whale', 'meme'];
+export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
 export function defaultTradingRules() {
   return { minMarketCap: 2500, maxMarketCap: 6000, buyAmountSol: 0.015, takeProfitPercent: 8, stopLossPercent: 5 };

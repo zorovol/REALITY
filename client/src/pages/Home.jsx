@@ -23,11 +23,11 @@ const TICKER = [
 ];
 
 const STRATEGIES = [
-  { id: 'sniper', name: 'Sniper', desc: 'First in on fresh bonding-curve launches.', color: '#34d399' },
-  { id: 'momentum', name: 'Momentum', desc: 'Rides volatility and volume spikes.', color: '#22d3ee' },
-  { id: 'lowcap', name: 'Low Cap', desc: 'Targets the smallest mcap in your band.', color: '#a78bfa' },
-  { id: 'whale', name: 'Whale', desc: 'Prefers deeper liquidity at the top of range.', color: '#fbbf24' },
-  { id: 'meme', name: 'Meme', desc: 'Random picks — chaos mode.', color: '#fb7185' },
+  { id: 'chatgpt', name: 'ChatGPT', desc: 'Fresh launches — first on new bonding curves.', color: '#34d399' },
+  { id: 'grok', name: 'Grok', desc: 'Volatility hunter — rides hype and volume spikes.', color: '#fb7185' },
+  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random picks, story-driven plays.', color: '#fbbf24' },
+  { id: 'gemini', name: 'Gemini', desc: 'Whale lane — deeper liquidity at the top of your range.', color: '#a78bfa' },
+  { id: 'deepseek', name: 'DeepSeek', desc: 'Low cap sniper — smallest mcap in your band.', color: '#38bdf8' },
 ];
 
 const TERMINAL_LINES = [
@@ -47,8 +47,8 @@ const BENTO = [
     icon: '◈',
   },
   {
-    title: '5 strategies',
-    desc: 'Sniper · Momentum · Low cap · Whale · Meme — same rules, different pick logic.',
+    title: '5 AI bots',
+    desc: 'ChatGPT · Grok · Fable · Gemini · DeepSeek',
     span: 'narrow',
     icon: '⚡',
   },
@@ -165,7 +165,7 @@ export default function Home() {
         <div className="home-v2-strategies-head">
           <p className="home-v2-eyebrow">Pick your edge</p>
           <h2>Five bot types. One engine.</h2>
-          <p>Every strategy uses your mcap band and TP/SL rules — only the token selection logic changes.</p>
+          <p>ChatGPT, Grok, Fable, Gemini, DeepSeek — same rules, different pick logic.</p>
         </div>
         <div className="home-v2-strategy-grid">
           {STRATEGIES.map((s) => (

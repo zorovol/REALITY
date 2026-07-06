@@ -1,35 +1,45 @@
-/** Bot type selection — only affects token ranking, not trading rules. */
+/** Bot type selection — each AI agent uses a different token ranking style. */
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-export const BOT_TYPES = ['sniper', 'momentum', 'lowcap', 'whale', 'meme'];
+export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
+
+/** Legacy ids from before AI naming. */
+const LEGACY = {
+  sniper: 'chatgpt',
+  momentum: 'grok',
+  meme: 'fable',
+  whale: 'gemini',
+  lowcap: 'deepseek',
+};
+
+function normalizeType(botType) {
+  return LEGACY[botType] || botType;
+}
 
 export function selectToken(botType, candidates) {
   if (!candidates.length) return null;
   const pool = [...candidates];
+  const type = normalizeType(botType);
 
-  switch (botType) {
-    case 'sniper':
-      // Newest tokens first (higher created timestamp)
+  switch (type) {
+    case 'chatgpt':
       pool.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
       return pick(pool.slice(0, Math.min(5, pool.length)));
 
-    case 'momentum':
-      // Highest recent activity / volatility
+    case 'grok':
       pool.sort((a, b) => (b.volatility ?? 0) - (a.volatility ?? 0));
       return pick(pool.slice(0, Math.min(5, pool.length)));
 
-    case 'lowcap':
-      // Smallest market cap in band
+    case 'deepseek':
       pool.sort((a, b) => a.usdMarketCap - b.usdMarketCap);
       return pool[0];
 
-    case 'whale':
-      // Highest market cap in band (more activity)
+    case 'gemini':
       pool.sort((a, b) => b.usdMarketCap - a.usdMarketCap);
       return pick(pool.slice(0, Math.min(5, pool.length)));
 
-    case 'meme':
+    case 'fable':
     default:
       return pick(pool);
   }

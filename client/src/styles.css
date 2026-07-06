@@ -8951,6 +8951,14 @@ body {
   background: rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.dash-type-char .character-photo {
+  border-radius: 10px;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--type-color, var(--accent-green)) 35%, transparent);
 }
 .dash-type-card strong {
   display: block;

@@ -5,14 +5,8 @@ import { getSession, clearSession, getWalletBalance } from '../lib/walletAuth.js
 import {
   BOT_TYPES, defaultTradingRules, listBots, createBot, updateBot, deleteBot,
 } from '../lib/localBots.js';
-
-const BOT_META = {
-  sniper: { label: 'Sniper', desc: 'Prioritizes newest tokens', color: '#34d399' },
-  momentum: { label: 'Momentum', desc: 'Fast volume & volatility', color: '#22d3ee' },
-  lowcap: { label: 'Low Cap', desc: 'Smallest market caps', color: '#fbbf24' },
-  whale: { label: 'Whale', desc: 'High activity tokens', color: '#a78bfa' },
-  meme: { label: 'Meme', desc: 'Trending random picks', color: '#fb7185' },
-};
+import { BOT_META, botMeta } from '../lib/botTypes.js';
+import Character from '../components/Character.jsx';
 
 export default function Dashboard() {
   const nav = useNavigate();
@@ -21,7 +15,7 @@ export default function Dashboard() {
   const [bots, setBots] = useState([]);
   const [defaults] = useState(defaultTradingRules());
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ botType: 'sniper', tradingRules: defaultTradingRules() });
+  const [form, setForm] = useState({ botType: 'chatgpt', tradingRules: defaultTradingRules() });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -175,6 +169,7 @@ export default function Dashboard() {
                       style={{ '--type-color': meta.color }}
                       onClick={() => setForm({ ...form, botType: t })}
                     >
+                      <Character id={t} size={40} className="dash-type-char" />
                       <strong>{meta.label}</strong>
                       <span>{meta.desc}</span>
                     </button>
@@ -210,7 +205,7 @@ export default function Dashboard() {
 
           <div className="dash-bot-grid">
             {bots.map((bot) => {
-              const meta = BOT_META[bot.botType] ?? { label: bot.botType, color: '#94a3b8' };
+              const meta = botMeta(bot.botType);
               return (
                 <article key={bot.id} className={`dash-bot-card ${bot.isActive ? 'is-active' : ''}`}>
                   <div className="dash-bot-top">
