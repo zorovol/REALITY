@@ -28,6 +28,7 @@ export const config = {
   solanaNetwork: network,
   authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY
     || (process.env.NODE_ENV !== 'production' ? 'local-dev-auth-key-32chars!!' : ''),
+  encryptionKey: process.env.ENCRYPTION_KEY || process.env.AUTH_SERVER_KEY || '',
   simulationFallback: process.env.SIMULATION_FALLBACK === 'true',
   minSolForTrade: Number(process.env.MIN_SOL_FOR_TRADE) || 0.02,
   minSolForLaunch: Number(process.env.MIN_SOL_FOR_LAUNCH) || 0.2,

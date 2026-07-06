@@ -195,12 +195,16 @@ async function main() {
     wallets.init();
     trading = new TradingEngine({ wallets, pump, world, dispatch: (event, payload) => io.emit(event, payload) });
     trading.start();
+  } catch (err) {
+    console.error('[solana] Island agent wallets skipped:', err.message);
+    console.error('[solana] User bot trading still works if AUTH_SERVER_KEY is set.');
+  }
+
+  try {
     userBotEngine = new UserBotEngine(pump);
     userBotEngine.start();
   } catch (err) {
-    console.error('[solana] Wallet init failed:', err.message);
-    console.error('[solana] Set ENCRYPTION_KEY on Render (same as local .env).');
-    process.exit(1);
+    console.error('[user-bots] Engine failed to start:', err.message);
   }
 
   // Patch world state broadcasts to include wallet/market data
