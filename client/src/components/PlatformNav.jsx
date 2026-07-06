@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { IconX } from './Icons.jsx';
 import { BRAND } from '../config/brand.js';
 
-const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgdsfable?s=11';
+const X_URL = import.meta.env.VITE_X_URL || BRAND.xUrl;
 
 export default function PlatformNav({ user }) {
   return (

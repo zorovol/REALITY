@@ -248,6 +248,7 @@ export default function Dashboard() {
             ) : (
               <p>Loading engine status…</p>
             )}
+            <p className="dash-build-stamp">Build {typeof __BUILD_SHA__ !== 'undefined' ? __BUILD_SHA__ : 'local'}</p>
           </div>
 
           {(!tradingReady || syncWarning) && (

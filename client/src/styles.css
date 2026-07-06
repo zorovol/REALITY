@@ -8830,6 +8830,12 @@ body {
   font-size: 12px;
   color: #fbbf24;
 }
+.dash-build-stamp {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #64748b;
+  font-family: var(--font-mono, monospace);
+}
 .live-floor-shell {
   min-height: 100vh;
   position: relative;

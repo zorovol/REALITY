@@ -4,7 +4,7 @@ import Character from './Character.jsx';
 import { BRAND } from '../config/brand.js';
 
 const BOTS = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
-const X_URL = import.meta.env.VITE_X_URL || 'https://x.com/gptgrokgdsfable?s=11';
+const X_URL = import.meta.env.VITE_X_URL || BRAND.xUrl;
 
 export default function Header({ market, connected, audience }) {
   const tradeCount = market?.recentTrades?.length ?? 0;
