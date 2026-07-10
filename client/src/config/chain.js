@@ -7,4 +7,4 @@ export const CHAIN = {
   explorerUrl: 'https://robinhoodchain.blockscout.com',
 };
 
-export const STOCK_TICKERS = ['AAPL', 'NVDA', 'TSLA', 'QQQ'];
+export const MEMECOIN_EXAMPLES = ['GORO', 'PEPE', 'DOGE', 'WIF'];

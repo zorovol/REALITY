@@ -8,7 +8,7 @@ export const robinhoodMainnet = {
   explorerUrl: 'https://robinhoodchain.blockscout.com',
   weth: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
   uniswapV2Router: '0x89e5DB8B5aA49aA85AC63f691524311AEB649eba',
-  /** Default stock tokens on Robinhood Chain mainnet (July 2026). */
+  /** Stock tokens — excluded from memecoin bot pool. */
   stockTokens: [
     { symbol: 'AAPL', address: '0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9', priceUsd: 220 },
     { symbol: 'NVDA', address: '0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC', priceUsd: 140 },

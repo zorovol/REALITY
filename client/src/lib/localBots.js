@@ -4,8 +4,8 @@ export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
 export function defaultTradingRules() {
   return {
-    minMarketCap: 50_000_000,
-    maxMarketCap: 500_000_000,
+    minMarketCap: 2_500,
+    maxMarketCap: 500_000,
     buyAmountEth: 0.0005,
     buyAmountSol: 0.0005,
     takeProfitPercent: 8,

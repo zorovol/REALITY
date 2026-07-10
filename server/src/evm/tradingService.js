@@ -15,7 +15,7 @@ const ERC20_ABI = [
   'function allowance(address owner, address spender) view returns (uint256)',
 ];
 
-/** Uniswap V2 swaps on Robinhood Chain — stock token buys/sells with ETH. */
+/** Uniswap V2 swaps on Robinhood Chain — memecoin buys/sells with ETH. */
 export class TradingService {
   /**
    * @param {{ rpcUrl: string, chainId: number, weth: string, router: string, explorerUrl: string }} chain
@@ -49,6 +49,17 @@ export class TradingService {
 
   txOptions() {
     return { type: 0, gasLimit: 600_000n };
+  }
+
+  async canSwapEthForToken(tokenAddress, ethAmount) {
+    try {
+      const path = [this.weth, tokenAddress];
+      const value = ethers.parseEther(String(Math.max(ethAmount, 0.00001)));
+      const amounts = await this.router.getAmountsOut(value, path);
+      return amounts[1] > 0n;
+    } catch {
+      return false;
+    }
   }
 
   async buyToken({ wallet, mintAddress, ethAmount }) {

@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { decryptWithServerKey } from '../auth/crypto.js';
 import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
-import { StockDiscovery } from '../evm/stockDiscovery.js';
+import { MemecoinDiscovery } from '../evm/memecoinDiscovery.js';
 import { txExplorerUrl } from '../chain/robinhood.js';
 import { selectToken, normalizeRules, defaultTradingRules } from './strategies.js';
 
@@ -11,7 +11,7 @@ export class UserBotEngine {
    */
   constructor(trading) {
     this.trading = trading;
-    this.discovery = new StockDiscovery();
+    this.discovery = new MemecoinDiscovery();
     this.busy = false;
     this.timers = [];
     this.walletCache = new Map();
@@ -44,9 +44,9 @@ export class UserBotEngine {
 
   start() {
     this.discovery.refresh();
-    this.timers.push(setInterval(() => this.discovery.refresh(), config.stockDiscoveryRefreshMs));
+    this.timers.push(setInterval(() => this.discovery.refresh(), config.memecoinDiscoveryRefreshMs));
     this.timers.push(setInterval(() => this.tick(), 3_000));
-    console.log('[user-bots] Engine started on Robinhood Chain — 3s tick');
+    console.log('[user-bots] Engine started — Robinhood Chain memecoins, 3s tick');
     setTimeout(() => this.tick(), 2_000);
   }
 
@@ -207,7 +207,7 @@ export class UserBotEngine {
     const candidates = this.filterCandidates(rules);
     if (!candidates.length) {
       const pool = this.discovery.list().length;
-      this.setStatus(bot, `no stocks in $${rules.minMarketCap}-$${rules.maxMarketCap} range (${pool} listed)`);
+      this.setStatus(bot, `no memecoins in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} on chain)`);
       return;
     }
 
@@ -216,6 +216,11 @@ export class UserBotEngine {
 
     let result;
     try {
+      const routable = await this.trading.canSwapEthForToken(target.address, rules.buyAmountEth);
+      if (!routable) {
+        this.setStatus(bot, `${target.symbol} has no Uniswap V2 WETH route — skipping`);
+        return;
+      }
       result = await this.trading.buyToken({
         wallet,
         mintAddress: target.address,
@@ -249,7 +254,7 @@ export class UserBotEngine {
           boughtAt: Date.now(),
         },
       });
-      console.log(`[user-bots] ${bot.name || bot.botType} bought ${target.symbol} (~$${Math.round(target.usdMarketCap)} notional)`);
+      console.log(`[user-bots] ${bot.name || bot.botType} bought $${target.symbol} (~$${Math.round(target.usdMarketCap)} mcap)`);
       this.botStatus.delete(String(bot.id));
     }
   }
@@ -270,6 +275,7 @@ export class UserBotEngine {
       authConfigured: Boolean(config.authServerKey),
       discoveryPool: pool.length,
       candidatesInRange: candidates.length,
+      memecoinDiscovery: this.discovery.getMeta(),
       mcapRange: { min: rules.minMarketCap, max: rules.maxMarketCap },
       activeBots: active.length,
       botStatus: active.map((b) => ({

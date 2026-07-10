@@ -43,7 +43,7 @@ export default function Docs() {
             <h1>{BRAND.fullName}</h1>
             <p className="docs-lead">
               Everything you need to understand how {BRAND.name} works — from account creation
-              to automated stock token trading on Robinhood Chain.
+              to automated memecoin trading on Robinhood Chain.
             </p>
           </header>
 
@@ -52,8 +52,8 @@ export default function Docs() {
             <p>
               {BRAND.name} is an automated trading platform on <strong>Robinhood Chain</strong> (EVM L2, chain ID 4663).
               You sign up with a password, receive an Ethereum wallet automatically, fund it with ETH,
-              then create trading bots that scan <strong>tokenized stock tokens</strong> (AAPL, NVDA, TSLA, QQQ)
-              and execute buy/sell swaps via <strong>Uniswap</strong> on your behalf — 24/7.
+              then create trading bots that scan <strong>live memecoins</strong> via DexScreener
+              and execute buy/sell swaps through <strong>Uniswap V2</strong> on your behalf — 24/7.
             </p>
             <p>There are two parallel experiences:</p>
             <ul>
@@ -85,23 +85,23 @@ export default function Docs() {
               │  · Signup / login / sessions  │
               │  · Bot CRUD + execution       │
               │  · Live AI trading floor      │
-              │  · Uniswap stock token swaps   │
+              │  · Uniswap V2 memecoin swaps    │
               │  · Encrypted wallet keys      │
               └───────────────┬───────────────┘
                               │
               ┌───────────────┴───────────────┐
               ▼                               ▼
        PostgreSQL (optional)          Robinhood Chain RPC
-       Users · Sessions · Bots        Uniswap V2 + stock tokens
+       Users · Sessions · Bots        DexScreener + Uniswap V2
 `}</pre>
             </div>
             <h3>Data flow for a user bot trade</h3>
             <ol className="docs-steps">
               <li>Backend loads all <strong>active</strong> bots from the database.</li>
               <li>For each bot, it decrypts the user&apos;s wallet server-side (never sent to browser).</li>
-              <li>Stock token list is refreshed from configured Robinhood Chain assets.</li>
-              <li>The bot type determines <em>which</em> stock to pick from the filtered list.</li>
-              <li>A buy swap (ETH → stock token) is submitted via Uniswap if the bot has no open position.</li>
+              <li>Memecoin pool is refreshed from DexScreener (Robinhood Chain, Uniswap V2 / WETH pairs only).</li>
+              <li>The bot type determines <em>which</em> memecoin to pick from the filtered list.</li>
+              <li>A buy swap (ETH → memecoin) is submitted via Uniswap V2 if the bot has no open position.</li>
               <li>When take-profit, stop-loss, or a time limit hits, a sell swap is submitted.</li>
               <li>Trade results are logged to the database and visible on your dashboard.</li>
             </ol>
@@ -211,7 +211,7 @@ export default function Docs() {
                 </thead>
                 <tbody>
                   <tr><td><code>minMarketCap</code></td><td>Minimum USD market cap for a token to be considered.</td><td>$2,500</td></tr>
-                  <tr><td><code>maxMarketCap</code></td><td>Maximum USD market cap for a token to be considered.</td><td>$6,000</td></tr>
+                  <tr><td><code>maxMarketCap</code></td><td>Maximum USD market cap for a token to be considered.</td><td>$500,000</td></tr>
                   <tr><td><code>buyAmountEth</code></td><td>ETH spent per buy swap.</td><td>0.0005 ETH</td></tr>
                   <tr><td><code>takeProfitPercent</code></td><td>Sell when token mcap rises this % above entry.</td><td>8%</td></tr>
                   <tr><td><code>stopLossPercent</code></td><td>Sell when token mcap drops this % below entry.</td><td>5%</td></tr>
@@ -219,7 +219,8 @@ export default function Docs() {
               </table>
             </div>
             <p>
-              Tokenized stock tokens on Robinhood Chain (AAPL, NVDA, TSLA, QQQ) are considered.
+              Live Robinhood Chain memecoins with Uniswap V2 WETH liquidity are considered.
+              Official stock tokens (AAPL, NVDA, etc.) and stablecoins are excluded.
               Tokens outside your mcap band are ignored.
             </p>
           </section>
@@ -229,18 +230,18 @@ export default function Docs() {
             <p>The backend runs a continuous loop (approximately every 3 seconds) on Render:</p>
             <ol className="docs-steps">
               <li>Fetch all bots where <code>isActive = true</code>.</li>
-              <li>Refresh the stock token discovery pool (Robinhood Chain assets).</li>
+              <li>Refresh the memecoin discovery pool (DexScreener → Uniswap V2 WETH pairs).</li>
               <li>For each active bot:
                 <ul>
                   <li>If holding a position → check take-profit, stop-loss, or ~30s time limit → sell if triggered.</li>
-                  <li>If no position and wallet has enough ETH → filter by notional range → apply bot type selection → buy via Uniswap.</li>
+                  <li>If no position and wallet has enough ETH → filter by mcap range → apply bot type selection → verify V2 route → buy via Uniswap.</li>
                 </ul>
               </li>
-              <li>Log every buy/sell with transaction signature (viewable on Solscan).</li>
+              <li>Log every buy/sell with transaction hash (viewable on Blockscout).</li>
             </ol>
             <p>
-              The engine uses the same <code>PumpService</code> as the live AI trading floor —
-              real on-chain swaps via Uniswap V2 on Robinhood Chain.
+              The engine uses the same Uniswap V2 trading service as the live AI trading floor —
+              real on-chain swaps on Robinhood Chain.
             </p>
           </section>
 
@@ -298,7 +299,7 @@ export default function Docs() {
               <dd>Not through the UI. Keys are server-managed for automated trading.</dd>
 
               <dt>Why isn&apos;t my bot trading?</dt>
-              <dd>Check: bot is started, wallet has ETH on Robinhood Chain, stocks exist in your range, Render backend is running.</dd>
+              <dd>Check: bot is started, wallet has ETH on Robinhood Chain, memecoins exist in your mcap range, Render backend is running.</dd>
 
               <dt>Do bots trade while I&apos;m offline?</dt>
               <dd>Yes — active bots run 24/7 on the backend using the server-encrypted wallet key.</dd>
@@ -307,7 +308,7 @@ export default function Docs() {
               <dd>Yes. Default network is Robinhood Chain <strong>mainnet</strong> (chain ID 4663) — real money.</dd>
 
               <dt>Where are trades recorded?</dt>
-              <dd>On-chain (Solscan) and in the platform database for dashboard history.</dd>
+              <dd>On-chain (Blockscout) and in the platform database for dashboard history.</dd>
             </dl>
           </section>
 

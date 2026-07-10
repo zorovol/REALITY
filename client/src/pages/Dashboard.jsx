@@ -205,7 +205,7 @@ export default function Dashboard() {
               <code>{user?.walletAddress}</code>
               <button type="button" onClick={copyWallet}>{copied ? 'Copied!' : 'Copy'}</button>
             </div>
-            <p className="dash-hint">Fund with ETH on Robinhood Chain — bots swap stock tokens via Uniswap when started.</p>
+            <p className="dash-hint">Fund with ETH on Robinhood Chain — bots scan DexScreener memecoins and swap via Uniswap V2.</p>
           </div>
 
           <div className="dash-sidebar-stats">
@@ -237,7 +237,10 @@ export default function Dashboard() {
                   <strong>Wallet synced:</strong>{' '}
                   {diagnostics.tradingReady ? 'yes' : 'no — sync below'}
                   {' · '}
-                  <strong>Tokens in your mcap range:</strong> {diagnostics.candidatesInRange ?? '—'}
+                  <strong>Memecoins in your mcap range:</strong> {diagnostics.candidatesInRange ?? '—'}
+                  {diagnostics.memecoinDiscovery?.poolSize != null && (
+                    <> · <strong>Pool:</strong> {diagnostics.memecoinDiscovery.poolSize} v2 pairs</>
+                  )}
                 </p>
                 {diagnostics.botStatus?.map((b) => (
                   <p key={b.id} className="dash-bot-status-line">
@@ -274,7 +277,7 @@ export default function Dashboard() {
           <header className="dash-header">
             <div>
               <h1>{BRAND.fullName}</h1>
-              <p>Name each bot, hit Start — RobinhoodBot trades stock tokens on-chain every ~3s.</p>
+              <p>Name each bot, hit Start — RobinhoodBot trades live memecoins every ~3s.</p>
             </div>
             <button type="button" className="home-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); }}>
               + Create bot

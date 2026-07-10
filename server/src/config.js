@@ -42,6 +42,12 @@ export const config = {
   uniswapRouter: process.env.UNISWAP_V2_ROUTER || chainDefaults.uniswapV2Router,
   stockTokens: parseStockTokens(process.env.STOCK_TOKENS_JSON),
   stockDiscoveryRefreshMs: Number(process.env.STOCK_DISCOVERY_REFRESH_MS) || 60_000,
+  // Robinhood Chain memecoins (DexScreener + Uniswap V2)
+  memecoinDiscoveryRefreshMs: Number(process.env.MEMECOIN_DISCOVERY_REFRESH_MS) || 45_000,
+  memecoinMinLiquidityUsd: Number(process.env.MEMECOIN_MIN_LIQUIDITY_USD) || 500,
+  memecoinMaxCandidates: Number(process.env.MEMECOIN_MAX_CANDIDATES) || 40,
+  memecoinExtraAddresses: (process.env.MEMECOIN_EXTRA_ADDRESSES || '')
+    .split(',').map((s) => s.trim()).filter(Boolean),
   authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY
     || (process.env.NODE_ENV !== 'production' ? 'local-dev-auth-key-32chars!!' : ''),
   encryptionKey: process.env.ENCRYPTION_KEY || process.env.AUTH_SERVER_KEY || '',

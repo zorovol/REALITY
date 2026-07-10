@@ -1,27 +1,72 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="RobinhoodBot">
   <defs>
-    <linearGradient id="g" x1="0%" y1="100%" x2="100%" y2="0%">
+    <linearGradient id="feather" x1="20%" y1="100%" x2="80%" y2="0%">
       <stop offset="0%" stop-color="#00a004"/>
+      <stop offset="55%" stop-color="#00c805"/>
+      <stop offset="100%" stop-color="#5ac53a"/>
+    </linearGradient>
+    <linearGradient id="chart" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00c805" stop-opacity="0.5"/>
       <stop offset="100%" stop-color="#00c805"/>
     </linearGradient>
-    <filter id="gl" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="2" result="b"/>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
+
+  <!-- App icon canvas -->
   <rect width="128" height="128" rx="28" fill="#000000"/>
-  <rect x="1" y="1" width="126" height="126" rx="27" fill="none" stroke="#00c805" stroke-width="2" opacity="0.35"/>
-  <!-- upward chart -->
-  <path d="M24 88 L44 72 L58 78 L76 52 L96 60 L104 44" fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/>
-  <circle cx="104" cy="44" r="5" fill="#00c805"/>
-  <!-- bot head -->
-  <rect x="40" y="36" width="48" height="40" rx="12" fill="#0a0a0a" stroke="#00c805" stroke-width="2.5"/>
-  <circle cx="52" cy="52" r="4.5" fill="#00c805"/>
-  <circle cx="76" cy="52" r="4.5" fill="#00c805"/>
-  <path d="M52 64 h24" stroke="#5ac53a" stroke-width="3" stroke-linecap="round"/>
-  <!-- antenna -->
-  <path d="M64 36 V26 M64 26 L58 20 M64 26 L70 20" stroke="#00c805" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- gear hint -->
-  <circle cx="96" cy="96" r="10" fill="none" stroke="#00c805" stroke-width="2" opacity="0.6"/>
-  <circle cx="96" cy="96" r="3" fill="#00c805" opacity="0.8"/>
+  <rect x="1.5" y="1.5" width="125" height="125" rx="26.5" fill="none" stroke="#00c805" stroke-width="2" opacity="0.4"/>
+
+  <!-- Robinhood-inspired quill feather (original stylized shape) -->
+  <g filter="url(#glow)">
+    <!-- feather body -->
+    <path
+      fill="url(#feather)"
+      d="M44 98
+         C38 82 36 64 42 48
+         C48 32 58 20 70 14
+         C76 11 82 10 86 12
+         C80 14 74 18 68 26
+         C58 40 52 58 50 74
+         C48 86 46 94 44 98 Z"
+    />
+    <!-- feather spine -->
+    <path
+      fill="none"
+      stroke="#003300"
+      stroke-width="2"
+      stroke-linecap="round"
+      opacity="0.35"
+      d="M46 96 C50 70 58 44 72 22 C78 16 84 13 88 12"
+    />
+    <!-- barb lines -->
+    <path fill="none" stroke="#5ac53a" stroke-width="1.5" stroke-linecap="round" opacity="0.55"
+      d="M52 72 L68 66 M48 58 L66 52 M46 44 L64 38"/>
+  </g>
+
+  <!-- Trading chart behind bot -->
+  <path
+    d="M18 92 L34 78 L48 82 L62 68 L78 72"
+    fill="none"
+    stroke="url(#chart)"
+    stroke-width="3.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.85"
+  />
+
+  <!-- Bot face — sits on feather / trading motif -->
+  <g transform="translate(58, 52)">
+    <rect x="0" y="0" width="52" height="44" rx="13" fill="#0a0a0a" stroke="#00c805" stroke-width="2.5"/>
+    <circle cx="16" cy="18" r="5" fill="#00c805"/>
+    <circle cx="36" cy="18" r="5" fill="#00c805"/>
+    <path d="M16 30 Q26 36 36 30" fill="none" stroke="#5ac53a" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- bot antenna -->
+    <path d="M26 0 V-8 M26 -8 L20 -14 M26 -8 L32 -14" stroke="#00c805" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Up-tick accent (stock bot) -->
+  <path d="M98 88 L98 62 L108 62" fill="none" stroke="#00c805" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
 </svg>
