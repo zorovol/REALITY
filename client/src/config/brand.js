@@ -5,7 +5,7 @@ export const BRAND = {
   /** Full product title */
   fullName: 'RobinhoodBot Trading',
   /** SEO / page titles */
-  title: 'RobinhoodBot Trading — Automated Stock Bots',
+  title: 'RobinhoodBot Trading — Automated Memecoin Bots',
   /** Split for styled nav: Robinhood (green) + Bot (white) */
   nameParts: { accent: 'Robinhood', rest: 'Bot' },
   domain: 'botsforge.tech',

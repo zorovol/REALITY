@@ -10189,7 +10189,7 @@ body {
 .brand-logo-img {
   border-radius: 10px;
   object-fit: cover;
-  box-shadow: 0 0 20px var(--rh-green-glow);
+  box-shadow: 0 0 20px var(--rh-green-glow), 0 0 0 1px rgba(0, 200, 5, 0.3);
 }
 .brand-logo-text {
   font-family: var(--font-display);
