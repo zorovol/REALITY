@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { IconX } from './Icons.jsx';
+import BrandLogo from './BrandLogo.jsx';
 import { BRAND } from '../config/brand.js';
 
 const X_URL = import.meta.env.VITE_X_URL || BRAND.xUrl;
@@ -8,8 +9,7 @@ export default function PlatformNav({ user }) {
   return (
     <nav className="platform-nav">
       <Link to="/" className="platform-nav-brand">
-        <img src="/logo.png" alt="" className="platform-nav-logo" width={32} height={32} />
-        {BRAND.name}
+        <BrandLogo size={32} />
       </Link>
       <div className="platform-nav-links">
         <Link to="/docs">Docs</Link>

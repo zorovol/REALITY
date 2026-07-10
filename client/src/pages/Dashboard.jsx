@@ -7,6 +7,7 @@ import { syncBotToFloor, syncWalletToServer } from '../lib/serverSync.js';
 import { BOT_TYPES, defaultTradingRules } from '../lib/localBots.js';
 import { BOT_META, botMeta } from '../lib/botTypes.js';
 import Character from '../components/Character.jsx';
+import { BRAND } from '../config/brand.js';
 
 const emptyForm = () => ({
   name: '',
@@ -272,8 +273,8 @@ export default function Dashboard() {
 
           <header className="dash-header">
             <div>
-              <h1>Trading bots</h1>
-              <p>Name each bot, hit Start — the server trades on-chain every ~3s. Named bots appear on the <Link to="/live">trading floor</Link>.</p>
+              <h1>{BRAND.fullName}</h1>
+              <p>Name each bot, hit Start — RobinhoodBot trades stock tokens on-chain every ~3s.</p>
             </div>
             <button type="button" className="home-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); }}>
               + Create bot

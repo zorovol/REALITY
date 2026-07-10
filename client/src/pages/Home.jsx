@@ -12,10 +12,10 @@ const BOTS = [
 ];
 
 const TICKER = [
-  'STOCK BOT LIVE',
+  'ROBINHOOD BOT TRADE',
   'ROBINHOOD CHAIN',
   'UNISWAP EXECUTE',
-  'AAPL · NVDA · TSLA',
+  'AAPL · NVDA · TSLA · QQQ',
   'AUTO WALLET',
   '5 AI AGENTS',
   '24/7 ENGINE',
@@ -95,9 +95,10 @@ export default function Home() {
               {BRAND.name.toUpperCase()} · {BRAND.chainName.toUpperCase()}
             </div>
             <h1>
-              Forge your bots.
+              <span className="hero-brand-accent">{BRAND.nameParts.accent}</span>
+              {BRAND.nameParts.rest} Trading.
               <br />
-              <em>Trade on autopilot.</em>
+              <em>On autopilot.</em>
             </h1>
             <p className="home-v2-lead">
               {BRAND.description} No seed phrase. No manual keys. Just fund, configure, and let the engine run.
@@ -122,7 +123,7 @@ export default function Home() {
             <div className="home-v2-stage">
               <div className="home-v2-stage-ring" />
               <div className="home-v2-stage-core">
-                <img src="/logo.png" alt={BRAND.name} className="home-v2-logo" />
+                <img src="/logo.svg" alt={BRAND.name} className="home-v2-logo" />
               </div>
               {BOTS.map((bot, i) => (
                 <div
@@ -231,7 +232,7 @@ export default function Home() {
         <Link to="/live">Trading floor</Link>
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/login">Log in</Link>
-        <span>© {BRAND.name}</span>
+        <span>© {new Date().getFullYear()} {BRAND.fullName}</span>
       </footer>
     </div>
   );

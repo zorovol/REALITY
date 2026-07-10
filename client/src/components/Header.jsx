@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { IconLive, IconMarket, IconX } from './Icons.jsx';
 import Character from './Character.jsx';
+import BrandLogo from './BrandLogo.jsx';
 import { BRAND } from '../config/brand.js';
 
 const BOTS = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
@@ -20,8 +21,7 @@ export default function Header({ market, connected, audience }) {
         </div>
         <div>
           <div className="trading-header-row">
-            <img src="/logo.png" alt="" className="trading-header-logo" width={28} height={28} />
-            <h1 className="trading-header-title">{BRAND.name}</h1>
+            <BrandLogo size={28} />
             <span className={`trading-live-pill ${connected ? 'on' : 'off'}`}>
               <IconLive size={9} />
               {connected ? 'LIVE' : 'OFFLINE'}

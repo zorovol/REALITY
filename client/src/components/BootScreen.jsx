@@ -1,4 +1,5 @@
 import { IconMarket } from './Icons.jsx';
+import BrandLogo from './BrandLogo.jsx';
 import { BRAND } from '../config/brand.js';
 
 export default function BootScreen({ connected, mode, reason, error }) {
@@ -14,12 +15,15 @@ export default function BootScreen({ connected, mode, reason, error }) {
       <div className="boot-vignette" aria-hidden="true" />
       <div className="boot-content">
         <div className="boot-mark">
-          <img src="/logo.png" alt="" className="boot-logo" width={56} height={56} />
+          <BrandLogo size={56} showName={false} className="boot-logo-wrap" />
           <div className="boot-mark-ring" />
         </div>
         <div className="boot-brand">
           <span className="boot-kicker">{BRAND.kicker}</span>
-          <h1 className="boot-title">{BRAND.name}</h1>
+          <h1 className="boot-title">
+            <span className="brand-logo-accent">{BRAND.nameParts.accent}</span>
+            {BRAND.nameParts.rest}
+          </h1>
         </div>
         <p className="boot-sub">{sub}</p>
         <div className="boot-progress">

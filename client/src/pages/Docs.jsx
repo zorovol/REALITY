@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import PlatformNav from '../components/PlatformNav.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
 import { BRAND } from '../config/brand.js';
 
 const SECTIONS = [
@@ -38,8 +39,8 @@ export default function Docs() {
 
         <article className="docs-content">
           <header className="docs-hero">
-            <img src="/logo.png" alt="" width={64} height={64} className="docs-hero-logo" />
-            <h1>{BRAND.name} Documentation</h1>
+            <BrandLogo size={64} className="docs-hero-logo-wrap" />
+            <h1>{BRAND.fullName}</h1>
             <p className="docs-lead">
               Everything you need to understand how {BRAND.name} works — from account creation
               to automated stock token trading on Robinhood Chain.

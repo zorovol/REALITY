@@ -1,16 +1,21 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   BotForge — Robinhood-inspired trading UI
+   RobinhoodBot Trading — Robinhood palette
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
   --bg-deep: #000000;
-  --bg-panel: rgba(28, 28, 28, 0.95);
-  --bg-panel-hover: rgba(40, 40, 40, 0.95);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-bright: rgba(0, 200, 5, 0.28);
+  --bg-panel: #1c1c1e;
+  --bg-panel-hover: #2c2c2e;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-bright: rgba(0, 200, 5, 0.45);
   --text-primary: #ffffff;
-  --text-secondary: #9b9b9b;
-  --text-muted: #6b6b6b;
+  --text-secondary: #a0a0a0;
+  --text-muted: #707070;
+  --rh-green: #00c805;
+  --rh-green-hover: #00b005;
+  --rh-green-dim: #00a004;
+  --rh-green-glow: rgba(0, 200, 5, 0.35);
+  --rh-green-soft: rgba(0, 200, 5, 0.12);
   --accent-cyan: #5ac53a;
   --accent-violet: #5ac53a;
   --accent-red: #ff5000;
@@ -24,7 +29,8 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --shadow-panel: 0 8px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(0, 200, 5, 0.06);
+  --shadow-panel: 0 8px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(0, 200, 5, 0.1);
+  --shadow-green: 0 0 32px rgba(0, 200, 5, 0.25);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +40,9 @@ body {
   font-family: var(--font-body);
   font-size: 14px;
   color: var(--text-primary);
-  background: var(--bg-deep);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 200, 5, 0.14), transparent 55%),
+    var(--bg-deep);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -10169,5 +10177,147 @@ body {
   .docs-content {
     padding: 32px 0;
   }
+}
+
+/* ── RobinhoodBot brand + stronger Robinhood palette ── */
+
+.brand-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-logo-img {
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 0 20px var(--rh-green-glow);
+}
+.brand-logo-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05em;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.brand-logo-accent,
+.hero-brand-accent {
+  color: var(--rh-green);
+}
+.platform-nav-brand .brand-logo-text {
+  font-size: 15px;
+}
+.docs-hero-logo-wrap {
+  margin-bottom: 16px;
+}
+.docs-hero-logo-wrap .brand-logo-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+.platform-nav {
+  background: rgba(0, 0, 0, 0.92);
+  border-bottom: 2px solid var(--rh-green);
+  box-shadow: 0 4px 24px rgba(0, 200, 5, 0.08);
+}
+.platform-nav-links a:hover {
+  color: var(--rh-green);
+  background: var(--rh-green-soft);
+}
+.platform-nav-cta {
+  box-shadow: var(--shadow-green);
+}
+.platform-nav-cta:hover {
+  background: var(--rh-green-hover) !important;
+}
+
+.home-v2-orb-a { background: rgba(0, 200, 5, 0.22); }
+.home-v2-orb-b { background: rgba(0, 200, 5, 0.14); }
+.home-v2-orb-c { background: rgba(0, 200, 5, 0.1); }
+.home-v2-ticker {
+  background: var(--rh-green-soft);
+  border-bottom-color: rgba(0, 200, 5, 0.35);
+}
+.home-v2-ticker-track span {
+  color: var(--rh-green);
+}
+.home-v2-live {
+  color: var(--rh-green);
+  border-color: rgba(0, 200, 5, 0.5);
+  background: var(--rh-green-soft);
+}
+.home-v2-copy h1 em {
+  color: var(--rh-green);
+  background: none;
+  -webkit-text-fill-color: var(--rh-green);
+}
+.home-v2-btn.primary {
+  background: var(--rh-green);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.home-v2-btn.primary:hover {
+  background: var(--rh-green-hover);
+}
+.home-v2-metrics div {
+  border-color: rgba(0, 200, 5, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(0, 200, 5, 0.08);
+}
+.home-v2-metrics strong {
+  color: var(--rh-green);
+}
+
+.dash-shell {
+  background:
+    radial-gradient(ellipse 70% 40% at 0% 0%, rgba(0, 200, 5, 0.08), transparent 50%),
+    var(--bg-deep);
+}
+.dash-wallet-panel,
+.dash-bot-card,
+.dash-create-panel {
+  border-color: rgba(0, 200, 5, 0.35);
+  box-shadow: var(--shadow-green);
+}
+.dash-sidebar {
+  border-right-color: rgba(0, 200, 5, 0.35);
+}
+.dash-balance-val {
+  color: var(--rh-green);
+  text-shadow: 0 0 24px var(--rh-green-glow);
+}
+
+.auth-card {
+  border: 2px solid rgba(0, 200, 5, 0.35);
+  box-shadow: 0 0 48px rgba(0, 200, 5, 0.12);
+}
+.auth-submit {
+  background: var(--rh-green);
+  font-weight: 800;
+}
+.auth-submit:hover {
+  background: var(--rh-green-hover);
+}
+
+.docs-shell {
+  background:
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 200, 5, 0.1), transparent 50%),
+    #000;
+}
+.docs-section h2 {
+  color: var(--rh-green);
+}
+.docs-sidebar a:hover {
+  color: var(--rh-green);
+}
+
+.boot-trading {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(0, 200, 5, 0.15), transparent 60%),
+    #000;
+}
+.boot-title .brand-logo-accent {
+  color: var(--rh-green);
+}
+.boot-progress-fill {
+  background: var(--rh-green);
 }
 

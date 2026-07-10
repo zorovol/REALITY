@@ -1,12 +1,19 @@
 /** Site-wide brand — single source of truth */
 export const BRAND = {
-  name: 'BotForge',
+  /** Display name in nav & UI */
+  name: 'RobinhoodBot',
+  /** Full product title */
+  fullName: 'RobinhoodBot Trading',
+  /** SEO / page titles */
+  title: 'RobinhoodBot Trading — Automated Stock Bots',
+  /** Split for styled nav: Robinhood (green) + Bot (white) */
+  nameParts: { accent: 'Robinhood', rest: 'Bot' },
   domain: 'botsforge.tech',
   url: 'https://botsforge.tech',
   xUrl: 'https://x.com/BotForgesolana',
-  tagline: 'Automated stock bots on Robinhood Chain',
-  kicker: 'Robinhood Chain · Stock tokens · 24/7 bots',
-  description: 'Sign up, get a wallet, deploy stock-trading bots on Robinhood Chain — tokenized equities via Uniswap, fully automated.',
+  tagline: 'Robinhood Chain trading bots — automated 24/7',
+  kicker: 'Robinhood Chain · Stock tokens · AI bots',
+  description: 'RobinhoodBot runs automated stock-trading bots on Robinhood Chain. Sign up, fund with ETH, and let AI agents swap tokenized equities via Uniswap.',
   chainName: 'Robinhood Chain',
   chainId: 4663,
   nativeSymbol: 'ETH',
