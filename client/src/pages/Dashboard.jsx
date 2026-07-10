@@ -43,7 +43,7 @@ export default function Dashboard() {
       const [me, botRes, bal, diag] = await Promise.all([
         api.me(),
         api.listBots(),
-        api.walletBalance().catch(() => ({ balanceSol: null })),
+        api.walletBalance().catch(() => ({ balanceEth: null, balanceSol: null })),
         api.tradingDiagnostics().catch((err) => {
           setDiagError(err.message);
           return null;
@@ -52,7 +52,7 @@ export default function Dashboard() {
       setUser({ walletAddress: me.walletAddress, createdAt: me.createdAt });
       setTradingReady(me.tradingReady !== false);
       setBots(botRes.bots);
-      setBalance(bal.balanceSol);
+      setBalance(bal.balanceEth ?? bal.balanceSol);
       setDiagnostics(diag);
       if (diag) setDiagError('');
     } catch (err) {
@@ -198,13 +198,13 @@ export default function Dashboard() {
             <h2>Your wallet</h2>
             <div className="dash-balance">
               <span className="dash-balance-val">{balance != null ? balance.toFixed(4) : '—'}</span>
-              <span className="dash-balance-unit">SOL</span>
+              <span className="dash-balance-unit">ETH</span>
             </div>
             <div className="dash-wallet-addr">
               <code>{user?.walletAddress}</code>
               <button type="button" onClick={copyWallet}>{copied ? 'Copied!' : 'Copy'}</button>
             </div>
-            <p className="dash-hint">Fund with SOL — bots trade on pump.fun mainnet when started.</p>
+            <p className="dash-hint">Fund with ETH on Robinhood Chain — bots swap stock tokens via Uniswap when started.</p>
           </div>
 
           <div className="dash-sidebar-stats">
@@ -324,7 +324,7 @@ export default function Dashboard() {
                 <div className="dash-rules-grid">
                   {ruleInput('minMarketCap', 'Min market cap ($)', 100)}
                   {ruleInput('maxMarketCap', 'Max market cap ($)', 100)}
-                  {ruleInput('buyAmountSol', 'Buy amount (SOL)', 0.001)}
+                  {ruleInput('buyAmountEth', 'Buy amount (ETH)', 0.0001)}
                   {ruleInput('takeProfitPercent', 'Take profit (%)', 1)}
                   {ruleInput('stopLossPercent', 'Stop loss (%)', 1)}
                 </div>
@@ -340,7 +340,7 @@ export default function Dashboard() {
           {!bots.length && !showCreate && (
             <div className="dash-empty">
               <h3>No bots yet</h3>
-              <p>Create a named bot, fund your wallet with SOL, then hit Start to trade on-chain.</p>
+              <p>Create a named bot, fund your wallet with ETH on Robinhood Chain, then hit Start to trade on-chain.</p>
               <button type="button" className="home-btn primary" onClick={() => setShowCreate(true)}>Create bot</button>
             </div>
           )}
@@ -386,7 +386,7 @@ export default function Dashboard() {
 
                   <ul className="dash-bot-rules">
                     <li><strong>MCap</strong> ${bot.tradingRules.minMarketCap?.toLocaleString()} – ${bot.tradingRules.maxMarketCap?.toLocaleString()}</li>
-                    <li><strong>Buy</strong> {bot.tradingRules.buyAmountSol} SOL</li>
+                    <li><strong>Buy</strong> {bot.tradingRules.buyAmountEth ?? bot.tradingRules.buyAmountSol} ETH</li>
                     <li><strong>TP / SL</strong> {bot.tradingRules.takeProfitPercent}% / {bot.tradingRules.stopLossPercent}%</li>
                   </ul>
 

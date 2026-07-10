@@ -32,7 +32,7 @@ export default function CompetitionChart({ market }) {
       const panel = byId.get(id) ?? {
         id,
         name: id.charAt(0).toUpperCase() + id.slice(1),
-        color: '#22d3ee',
+        color: '#00c805',
         wallet: { sol: 0, funded: false },
         pnlSol: 0,
         trades: [],

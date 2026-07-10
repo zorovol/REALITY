@@ -6,7 +6,7 @@ import { Server } from 'socket.io';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { config } from './config.js';
+import { config, chainConfig } from './config.js';
 import { initDb, dbReady, saveSnapshot, loadSnapshot, insertEvent, insertVote } from './db.js';
 import { initPlatformStore } from './auth/store.js';
 import { mountAuthRoutes } from './auth/routes.js';
@@ -18,6 +18,7 @@ import { WorldEngine } from './engine/world.js';
 import { speak } from './ai/brain.js';
 import { personaLine } from './ai/persona.js';
 import { availableProviders, assignProvider } from './ai/providers.js';
+import { TradingService } from './evm/tradingService.js';
 import { PumpService } from './solana/pump.js';
 import { WalletManager } from './solana/wallets.js';
 import { TradingEngine } from './solana/trading.js';
@@ -44,8 +45,10 @@ app.use(express.json());
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const pump = new PumpService(solanaConfig.rpcUrl);
-const wallets = new WalletManager({ connection: pump.connection });
+const solanaEnabled = process.env.ENABLE_SOLANA_ISLAND === 'true';
+const pump = solanaEnabled ? new PumpService(solanaConfig.rpcUrl) : null;
+const wallets = pump ? new WalletManager({ connection: pump.connection }) : null;
+const stockTrading = new TradingService(chainConfig());
 
 let trading = null;
 let userBotEngine = null;
@@ -72,12 +75,14 @@ const world = new WorldEngine({
 
 function publicState() {
   const base = world.serialize();
-  const walletMap = wallets.allPublicWallets();
+  const walletMap = wallets?.allPublicWallets?.() ?? {};
   const market = trading?.getMarketState() ?? buildSkeletonMarket(walletMap);
   return {
     ...base,
     market,
-    agents: base.agents.map((a) => trading ? trading.enrichAgent(a) : { ...a, wallet: wallets.getPublicWallet(a.id) }),
+    agents: base.agents.map((a) => trading
+      ? trading.enrichAgent(a)
+      : { ...a, wallet: wallets?.getPublicWallet?.(a.id) }),
   };
 }
 
@@ -95,10 +100,16 @@ app.get('/api/health', (req, res) => {
     tension: Math.round(world.tension),
     population: world.activeAgents().length,
     voting: !!world.voting,
-    solana: {
+    chain: {
+      name: config.chainName,
+      chainId: config.chainId,
+      nativeSymbol: config.nativeSymbol,
+      mode: config.simulationFallback ? 'simulation_fallback' : 'real',
+    },
+    solana: solanaEnabled ? {
       network: solanaConfig.network,
       mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
-    },
+    } : null,
   });
 });
 
@@ -107,6 +118,16 @@ app.get('/api/state', (req, res) => {
 });
 
 app.get('/api/wallets', (req, res) => {
+  if (!wallets) {
+    return res.json({
+      chain: config.chainName,
+      chainId: config.chainId,
+      mode: config.simulationFallback ? 'simulation_fallback' : 'real',
+      minEthRecommended: config.minEthForTrade,
+      disclaimer: `Fund your Robinhood Chain wallet with ETH. Private keys never leave the server.`,
+      wallets: {},
+    });
+  }
   res.json({
     network: solanaConfig.network,
     mode: solanaConfig.simulationFallback ? 'simulation_fallback' : 'real',
@@ -117,7 +138,7 @@ app.get('/api/wallets', (req, res) => {
 });
 
 app.get('/api/market', (req, res) => {
-  res.json(trading?.getMarketState() ?? buildSkeletonMarket(wallets.allPublicWallets()));
+  res.json(trading?.getMarketState() ?? buildSkeletonMarket(wallets?.allPublicWallets?.() ?? {}));
 });
 
 app.get('/api/trades', (req, res) => {
@@ -192,17 +213,18 @@ async function main() {
     console.log(`[server] DB: ${dbReady() ? 'Neon PostgreSQL' : 'in-memory (set DATABASE_URL to persist)'}`);
   });
 
-  try {
-    wallets.init();
-    trading = new TradingEngine({ wallets, pump, world, dispatch: (event, payload) => io.emit(event, payload) });
-    trading.start();
-  } catch (err) {
-    console.error('[solana] Island agent wallets skipped:', err.message);
-    console.error('[solana] User bot trading still works if AUTH_SERVER_KEY is set.');
+  if (solanaEnabled && wallets && pump) {
+    try {
+      wallets.init();
+      trading = new TradingEngine({ wallets, pump, world, dispatch: (event, payload) => io.emit(event, payload) });
+      trading.start();
+    } catch (err) {
+      console.error('[solana] Island agent wallets skipped:', err.message);
+    }
   }
 
   try {
-    userBotEngine = new UserBotEngine(pump);
+    userBotEngine = new UserBotEngine(stockTrading);
     userBotEngine.start();
     setUserBotEngine(userBotEngine);
   } catch (err) {
@@ -214,8 +236,11 @@ async function main() {
 
   const providers = availableProviders().map((p) => p.id);
   console.log(`[server] AI providers: ${providers.length ? providers.join(', ') : 'none (persona engine active)'}`);
-  console.log(`[server] Solana: ${solanaConfig.network} (${solanaConfig.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'})`);
-  console.log(`[server] Fund wallets: npm run wallets:addresses --prefix server`);
+  console.log(`[server] Robinhood Chain: ${config.chainName} (${config.chainId}) — ${config.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'}`);
+  if (solanaEnabled) {
+    console.log(`[server] Solana island: ${solanaConfig.network}`);
+    console.log(`[server] Fund island wallets: npm run wallets:addresses --prefix server`);
+  }
 
   await world.start();
   world.agents.forEach((a, i) => { a.provider = assignProvider(i); });

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { config } from '../config.js';
+import { config, chainConfig } from '../config.js';
 import {
   createUser,
   findUserByWallet,
@@ -23,7 +23,8 @@ import {
   newUserSalt,
 } from './crypto.js';
 import { BOT_TYPES, defaultTradingRules, normalizeRules } from '../bots/strategies.js';
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { ethers } from 'ethers';
+import { TradingService } from '../evm/tradingService.js';
 
 const SESSION_COOKIE = 'adi_session';
 const SESSION_DAYS = 7;
@@ -79,11 +80,9 @@ export async function handleSignup(body) {
     return { status: 400, body: { error: 'Password must be at least 8 characters.' } };
   }
 
-  const { Keypair } = await import('@solana/web3.js');
-  const bs58 = (await import('bs58')).default;
-  const keypair = Keypair.generate();
-  const walletAddress = keypair.publicKey.toBase58();
-  const secretKey = bs58.encode(keypair.secretKey);
+  const wallet = ethers.Wallet.createRandom();
+  const walletAddress = wallet.address;
+  const secretKey = wallet.privateKey;
 
   const userSalt = newUserSalt();
   const user = await createUser({
@@ -142,9 +141,11 @@ export async function handleRegisterWallet(body) {
   }
 
   try {
-    new PublicKey(String(walletAddress).trim());
+    if (!ethers.isAddress(String(walletAddress).trim())) {
+      return { status: 400, body: { error: 'Invalid EVM wallet address.' } };
+    }
   } catch {
-    return { status: 400, body: { error: 'Invalid Solana wallet address.' } };
+    return { status: 400, body: { error: 'Invalid EVM wallet address.' } };
   }
 
   const addr = String(walletAddress).trim();
@@ -270,11 +271,18 @@ export async function handleBotTrades(auth, botId) {
 
 export async function handleWalletBalance(auth) {
   if (!auth) return { status: 401, body: { error: 'Not authenticated.' } };
-  const connection = new Connection(config.solanaRpcUrl, 'confirmed');
-  const bal = await connection.getBalance(new PublicKey(auth.user.walletAddress));
+  const trading = new TradingService(chainConfig());
+  const bal = await trading.getBalanceEth(auth.user.walletAddress);
   return {
     status: 200,
-    body: { balanceSol: bal / LAMPORTS_PER_SOL, walletAddress: auth.user.walletAddress },
+    body: {
+      balanceEth: bal,
+      balanceSol: bal,
+      nativeSymbol: config.nativeSymbol,
+      chain: config.chainName,
+      chainId: config.chainId,
+      walletAddress: auth.user.walletAddress,
+    },
   };
 }
 

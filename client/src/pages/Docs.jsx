@@ -42,17 +42,17 @@ export default function Docs() {
             <h1>{BRAND.name} Documentation</h1>
             <p className="docs-lead">
               Everything you need to understand how {BRAND.name} works — from account creation
-              to automated pump.fun trading on Solana mainnet.
+              to automated stock token trading on Robinhood Chain.
             </p>
           </header>
 
           <section id="overview" className="docs-section">
             <h2>Overview</h2>
             <p>
-              {BRAND.name} is an automated trading platform on <strong>Solana mainnet</strong>.
-              You sign up with a password, receive a Solana wallet automatically, fund it with SOL,
-              then create trading bots that scan <strong>pump.fun</strong> bonding-curve tokens and
-              execute buy/sell transactions on your behalf — 24/7, without manual private key handling.
+              {BRAND.name} is an automated trading platform on <strong>Robinhood Chain</strong> (EVM L2, chain ID 4663).
+              You sign up with a password, receive an Ethereum wallet automatically, fund it with ETH,
+              then create trading bots that scan <strong>tokenized stock tokens</strong> (AAPL, NVDA, TSLA, QQQ)
+              and execute buy/sell swaps via <strong>Uniswap</strong> on your behalf — 24/7.
             </p>
             <p>There are two parallel experiences:</p>
             <ul>
@@ -60,7 +60,7 @@ export default function Docs() {
               <li><strong>Live trading floor</strong> — five AI agents (ChatGPT, Grok, Fable, Gemini, DeepSeek) trading publicly on a shared broadcast UI.</li>
             </ul>
             <div className="docs-callout">
-              <strong>Not financial advice.</strong> This is real on-chain trading with real SOL.
+              <strong>Not financial advice.</strong> This is real on-chain trading with real ETH on Robinhood Chain.
               You can lose funds. Only trade what you can afford to lose.
             </div>
           </section>
@@ -84,24 +84,24 @@ export default function Docs() {
               │  · Signup / login / sessions  │
               │  · Bot CRUD + execution       │
               │  · Live AI trading floor      │
-              │  · pump.fun buy/sell          │
+              │  · Uniswap stock token swaps   │
               │  · Encrypted wallet keys      │
               └───────────────┬───────────────┘
                               │
               ┌───────────────┴───────────────┐
               ▼                               ▼
-       PostgreSQL (optional)          Solana Mainnet RPC
-       Users · Sessions · Bots        pump.fun program
+       PostgreSQL (optional)          Robinhood Chain RPC
+       Users · Sessions · Bots        Uniswap V2 + stock tokens
 `}</pre>
             </div>
             <h3>Data flow for a user bot trade</h3>
             <ol className="docs-steps">
               <li>Backend loads all <strong>active</strong> bots from the database.</li>
               <li>For each bot, it decrypts the user&apos;s wallet server-side (never sent to browser).</li>
-              <li>pump.fun API is polled for bonding-curve tokens matching the bot&apos;s market cap rules.</li>
-              <li>The bot type (sniper, momentum, etc.) determines <em>which</em> token to pick from the filtered list.</li>
-              <li>A buy transaction is submitted via Solana RPC if the bot has no open position.</li>
-              <li>When take-profit, stop-loss, or a time limit hits, a sell transaction is submitted.</li>
+              <li>Stock token list is refreshed from configured Robinhood Chain assets.</li>
+              <li>The bot type determines <em>which</em> stock to pick from the filtered list.</li>
+              <li>A buy swap (ETH → stock token) is submitted via Uniswap if the bot has no open position.</li>
+              <li>When take-profit, stop-loss, or a time limit hits, a sell swap is submitted.</li>
               <li>Trade results are logged to the database and visible on your dashboard.</li>
             </ol>
           </section>
@@ -110,8 +110,8 @@ export default function Docs() {
             <h2>Sign up &amp; wallet</h2>
             <p>When you click <Link to="/signup">Sign up</Link> and set a password:</p>
             <ol className="docs-steps">
-              <li>A new <strong>Solana Ed25519 keypair</strong> is generated on the server.</li>
-              <li>Your <strong>wallet address</strong> (public key) becomes your username.</li>
+              <li>A new <strong>EVM wallet</strong> is generated in your browser (or on the server for server-side signup).</li>
+              <li>Your <strong>wallet address</strong> (0x…) becomes your username.</li>
               <li>Your password is hashed with <strong>scrypt</strong> — the raw password is never stored.</li>
               <li>Your private key is encrypted twice:
                 <ul>
@@ -131,7 +131,7 @@ export default function Docs() {
             <h2>Login &amp; sessions</h2>
             <p>Log in with:</p>
             <ul>
-              <li><strong>Username</strong> = your Solana wallet address</li>
+              <li><strong>Username</strong> = your Robinhood Chain wallet address (0x…)</li>
               <li><strong>Password</strong> = the password you chose at signup</li>
             </ul>
             <p>
@@ -148,14 +148,14 @@ export default function Docs() {
             <h2>Dashboard</h2>
             <p>After login, the <Link to="/dashboard">dashboard</Link> shows:</p>
             <ul>
-              <li>Your wallet address and live <strong>SOL balance</strong></li>
+              <li>Your wallet address and live <strong>ETH balance</strong></li>
               <li>All bots you have created</li>
               <li>Each bot&apos;s status (active / stopped), type, rules, and open position</li>
               <li>Controls to start, stop, or delete bots</li>
             </ul>
             <p>
-              Fund your wallet by sending SOL to the address shown on the dashboard.
-              Bots need SOL for trade size plus ~0.004 SOL reserved for transaction fees.
+              Fund your wallet by bridging ETH to Robinhood Chain (chain ID 4663).
+              Bots need ETH for trade size plus ~0.0003 ETH reserved for gas.
             </p>
           </section>
 
@@ -211,14 +211,14 @@ export default function Docs() {
                 <tbody>
                   <tr><td><code>minMarketCap</code></td><td>Minimum USD market cap for a token to be considered.</td><td>$2,500</td></tr>
                   <tr><td><code>maxMarketCap</code></td><td>Maximum USD market cap for a token to be considered.</td><td>$6,000</td></tr>
-                  <tr><td><code>buyAmountSol</code></td><td>SOL spent per buy transaction.</td><td>0.015 SOL</td></tr>
+                  <tr><td><code>buyAmountEth</code></td><td>ETH spent per buy swap.</td><td>0.0005 ETH</td></tr>
                   <tr><td><code>takeProfitPercent</code></td><td>Sell when token mcap rises this % above entry.</td><td>8%</td></tr>
                   <tr><td><code>stopLossPercent</code></td><td>Sell when token mcap drops this % below entry.</td><td>5%</td></tr>
                 </tbody>
               </table>
             </div>
             <p>
-              Only tokens on the pump.fun <strong>bonding curve</strong> (not yet graduated) are considered.
+              Tokenized stock tokens on Robinhood Chain (AAPL, NVDA, TSLA, QQQ) are considered.
               Tokens outside your mcap band are ignored.
             </p>
           </section>
@@ -228,18 +228,18 @@ export default function Docs() {
             <p>The backend runs a continuous loop (approximately every 3 seconds) on Render:</p>
             <ol className="docs-steps">
               <li>Fetch all bots where <code>isActive = true</code>.</li>
-              <li>Refresh the pump.fun token discovery pool (~300 recommended coins + top runners).</li>
+              <li>Refresh the stock token discovery pool (Robinhood Chain assets).</li>
               <li>For each active bot:
                 <ul>
                   <li>If holding a position → check take-profit, stop-loss, or ~30s time limit → sell if triggered.</li>
-                  <li>If no position and wallet has enough SOL → filter by mcap rules → apply bot type selection → buy.</li>
+                  <li>If no position and wallet has enough ETH → filter by notional range → apply bot type selection → buy via Uniswap.</li>
                 </ul>
               </li>
               <li>Log every buy/sell with transaction signature (viewable on Solscan).</li>
             </ol>
             <p>
               The engine uses the same <code>PumpService</code> as the live AI trading floor —
-              real on-chain transactions via the pump.fun SDK and your configured Solana RPC.
+              real on-chain swaps via Uniswap V2 on Robinhood Chain.
             </p>
           </section>
 
@@ -276,13 +276,13 @@ export default function Docs() {
           <section id="funding" className="docs-section">
             <h2>Funding &amp; fees</h2>
             <ul>
-              <li>Send <strong>SOL</strong> to your wallet address to fund bot trades.</li>
-              <li>Each buy uses <code>buyAmountSol</code> from your rules.</li>
-              <li>Keep extra SOL for transaction fees (~0.003–0.004 SOL per tx).</li>
-              <li>Recommended minimum: enough for several trades + fee buffer (e.g. 0.1 SOL to start).</li>
+              <li>Bridge <strong>ETH</strong> to your wallet on Robinhood Chain (chain ID 4663).</li>
+              <li>Each buy uses <code>buyAmountEth</code> from your rules.</li>
+              <li>Keep extra ETH for gas (~0.0003 ETH per swap).</li>
+              <li>Recommended minimum: ~0.01 ETH to start (trade size + gas buffer).</li>
             </ul>
             <p>
-              Slippage, bonding curve price impact, and failed transactions can occur on volatile tokens.
+              Slippage, pool liquidity, and failed transactions can occur on volatile markets.
               Not every trade will be profitable.
             </p>
           </section>
@@ -291,19 +291,19 @@ export default function Docs() {
             <h2>FAQ</h2>
             <dl className="docs-faq">
               <dt>What is my username?</dt>
-              <dd>Your Solana wallet public key — shown after signup and on the dashboard.</dd>
+              <dd>Your Robinhood Chain wallet address (0x…) — shown after signup and on the dashboard.</dd>
 
               <dt>Can I export my private key?</dt>
               <dd>Not through the UI. Keys are server-managed for automated trading.</dd>
 
               <dt>Why isn&apos;t my bot trading?</dt>
-              <dd>Check: bot is started, wallet has SOL, tokens exist in your mcap range, Render backend is running.</dd>
+              <dd>Check: bot is started, wallet has ETH on Robinhood Chain, stocks exist in your range, Render backend is running.</dd>
 
               <dt>Do bots trade while I&apos;m offline?</dt>
               <dd>Yes — active bots run 24/7 on the backend using the server-encrypted wallet key.</dd>
 
               <dt>Is this testnet?</dt>
-              <dd>No. Default network is Solana <strong>mainnet-beta</strong> — real money.</dd>
+              <dd>Yes. Default network is Robinhood Chain <strong>mainnet</strong> (chain ID 4663) — real money.</dd>
 
               <dt>Where are trades recorded?</dt>
               <dd>On-chain (Solscan) and in the platform database for dashboard history.</dd>

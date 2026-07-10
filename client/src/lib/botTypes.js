@@ -5,27 +5,27 @@ export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 export const BOT_META = {
   chatgpt: {
     label: 'ChatGPT',
-    desc: 'Fresh launches — first on new bonding curves.',
-    color: '#34d399',
+    desc: 'New listings — first on fresh stock token pools.',
+    color: '#00c805',
   },
   grok: {
     label: 'Grok',
-    desc: 'Volatility hunter — rides hype and volume spikes.',
+    desc: 'Volatility hunter — rides on-chain price spikes.',
     color: '#fb7185',
   },
   fable: {
     label: 'Fable',
-    desc: 'Chaos mode — random picks, story-driven plays.',
+    desc: 'Chaos mode — random stock picks.',
     color: '#fbbf24',
   },
   gemini: {
     label: 'Gemini',
-    desc: 'Whale lane — deeper liquidity at the top of your range.',
+    desc: 'Blue chips — larger notional at the top of your range.',
     color: '#a78bfa',
   },
   deepseek: {
     label: 'DeepSeek',
-    desc: 'Low cap sniper — smallest mcap in your band.',
+    desc: 'Value sniper — smallest notional in your band.',
     color: '#38bdf8',
   },
 };

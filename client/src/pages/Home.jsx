@@ -4,7 +4,7 @@ import Character from '../components/Character.jsx';
 import { BRAND } from '../config/brand.js';
 
 const BOTS = [
-  { id: 'chatgpt', label: 'ChatGPT', color: '#34d399' },
+  { id: 'chatgpt', label: 'ChatGPT', color: '#00c805' },
   { id: 'grok', label: 'Grok', color: '#fb7185' },
   { id: 'fable', label: 'Fable', color: '#fbbf24' },
   { id: 'gemini', label: 'Gemini', color: '#a78bfa' },
@@ -12,10 +12,10 @@ const BOTS = [
 ];
 
 const TICKER = [
-  'SNIPER BOT LIVE',
-  'MOMENTUM SCAN',
-  'PUMP.FUN EXECUTE',
-  'SOLANA MAINNET',
+  'STOCK BOT LIVE',
+  'ROBINHOOD CHAIN',
+  'UNISWAP EXECUTE',
+  'AAPL · NVDA · TSLA',
   'AUTO WALLET',
   '5 AI AGENTS',
   '24/7 ENGINE',
@@ -23,26 +23,26 @@ const TICKER = [
 ];
 
 const STRATEGIES = [
-  { id: 'chatgpt', name: 'ChatGPT', desc: 'Fresh launches — first on new bonding curves.', color: '#34d399' },
-  { id: 'grok', name: 'Grok', desc: 'Volatility hunter — rides hype and volume spikes.', color: '#fb7185' },
-  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random picks, story-driven plays.', color: '#fbbf24' },
-  { id: 'gemini', name: 'Gemini', desc: 'Whale lane — deeper liquidity at the top of your range.', color: '#a78bfa' },
-  { id: 'deepseek', name: 'DeepSeek', desc: 'Low cap sniper — smallest mcap in your band.', color: '#38bdf8' },
+  { id: 'chatgpt', name: 'ChatGPT', desc: 'New listings — first on fresh stock token pools.', color: '#00c805' },
+  { id: 'grok', name: 'Grok', desc: 'Volatility hunter — rides price spikes on-chain.', color: '#fb7185' },
+  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random stock picks, story-driven plays.', color: '#fbbf24' },
+  { id: 'gemini', name: 'Gemini', desc: 'Blue chips — larger notional at the top of your range.', color: '#a78bfa' },
+  { id: 'deepseek', name: 'DeepSeek', desc: 'Value sniper — smallest notional in your band.', color: '#38bdf8' },
 ];
 
 const TERMINAL_LINES = [
-  { time: '04:12:01', agent: 'SNIPER', msg: 'BUY 0.015 SOL → $PEPE2', type: 'buy' },
-  { time: '04:12:04', agent: 'ENGINE', msg: 'mcap $3.8k · TP +8% · SL -5%', type: 'info' },
-  { time: '04:12:18', agent: 'SNIPER', msg: 'SELL +6.2% · sig 5xK…9mQ', type: 'sell' },
-  { time: '04:12:22', agent: 'MOMENTUM', msg: 'scanning 284 tokens…', type: 'info' },
-  { time: '04:12:25', agent: 'MOMENTUM', msg: 'BUY 0.015 SOL → $WOJAK', type: 'buy' },
+  { time: '04:12:01', agent: 'SNIPER', msg: 'BUY 0.0005 ETH → AAPL', type: 'buy' },
+  { time: '04:12:04', agent: 'ENGINE', msg: 'notional $220M · TP +8% · SL -5%', type: 'info' },
+  { time: '04:12:18', agent: 'SNIPER', msg: 'SELL +6.2% · tx 0x8f…9mQ', type: 'sell' },
+  { time: '04:12:22', agent: 'MOMENTUM', msg: 'scanning 4 stock tokens…', type: 'info' },
+  { time: '04:12:25', agent: 'MOMENTUM', msg: 'BUY 0.0005 ETH → NVDA', type: 'buy' },
   { time: '04:12:41', agent: 'MOMENTUM', msg: 'SELL -2.1% · time limit', type: 'sell' },
 ];
 
 const BENTO = [
   {
     title: 'Zero setup wallet',
-    desc: 'Sign up → Solana keypair generated instantly. Your address is your username.',
+    desc: 'Sign up → EVM wallet generated instantly. Your address is your username.',
     span: 'wide',
     icon: '◈',
   },
@@ -92,7 +92,7 @@ export default function Home() {
           <div className="home-v2-copy">
             <div className="home-v2-live">
               <span className="home-v2-live-dot" />
-              {BRAND.name.toUpperCase()} · SOLANA MAINNET
+              {BRAND.name.toUpperCase()} · {BRAND.chainName.toUpperCase()}
             </div>
             <h1>
               Forge your bots.
@@ -138,7 +138,7 @@ export default function Home() {
                   <span>{bot.label}</span>
                 </div>
               ))}
-              <div className="home-v2-stage-badge">pump.fun</div>
+              <div className="home-v2-stage-badge">Robinhood Chain</div>
             </div>
 
             <div className="home-v2-terminal" aria-hidden="true">
@@ -221,7 +221,7 @@ export default function Home() {
       <section className="home-v2-final">
         <div className="home-v2-final-glow" aria-hidden="true" />
         <h2>Stop watching. Start trading.</h2>
-        <p className="home-v2-final-sub">Free to sign up. Real SOL. Real pump.fun trades.</p>
+        <p className="home-v2-final-sub">Free to sign up. Real ETH. Real stock token trades on Robinhood Chain.</p>
         <Link to="/signup" className="home-v2-btn primary large">Create free account</Link>
         <p className="home-v2-disclaimer">Not financial advice. You can lose funds. Trade responsibly.</p>
       </section>

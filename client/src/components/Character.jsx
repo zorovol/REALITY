@@ -3,7 +3,7 @@
  */
 
 export const PALETTES = {
-  chatgpt: { g1: '#10b981', g2: '#047857', glow: '#34d399', eye: '#6ee7b7' },
+  chatgpt: { g1: '#00c805', g2: '#003300', glow: '#00c805', eye: '#5ac53a' },
   grok: { g1: '#f43f5e', g2: '#0f172a', glow: '#fb7185', eye: '#fecdd3' },
   fable: { g1: '#f59e0b', g2: '#92400e', glow: '#fbbf24', eye: '#fde68a' },
   gemini: { g1: '#818cf8', g2: '#4f46e5', glow: '#a78bfa', eye: '#c4b5fd' },
