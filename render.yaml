@@ -1,5 +1,16 @@
-# Backend for real trading + websockets (Vercel hosts the static UI only).
-# Deploy at https://dashboard.render.com → New → Blueprint → connect this repo.
+# Backend for RobinhoodBot trading + websockets (Vercel hosts the static UI).
+# Render dashboard → Blueprint → connect repo, OR set env vars manually on ai-drama-island-api.
+#
+# DATABASE_URL: use Neon (recommended) OR the Render Postgres database below.
+# After adding DATABASE_URL, redeploy — /api/health should show db: "postgres".
+
+databases:
+  - name: robinhoodbot-db
+    plan: free
+    region: oregon
+    databaseName: robinhoodbot
+    user: robinhoodbot
+
 services:
   - type: web
     name: ai-drama-island-api
@@ -16,40 +27,35 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://botsforge.tech,https://www.botsforge.tech,https://gptgrokgeminideepseekfable.com,https://www.gptgrokgeminideepseekfable.com,https://ai-drama-island.vercel.app
+        value: https://botsforge.tech,https://www.botsforge.tech,https://ai-drama-island.vercel.app
       - key: SIMULATION_FALLBACK
         value: "false"
-      - key: PUMP_DISCOVERY
-        value: "true"
-      - key: PUMP_AUTO_LAUNCH
-        value: "false"
-      - key: TRADE_USD_PER_SIDE
-        value: "2"
-      - key: TRADE_INTERVAL_MS
-        value: "2000"
-      - key: MAX_TRADES_PER_MINUTE
-        value: "30"
-      - key: BALANCE_REFRESH_MS
-        value: "5000"
-      - key: TRADE_SELL_AFTER_BUY_MS
-        value: "20000"
-      - key: MIN_SOL_FOR_TRADE
-        value: "0.02"
-      - key: PUMP_TARGET_MCAP_USD
-        value: "4000"
-      - key: PUMP_MCAP_MIN_USD
-        value: "2500"
-      - key: PUMP_MCAP_MAX_USD
-        value: "6000"
-      - key: ENCRYPTION_KEY
-        sync: false
       - key: AUTH_SERVER_KEY
         sync: false
-      - key: WALLETS_ENC_B64
-        sync: false
-      - key: SOLANA_RPC_URL
-        sync: false
-      - key: SOLANA_NETWORK
-        value: mainnet-beta
+      # Neon: paste postgresql://...?sslmode=require from console.neon.tech
+      # Render Postgres: auto-wired if you deploy this blueprint with the database above
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: robinhoodbot-db
+          property: connectionString
+      # Robinhood Chain
+      - key: CHAIN_NETWORK
+        value: mainnet
+      - key: EVM_RPC_URL
+        value: https://rpc.mainnet.chain.robinhood.com
+      - key: CHAIN_ID
+        value: "4663"
+      - key: CHAIN_EXPLORER_URL
+        value: https://robinhoodchain.blockscout.com
+      - key: NATIVE_SYMBOL
+        value: ETH
+      - key: WETH_ADDRESS
+        value: 0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73
+      - key: UNISWAP_V2_ROUTER
+        value: 0x89e5DB8B5aA49aA85AC63f691524311AEB649eba
+      - key: MEMECOIN_DISCOVERY_REFRESH_MS
+        value: "45000"
+      - key: MEMECOIN_MIN_LIQUIDITY_USD
+        value: "500"
+      - key: ENABLE_SOLANA_ISLAND
+        value: "false"

@@ -7,7 +7,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { config, chainConfig } from './config.js';
-import { initDb, dbReady, saveSnapshot, loadSnapshot, insertEvent, insertVote } from './db.js';
+import { initDb, dbReady, dbStatus, saveSnapshot, loadSnapshot, insertEvent, insertVote } from './db.js';
+import { platformReady } from './auth/store.js';
 import { initPlatformStore } from './auth/store.js';
 import { mountAuthRoutes } from './auth/routes.js';
 import { mountWalletRoutes } from './auth/wallet.js';
@@ -91,9 +92,11 @@ mountWalletRoutes(app);
 mountBotRoutes(app);
 
 app.get('/api/health', (req, res) => {
+  const db = dbStatus();
   res.json({
     ok: true,
-    db: dbReady() ? 'neon' : 'memory',
+    db: db.connected ? 'postgres' : 'memory',
+    database: { ...db, platformReady: platformReady() },
     platformAuth: true,
     aiProviders: availableProviders().map((p) => p.id),
     arc: world.arc,

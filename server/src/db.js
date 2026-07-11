@@ -9,6 +9,20 @@ import { config } from './config.js';
 
 let pool = null;
 let ready = false;
+let lastError = null;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function poolConfig(connectionString) {
+  const sslRequired = /neon\.tech|render\.com|sslmode=require/i.test(connectionString);
+  return {
+    connectionString,
+    ssl: sslRequired ? { rejectUnauthorized: false } : undefined,
+    max: 5,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 15_000,
+  };
+}
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS seasons (
@@ -117,31 +131,57 @@ CREATE INDEX IF NOT EXISTS idx_bot_trades_bot ON bot_trades(bot_id);
 `;
 
 export async function initDb() {
+  lastError = null;
   if (!config.databaseUrl) {
-    console.log('[db] No DATABASE_URL — running with in-memory persistence.');
+    const msg = '[db] No DATABASE_URL — running with in-memory persistence (users/bots reset on restart).';
+    if (process.env.NODE_ENV === 'production') {
+      console.warn(`[db] WARNING: ${msg}`);
+    } else {
+      console.log(msg);
+    }
     return false;
   }
-  try {
-    pool = new pg.Pool({
-      connectionString: config.databaseUrl,
-      ssl: { rejectUnauthorized: false },
-      max: 5,
-    });
-    await pool.query(SCHEMA);
-    await pool.query(`ALTER TABLE bots ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT ''`);
-    ready = true;
-    console.log('[db] Connected to Neon PostgreSQL, schema ready.');
-    return true;
-  } catch (err) {
-    console.error('[db] Connection failed, falling back to in-memory:', err.message);
-    pool = null;
-    ready = false;
-    return false;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      pool = new pg.Pool(poolConfig(config.databaseUrl));
+      await pool.query('SELECT 1');
+      await pool.query(SCHEMA);
+      await pool.query(`ALTER TABLE bots ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT ''`);
+      ready = true;
+      lastError = null;
+      console.log('[db] Connected to PostgreSQL — users, bots, and trades will persist.');
+      return true;
+    } catch (err) {
+      lastError = err.message;
+      console.error(`[db] Connection attempt ${attempt}/3 failed:`, err.message);
+      if (pool) {
+        try { await pool.end(); } catch { /* ignore */ }
+      }
+      pool = null;
+      ready = false;
+      if (attempt < 3) await sleep(2000 * attempt);
+    }
   }
+
+  console.error('[db] FATAL: DATABASE_URL is set but PostgreSQL connection failed.');
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+  return false;
 }
 
 export function dbReady() {
   return ready;
+}
+
+export function dbStatus() {
+  return {
+    configured: Boolean(config.databaseUrl),
+    connected: ready,
+    mode: ready ? 'postgres' : 'memory',
+    lastError,
+  };
 }
 
 export function dbPool() {
