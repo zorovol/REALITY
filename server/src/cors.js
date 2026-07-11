@@ -1,6 +1,8 @@
 import { config } from './config.js';
 
 const PRODUCTION_ORIGINS = [
+  'https://robinbot.app',
+  'https://www.robinbot.app',
   'https://botsforge.tech',
   'https://www.botsforge.tech',
   'https://gptgrokgeminideepseekfable.com',
@@ -16,6 +18,10 @@ function isAllowedOrigin(origin, allowed) {
   if (isLocalDevOrigin(origin)) return true;
   if (allowed.includes(origin)) return true;
   if (allowed.some((o) => o.includes('vercel.app')) && /\.vercel\.app$/.test(origin)) {
+    return true;
+  }
+  if (allowed.some((o) => o.includes('robinbot.app'))
+    && /^https:\/\/(www\.)?robinbot\.app$/.test(origin)) {
     return true;
   }
   if (allowed.some((o) => o.includes('botsforge.tech'))

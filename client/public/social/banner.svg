@@ -64,14 +64,14 @@
     <tspan fill="#00c805">Robin</tspan><tspan fill="#ffffff">Bot</tspan>
   </text>
   <text x="482" y="272" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="600" fill="#8a9a8a" letter-spacing="0.5">
-    Robinhood Chain ∑ Memecoins ∑ Uniswap V2 ∑ 24/7
+    Robinhood Chain ù Memecoins ù Uniswap V2 ù 24/7
   </text>
   <text x="482" y="322" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="500" fill="#5ac53a">
-    Automated memecoin trading bots ó sign up, fund, run.
+    Automated memecoin trading bots ù sign up, fund, run.
   </text>
 
-  <rect x="482" y="354" width="248" height="44" rx="22" fill="#00c805" fill-opacity="0.12" stroke="#00c805" stroke-opacity="0.45"/>
-  <text x="606" y="383" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="700" fill="#00c805">botsforge.tech</text>
+  <rect x="482" y="354" width="230" height="44" rx="22" fill="#00c805" fill-opacity="0.12" stroke="#00c805" stroke-opacity="0.45"/>
+  <text x="597" y="383" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="700" fill="#00c805">robinbot.app</text>
 
   <g transform="translate(1280, 80)" opacity="0.9">
     <circle cx="0" cy="0" r="36" fill="#00c805" opacity="0.1"/>

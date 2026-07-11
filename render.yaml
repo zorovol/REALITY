@@ -27,7 +27,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://botsforge.tech,https://www.botsforge.tech,https://ai-drama-island.vercel.app
+        value: https://robinbot.app,https://www.robinbot.app,https://botsforge.tech,https://www.botsforge.tech,https://ai-drama-island.vercel.app
       - key: SIMULATION_FALLBACK
         value: "false"
       - key: AUTH_SERVER_KEY

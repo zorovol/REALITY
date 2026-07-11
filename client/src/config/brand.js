@@ -8,8 +8,8 @@ export const BRAND = {
   title: 'RobinBot — Automated Memecoin Bots on Robinhood Chain',
   /** Split for styled nav: Robin (green) + Bot (white) */
   nameParts: { accent: 'Robin', rest: 'Bot' },
-  domain: 'botsforge.tech',
-  url: 'https://botsforge.tech',
+  domain: 'robinbot.app',
+  url: 'https://www.robinbot.app',
   logoSrc: '/logo.png',
   faviconSrc: '/favicon.png',
   xUrl: 'https://x.com/Robinhoodauto',
