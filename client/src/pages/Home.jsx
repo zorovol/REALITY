@@ -12,7 +12,7 @@ const BOTS = [
 ];
 
 const TICKER = [
-  'ROBINHOOD MEMECOINS',
+  'ROBINBOT',
   'ROBINHOOD CHAIN',
   'UNISWAP V2 EXECUTE',
   'DEXSCREENER SCAN',
@@ -123,7 +123,7 @@ export default function Home() {
             <div className="home-v2-stage">
               <div className="home-v2-stage-ring" />
               <div className="home-v2-stage-core">
-                <img src="/logo.svg" alt={BRAND.name} className="home-v2-logo" />
+                <img src={BRAND.logoSrc} alt={BRAND.name} className="home-v2-logo" />
               </div>
               {BOTS.map((bot, i) => (
                 <div

@@ -1,4 +1,4 @@
-# Backend for RobinhoodBot trading + websockets (Vercel hosts the static UI).
+# Backend for RobinBot trading + websockets (Vercel hosts the static UI).
 # Render dashboard → Blueprint → connect repo, OR set env vars manually on ai-drama-island-api.
 #
 # DATABASE_URL: use Neon (recommended) OR the Render Postgres database below.

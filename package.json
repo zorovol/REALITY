@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "RobinhoodBot Trading — automated stock bots on Robinhood Chain",
+  "description": "RobinBot — automated memecoin bots on Robinhood Chain",
   "scripts": {
     "setup": "npm install && npm install --prefix server && npm install --prefix client --include=dev",
     "build:render": "NPM_CONFIG_PRODUCTION=false npm run setup && npm run build",

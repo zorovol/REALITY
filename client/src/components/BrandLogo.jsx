@@ -5,7 +5,7 @@ export default function BrandLogo({ size = 32, showName = true, className = '' }
   return (
     <span className={`brand-logo-wrap ${className}`.trim()}>
       <img
-        src="/logo.svg"
+        src={BRAND.logoSrc}
         alt={BRAND.name}
         className="brand-logo-img"
         width={size}
