@@ -1,14 +1,11 @@
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { config } from '../config.js';
 import { requireAuth } from './routes.js';
+import { handleWalletBalance, sendJson } from './handlers.js';
 
-const connection = new Connection(config.solanaRpcUrl, 'confirmed');
-
+/** Robinhood Chain ETH balance for the logged-in user wallet. */
 export function mountWalletRoutes(app) {
   app.get('/api/wallet/balance', requireAuth, async (req, res) => {
     try {
-      const bal = await connection.getBalance(new PublicKey(req.user.walletAddress));
-      res.json({ balanceSol: bal / LAMPORTS_PER_SOL, walletAddress: req.user.walletAddress });
+      sendJson(res, await handleWalletBalance({ user: req.user }));
     } catch (err) {
       console.error('[wallet] balance error:', err.message);
       res.status(500).json({ error: 'Failed to fetch balance.' });

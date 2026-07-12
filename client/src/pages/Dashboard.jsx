@@ -8,6 +8,7 @@ import { BOT_TYPES, defaultTradingRules } from '../lib/localBots.js';
 import { BOT_META, botMeta } from '../lib/botTypes.js';
 import Character from '../components/Character.jsx';
 import { BRAND } from '../config/brand.js';
+import { CHAIN, addRobinhoodChainToWallet } from '../config/chain.js';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -45,6 +46,16 @@ export default function Dashboard() {
   const [diagnostics, setDiagnostics] = useState(null);
   const [diagError, setDiagError] = useState('');
   const [tab, setTab] = useState('overview');
+  const [mmError, setMmError] = useState('');
+
+  const addRobinhoodNetwork = async () => {
+    setMmError('');
+    try {
+      await addRobinhoodChainToWallet();
+    } catch (err) {
+      setMmError(err.message || 'Could not add network to MetaMask');
+    }
+  };
 
   const load = useCallback(async () => {
     const session = getSession();
@@ -713,9 +724,16 @@ export default function Dashboard() {
               <article className="dash-v2-card">
                 <span className="home-v2-split-tag">How to fund</span>
                 <p className="dash-v2-card-text">
-                  Send ETH to your address above on {BRAND.chainName}. Once funded, create a bot and hit Start — the engine handles DexScreener scans and Uniswap swaps automatically.
+                  Send ETH to your address above on <strong>{BRAND.chainName}</strong> (chain ID {CHAIN.chainId}) — not Ethereum mainnet.
+                  If you import this wallet into MetaMask, add Robinhood Chain first or transactions will fail.
                 </p>
-                <Link to="/docs" className="home-v2-link">Read setup docs →</Link>
+                <div className="dash-v2-wallet-actions">
+                  <button type="button" className="home-v2-btn ghost" onClick={addRobinhoodNetwork}>
+                    Add Robinhood Chain to MetaMask
+                  </button>
+                  <Link to="/docs" className="home-v2-link">Read setup docs →</Link>
+                </div>
+                {mmError && <p className="auth-error">{mmError}</p>}
               </article>
             </div>
           )}

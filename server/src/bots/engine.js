@@ -104,9 +104,22 @@ export class UserBotEngine {
 
       if (!this.discovery.list().length) await this.discovery.refresh();
 
-      await Promise.all(bots.map((bot) => this.runBot(bot).catch((err) => {
-        console.error(`[user-bots] bot ${bot.id} error:`, err.message);
-      })));
+      // One wallet per user — run bots sequentially per user to avoid nonce collisions.
+      const byUser = new Map();
+      for (const bot of bots) {
+        if (!byUser.has(bot.userId)) byUser.set(bot.userId, []);
+        byUser.get(bot.userId).push(bot);
+      }
+
+      await Promise.all([...byUser.entries()].map(([, userBots]) =>
+        (async () => {
+          for (const bot of userBots) {
+            await this.runBot(bot).catch((err) => {
+              console.error(`[user-bots] bot ${bot.id} error:`, err.message);
+            });
+          }
+        })(),
+      ));
     } finally {
       this.busy = false;
     }
@@ -137,7 +150,7 @@ export class UserBotEngine {
 
     const rules = normalizeRules(bot.tradingRules);
     const balanceEth = await this.trading.getBalanceEth(wallet.address);
-    const feeReserve = 0.0003;
+    const feeReserve = 0.001;
     const sym = config.nativeSymbol;
 
     const tokenAddr = bot.position?.mint || bot.position?.address;
@@ -227,8 +240,9 @@ export class UserBotEngine {
         ethAmount: rules.buyAmountEth,
       });
     } catch (err) {
-      console.error(`[user-bots] ${bot.name || bot.botType} buy failed on ${target.symbol}:`, err.message);
-      this.setStatus(bot, `buy failed: ${err.message.slice(0, 120)}`);
+      const msg = this.trading.formatTxError?.(err) ?? err.message;
+      console.error(`[user-bots] ${bot.name || bot.botType} buy failed on ${target.symbol}:`, msg);
+      this.setStatus(bot, `buy failed: ${msg.slice(0, 140)}`);
       return;
     }
 

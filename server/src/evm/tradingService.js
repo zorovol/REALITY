@@ -47,8 +47,39 @@ export class TradingService {
     return token.balanceOf(wallet.address);
   }
 
-  txOptions() {
-    return { type: 0, gasLimit: 600_000n };
+  async buildTxOverrides(extra = {}) {
+    const fee = await this.provider.getFeeData();
+    const gasLimit = 800_000n;
+    if (fee.maxFeePerGas && fee.maxFeePerGas > 0n) {
+      const priority = fee.maxPriorityFeePerGas && fee.maxPriorityFeePerGas > 0n
+        ? fee.maxPriorityFeePerGas
+        : fee.maxFeePerGas / 10n;
+      return {
+        gasLimit,
+        type: 2,
+        maxFeePerGas: fee.maxFeePerGas,
+        maxPriorityFeePerGas: priority,
+        ...extra,
+      };
+    }
+    return {
+      gasLimit,
+      type: 0,
+      gasPrice: fee.gasPrice ?? 100_000_000n,
+      ...extra,
+    };
+  }
+
+  formatTxError(err) {
+    const msg = err?.shortMessage || err?.reason || err?.message || 'transaction failed';
+    if (/insufficient funds/i.test(msg)) {
+      return `${msg} — fund ETH on Robinhood Chain (chain ID 4663), not Ethereum L1`;
+    }
+    if (/nonce/i.test(msg)) return `${msg} — retrying next tick`;
+    if (/slippage|STF|INSUFFICIENT_OUTPUT/i.test(msg)) {
+      return `${msg} — memecoin moved too fast, will retry`;
+    }
+    return msg.slice(0, 200);
   }
 
   async canSwapEthForToken(tokenAddress, ethAmount) {
@@ -67,7 +98,7 @@ export class TradingService {
     const deadline = Math.floor(Date.now() / 1000) + 600;
     const value = ethers.parseEther(String(ethAmount));
     const amounts = await this.router.getAmountsOut(value, path);
-    const amountOutMin = (amounts[1] * 95n) / 100n;
+    const amountOutMin = (amounts[1] * 80n) / 100n; // 20% slippage for volatile memecoins
 
     const signer = wallet.connect(this.provider);
     const router = this.router.connect(signer);
@@ -76,9 +107,12 @@ export class TradingService {
       path,
       wallet.address,
       deadline,
-      { ...this.txOptions(), value },
+      { ...(await this.buildTxOverrides()), value },
     );
     const receipt = await tx.wait();
+    if (!receipt || receipt.status !== 1) {
+      throw new Error('buy transaction reverted on-chain');
+    }
     return {
       signature: receipt.hash,
       ethAmount: Number(ethAmount),
@@ -95,8 +129,11 @@ export class TradingService {
     const routerAddr = this.chain.uniswapV2Router;
     const allowance = await token.allowance(wallet.address, routerAddr);
     if (allowance < balance) {
-      const approveTx = await token.approve(routerAddr, ethers.MaxUint256, this.txOptions());
-      await approveTx.wait();
+      const approveTx = await token.approve(routerAddr, ethers.MaxUint256, await this.buildTxOverrides());
+      const approveReceipt = await approveTx.wait();
+      if (!approveReceipt || approveReceipt.status !== 1) {
+        throw new Error('token approve reverted on-chain');
+      }
     }
 
     const path = [mintAddress, this.weth];
@@ -114,7 +151,7 @@ export class TradingService {
     }
 
     const amountsOut = await this.router.getAmountsOut(amountIn, path);
-    const amountOutMin = (amountsOut[1] * 90n) / 100n;
+    const amountOutMin = (amountsOut[1] * 85n) / 100n; // 15% slippage on sells
 
     const router = this.router.connect(wallet.connect(this.provider));
     const tx = await router.swapExactTokensForETH(
@@ -123,9 +160,12 @@ export class TradingService {
       path,
       wallet.address,
       deadline,
-      this.txOptions(),
+      await this.buildTxOverrides(),
     );
     const receipt = await tx.wait();
+    if (!receipt || receipt.status !== 1) {
+      throw new Error('sell transaction reverted on-chain');
+    }
     const ethOut = Number(ethers.formatEther(amountsOut[1] ?? 0n));
 
     return {
