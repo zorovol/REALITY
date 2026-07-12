@@ -31,11 +31,11 @@ const STRATEGIES = [
 ];
 
 const TERMINAL_LINES = [
-  { time: '04:12:01', agent: 'SNIPER', msg: 'BUY 0.0005 ETH → $PEPE', type: 'buy' },
+  { time: '04:12:01', agent: 'SNIPER', msg: 'BUY ~$5 ETH → $PEPE', type: 'buy' },
   { time: '04:12:04', agent: 'ENGINE', msg: 'mcap $42k · TP +8% · SL -5%', type: 'info' },
   { time: '04:12:18', agent: 'SNIPER', msg: 'SELL +6.2% · tx 0x8f…9mQ', type: 'sell' },
   { time: '04:12:22', agent: 'MOMENTUM', msg: 'scanning 12 memecoins on-chain…', type: 'info' },
-  { time: '04:12:25', agent: 'MOMENTUM', msg: 'BUY 0.0005 ETH → $GORO', type: 'buy' },
+  { time: '04:12:25', agent: 'MOMENTUM', msg: 'BUY ~$5 ETH → $GORO', type: 'buy' },
   { time: '04:12:41', agent: 'MOMENTUM', msg: 'SELL -2.1% · time limit', type: 'sell' },
 ];
 

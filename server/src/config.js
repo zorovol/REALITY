@@ -64,6 +64,8 @@ export const config = {
   tradeSellAfterBuyMs: Number(process.env.TRADE_SELL_AFTER_BUY_MS) || 20_000,
   tradeUsdPerSide: Number(process.env.TRADE_USD_PER_SIDE) || 2,
   ethUsdFallback: Number(process.env.ETH_USD_PRICE) || 3500,
+  /** Default memecoin bot buy size (~USD per swap). */
+  botBuyUsd: Number(process.env.BOT_BUY_USD) || 5,
   // Legacy Solana island show (optional — not used for user stock bots)
   solanaRpcUrl: process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   solanaNetwork: process.env.SOLANA_NETWORK || 'mainnet-beta',

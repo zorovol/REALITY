@@ -328,7 +328,7 @@ export default function Dashboard() {
           <div className="dash-v2-rules-grid">
             {ruleInput('minMarketCap', 'Min market cap ($)', 100)}
             {ruleInput('maxMarketCap', 'Max market cap ($)', 100)}
-            {ruleInput('buyAmountEth', 'Buy amount (ETH)', 0.0001)}
+            {ruleInput('buyAmountEth', 'Buy amount (ETH, ~$5)', 0.0001)}
             {ruleInput('takeProfitPercent', 'Take profit (%)', 1)}
             {ruleInput('stopLossPercent', 'Stop loss (%)', 1)}
           </div>
@@ -406,7 +406,7 @@ export default function Dashboard() {
               <span className="dash-v2-balance-unit">ETH</span>
             </div>
             <code className="dash-v2-wallet-addr">{user?.walletAddress}</code>
-            <p className="dash-v2-wallet-hint">Fund with ETH on {BRAND.chainName} — bots swap launchpad tokens via Uniswap V3.</p>
+            <p className="dash-v2-wallet-hint">Fund with ~$10+ ETH on {BRAND.chainName} — ~$5 per buy + gas via Uniswap V3.</p>
           </div>
         </header>
 

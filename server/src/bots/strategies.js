@@ -1,8 +1,16 @@
 /** Bot type selection — each AI agent uses a different token ranking style. */
 
+import { config } from '../config.js';
+
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
+
+/** ~$5 per buy at configured ETH/USD (default 0.001429 ETH @ $3500). */
+export function defaultBuyAmountEth() {
+  const eth = config.botBuyUsd / config.ethUsdFallback;
+  return Math.round(eth * 1_000_000) / 1_000_000;
+}
 
 /** Legacy ids from before AI naming. */
 const LEGACY = {
@@ -61,12 +69,13 @@ export function selectToken(botType, candidates) {
 }
 
 export function defaultTradingRules() {
+  const buyEth = defaultBuyAmountEth();
   return {
     // Ape.Store / NOXA launches on Robinhood are typically ~$1.5k–$2.5k mcap at deploy.
     minMarketCap: 500,
     maxMarketCap: 500_000,
-    buyAmountEth: 0.0005,
-    buyAmountSol: 0.0005,
+    buyAmountEth: buyEth,
+    buyAmountSol: buyEth,
     takeProfitPercent: 8,
     stopLossPercent: 5,
   };
@@ -74,7 +83,8 @@ export function defaultTradingRules() {
 
 export function normalizeRules(input = {}) {
   const d = defaultTradingRules();
-  const buyEth = Number(input.buyAmountEth ?? input.buyAmountSol) || d.buyAmountEth;
+  let buyEth = Number(input.buyAmountEth ?? input.buyAmountSol) || d.buyAmountEth;
+  if (buyEth === 0.0005) buyEth = d.buyAmountEth;
   let minMarketCap = Number(input.minMarketCap) || d.minMarketCap;
   // Legacy default blocked ~$1.6k launchpad tokens on Ape.Store / NOXA.
   if (minMarketCap === 2_500) minMarketCap = d.minMarketCap;

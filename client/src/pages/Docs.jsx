@@ -212,7 +212,7 @@ export default function Docs() {
                 <tbody>
                   <tr><td><code>minMarketCap</code></td><td>Minimum USD market cap for a token to be considered.</td><td>$500</td></tr>
                   <tr><td><code>maxMarketCap</code></td><td>Maximum USD market cap for a token to be considered.</td><td>$500,000</td></tr>
-                  <tr><td><code>buyAmountEth</code></td><td>ETH spent per buy swap.</td><td>0.0005 ETH</td></tr>
+                  <tr><td><code>buyAmountEth</code></td><td>ETH spent per buy swap (~$5 default).</td><td>~0.00143 ETH</td></tr>
                   <tr><td><code>takeProfitPercent</code></td><td>Sell when token mcap rises this % above entry.</td><td>8%</td></tr>
                   <tr><td><code>stopLossPercent</code></td><td>Sell when token mcap drops this % below entry.</td><td>5%</td></tr>
                 </tbody>

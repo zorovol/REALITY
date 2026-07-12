@@ -2,12 +2,15 @@ const BOTS_KEY = 'botforge_bots';
 
 export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
+/** ~$5 per buy at $3500/ETH — keep in sync with server BOT_BUY_USD. */
+const DEFAULT_BUY_ETH = Math.round((5 / 3500) * 1_000_000) / 1_000_000;
+
 export function defaultTradingRules() {
   return {
     minMarketCap: 500,
     maxMarketCap: 500_000,
-    buyAmountEth: 0.0005,
-    buyAmountSol: 0.0005,
+    buyAmountEth: DEFAULT_BUY_ETH,
+    buyAmountSol: DEFAULT_BUY_ETH,
     takeProfitPercent: 8,
     stopLossPercent: 5,
   };
