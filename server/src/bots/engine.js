@@ -42,6 +42,17 @@ export class UserBotEngine {
     console.log(`[user-bots] ${bot.name || bot.botType} (${bot.id}) skip: ${reason}`);
   }
 
+  /** Spend up to rule cap, but only what fits in wallet after gas reserve. */
+  buyEthForBalance(balanceEth, rules) {
+    const available = balanceEth - config.botGasReserveEth;
+    if (available <= 0) return 0;
+    return Math.min(rules.buyAmountEth, available);
+  }
+
+  gasNeededStatus(balanceEth, sym) {
+    return `need more ETH for gas on Robinhood Chain — have ${balanceEth.toFixed(6)} ${sym}`;
+  }
+
   start() {
     this.discovery.refresh();
     this.timers.push(setInterval(() => this.discovery.refresh(), config.memecoinDiscoveryRefreshMs));
@@ -150,7 +161,7 @@ export class UserBotEngine {
 
     const rules = normalizeRules(bot.tradingRules);
     const balanceEth = await this.trading.getBalanceEth(wallet.address);
-    const feeReserve = 0.001;
+    const feeReserve = config.botGasReserveEth;
     const sym = config.nativeSymbol;
 
     const tokenAddr = bot.position?.mint || bot.position?.address;
@@ -171,7 +182,7 @@ export class UserBotEngine {
       if (takeProfit || stopLoss || stale) {
         const sellEth = Math.min(rules.buyAmountEth, balanceEth);
         if (balanceEth < feeReserve) {
-          this.setStatus(bot, `balance too low to sell (${balanceEth.toFixed(6)} ${sym})`);
+          this.setStatus(bot, this.gasNeededStatus(balanceEth, sym));
           return;
         }
 
@@ -211,9 +222,9 @@ export class UserBotEngine {
       return;
     }
 
-    const minRequired = rules.buyAmountEth + feeReserve;
-    if (balanceEth < minRequired) {
-      this.setStatus(bot, `need ${minRequired.toFixed(6)} ${sym}, have ${balanceEth.toFixed(6)}`);
+    const buyEth = this.buyEthForBalance(balanceEth, rules);
+    if (buyEth <= 0) {
+      this.setStatus(bot, this.gasNeededStatus(balanceEth, sym));
       return;
     }
 
@@ -233,13 +244,13 @@ export class UserBotEngine {
 
     for (const candidate of ranked.slice(0, 15)) {
       try {
-        const routable = await this.trading.canSwapEthForToken(candidate.address, rules.buyAmountEth);
+        const routable = await this.trading.canSwapEthForToken(candidate.address, buyEth);
         if (!routable) continue;
         target = candidate;
         result = await this.trading.buyToken({
           wallet,
           mintAddress: candidate.address,
-          ethAmount: rules.buyAmountEth,
+          ethAmount: buyEth,
         });
         break;
       } catch (err) {

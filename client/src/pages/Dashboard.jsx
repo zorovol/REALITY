@@ -406,7 +406,7 @@ export default function Dashboard() {
               <span className="dash-v2-balance-unit">ETH</span>
             </div>
             <code className="dash-v2-wallet-addr">{user?.walletAddress}</code>
-            <p className="dash-v2-wallet-hint">Fund with ~$10+ ETH on {BRAND.chainName} — ~$5 per buy + gas via Uniswap V3.</p>
+            <p className="dash-v2-wallet-hint">Fund with ETH on {BRAND.chainName} — bot uses your balance minus gas for each swap.</p>
           </div>
         </header>
 

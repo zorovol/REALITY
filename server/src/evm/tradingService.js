@@ -79,7 +79,7 @@ export class TradingService {
   formatTxError(err) {
     const msg = err?.shortMessage || err?.reason || err?.message || 'transaction failed';
     if (/insufficient funds/i.test(msg)) {
-      return `${msg} — fund ETH on Robinhood Chain (chain ID 4663), not Ethereum L1`;
+      return 'need more ETH for gas on Robinhood Chain (chain ID 4663) — not Ethereum L1';
     }
     if (/nonce/i.test(msg)) return `${msg} — retrying next tick`;
     if (/slippage|STF|INSUFFICIENT_OUTPUT|TF/i.test(msg)) {

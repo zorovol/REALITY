@@ -66,6 +66,8 @@ export const config = {
   ethUsdFallback: Number(process.env.ETH_USD_PRICE) || 3500,
   /** Default memecoin bot buy size (~USD per swap). */
   botBuyUsd: Number(process.env.BOT_BUY_USD) || 5,
+  /** ETH kept aside for gas on each buy/sell (Robinhood L2). */
+  botGasReserveEth: Number(process.env.BOT_GAS_RESERVE_ETH) || 0.0002,
   // Legacy Solana island show (optional — not used for user stock bots)
   solanaRpcUrl: process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   solanaNetwork: process.env.SOLANA_NETWORK || 'mainnet-beta',
