@@ -3,7 +3,7 @@ import { decryptWithServerKey } from '../auth/crypto.js';
 import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
 import { MemecoinDiscovery } from '../evm/memecoinDiscovery.js';
 import { txExplorerUrl } from '../chain/robinhood.js';
-import { selectToken, normalizeRules, defaultTradingRules } from './strategies.js';
+import { rankCandidates, normalizeRules, defaultTradingRules } from './strategies.js';
 
 export class UserBotEngine {
   /**
@@ -220,29 +220,38 @@ export class UserBotEngine {
     const candidates = this.filterCandidates(rules);
     if (!candidates.length) {
       const pool = this.discovery.list().length;
-      this.setStatus(bot, `no launchpad memecoins in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} listed)`);
+      const hint = rules.minMarketCap > 2_000
+        ? ' — try lowering min market cap (~$1.6k for fresh launchpad tokens)'
+        : '';
+      this.setStatus(bot, `no launchpad memecoins in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} listed)${hint}`);
       return;
     }
 
-    const target = selectToken(bot.botType, candidates);
-    if (!target) return;
-
+    const ranked = rankCandidates(bot.botType, candidates);
+    let target = null;
     let result;
-    try {
-      const routable = await this.trading.canSwapEthForToken(target.address, rules.buyAmountEth);
-      if (!routable) {
-        this.setStatus(bot, `${target.symbol} (${target.launchpad || 'launchpad'}) not swappable on Uniswap V3 yet — skipping`);
+
+    for (const candidate of ranked.slice(0, 15)) {
+      try {
+        const routable = await this.trading.canSwapEthForToken(candidate.address, rules.buyAmountEth);
+        if (!routable) continue;
+        target = candidate;
+        result = await this.trading.buyToken({
+          wallet,
+          mintAddress: candidate.address,
+          ethAmount: rules.buyAmountEth,
+        });
+        break;
+      } catch (err) {
+        const msg = this.trading.formatTxError?.(err) ?? err.message;
+        console.error(`[user-bots] ${bot.name || bot.botType} buy failed on ${candidate.symbol}:`, msg);
+        this.setStatus(bot, `buy failed on ${candidate.symbol}: ${msg.slice(0, 120)}`);
         return;
       }
-      result = await this.trading.buyToken({
-        wallet,
-        mintAddress: target.address,
-        ethAmount: rules.buyAmountEth,
-      });
-    } catch (err) {
-      const msg = this.trading.formatTxError?.(err) ?? err.message;
-      console.error(`[user-bots] ${bot.name || bot.botType} buy failed on ${target.symbol}:`, msg);
-      this.setStatus(bot, `buy failed: ${msg.slice(0, 140)}`);
+    }
+
+    if (!target) {
+      this.setStatus(bot, `0/${candidates.length} launchpad tokens swappable on Uniswap V3 in your mcap range — waiting for pools`);
       return;
     }
 
@@ -281,6 +290,10 @@ export class UserBotEngine {
     const candidates = pool.filter(
       (t) => t.usdMarketCap >= rules.minMarketCap && t.usdMarketCap <= rules.maxMarketCap,
     );
+    let routableInRange = 0;
+    for (const t of candidates.slice(0, 25)) {
+      if (await this.trading.canSwapEthForToken(t.address, rules.buyAmountEth)) routableInRange += 1;
+    }
     return {
       engineRunning: true,
       chain: config.chainName,
@@ -289,6 +302,7 @@ export class UserBotEngine {
       authConfigured: Boolean(config.authServerKey),
       discoveryPool: pool.length,
       candidatesInRange: candidates.length,
+      routableInRange,
       memecoinDiscovery: this.discovery.getMeta(),
       mcapRange: { min: rules.minMarketCap, max: rules.maxMarketCap },
       activeBots: active.length,

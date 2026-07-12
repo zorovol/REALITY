@@ -491,6 +491,9 @@ export default function Dashboard() {
                           {diagnostics.candidatesInRange != null && (
                             <> · Candidates: <strong>{diagnostics.candidatesInRange}</strong></>
                           )}
+                          {diagnostics.routableInRange != null && (
+                            <> · V3 swappable: <strong>{diagnostics.routableInRange}</strong></>
+                          )}
                         </p>
                       </>
                     ) : (
