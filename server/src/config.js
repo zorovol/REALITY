@@ -49,7 +49,11 @@ export const config = {
   memecoinDiscoveryRefreshMs: Number(process.env.MEMECOIN_DISCOVERY_REFRESH_MS) || 45_000,
   memecoinDefaultMcapUsd: Number(process.env.MEMECOIN_DEFAULT_MCAP_USD) || 1600,
   memecoinMinLiquidityUsd: Number(process.env.MEMECOIN_MIN_LIQUIDITY_USD) || 500,
-  memecoinMaxCandidates: Number(process.env.MEMECOIN_MAX_CANDIDATES) || 80,
+  memecoinMaxCandidates: Number(process.env.MEMECOIN_MAX_CANDIDATES) || 400,
+  memecoinApeMaxPages: Number(process.env.MEMECOIN_APE_MAX_PAGES) || 120,
+  memecoinNoxaMaxPages: Number(process.env.MEMECOIN_NOXA_MAX_PAGES) || 40,
+  memecoinNoxaRpcChunkSize: Number(process.env.MEMECOIN_NOXA_RPC_CHUNK) || 75_000,
+  memecoinNoxaMaxRpcChunks: Number(process.env.MEMECOIN_NOXA_RPC_CHUNKS) || 12,
   memecoinExtraAddresses: (process.env.MEMECOIN_EXTRA_ADDRESSES || '')
     .split(',').map((s) => s.trim()).filter(Boolean),
   authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY

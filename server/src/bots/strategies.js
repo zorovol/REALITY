@@ -58,14 +58,27 @@ export function rankCandidates(botType, candidates) {
   }
 }
 
-export function selectToken(botType, candidates) {
+/** Merge strategy-ranked tokens with older launchpad coins so bots trade both. */
+export function buildTradeCandidateOrder(botType, candidates) {
+  if (!candidates.length) return [];
   const ranked = rankCandidates(botType, candidates);
-  if (!ranked.length) return null;
-  const type = normalizeType(botType);
-  if (type === 'chatgpt' || type === 'grok' || type === 'gemini') {
-    return pick(ranked.slice(0, Math.min(5, ranked.length)));
+  const oldest = [...candidates].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+  const merged = [];
+  const seen = new Set();
+
+  const push = (t) => {
+    if (!t || seen.has(t.address)) return;
+    seen.add(t.address);
+    merged.push(t);
+  };
+
+  const maxLen = Math.max(ranked.length, oldest.length);
+  for (let i = 0; i < maxLen; i += 1) {
+    push(ranked[i]);
+    push(oldest[i]);
   }
-  return ranked[0];
+
+  return merged;
 }
 
 export function defaultTradingRules() {

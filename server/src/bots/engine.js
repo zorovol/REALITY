@@ -3,7 +3,7 @@ import { decryptWithServerKey } from '../auth/crypto.js';
 import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
 import { MemecoinDiscovery } from '../evm/memecoinDiscovery.js';
 import { txExplorerUrl } from '../chain/robinhood.js';
-import { rankCandidates, normalizeRules, defaultTradingRules } from './strategies.js';
+import { buildTradeCandidateOrder, normalizeRules, defaultTradingRules } from './strategies.js';
 
 export class UserBotEngine {
   /**
@@ -238,11 +238,11 @@ export class UserBotEngine {
       return;
     }
 
-    const ranked = rankCandidates(bot.botType, candidates);
+    const ordered = buildTradeCandidateOrder(bot.botType, candidates);
     let target = null;
     let result;
 
-    for (const candidate of ranked.slice(0, 15)) {
+    for (const candidate of ordered.slice(0, 50)) {
       try {
         const routable = await this.trading.canSwapEthForToken(candidate.address, buyEth);
         if (!routable) continue;
