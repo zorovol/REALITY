@@ -26,7 +26,7 @@ const STRATEGIES = [
   { id: 'chatgpt', name: 'ChatGPT', desc: 'Fresh memecoins — newest launches on Robinhood Chain.', color: '#00c805' },
   { id: 'grok', name: 'Grok', desc: 'Volatility hunter — rides hype and volume spikes.', color: '#fb7185' },
   { id: 'fable', name: 'Fable', desc: 'Chaos mode — random memecoin picks.', color: '#fbbf24' },
-  { id: 'gemini', name: 'Gemini', desc: 'Higher mcap — top of your range on DexScreener.', color: '#a78bfa' },
+  { id: 'gemini', name: 'Gemini', desc: 'Higher mcap — top of your launchpad range.', color: '#a78bfa' },
   { id: 'deepseek', name: 'DeepSeek', desc: 'Low cap sniper — smallest mcap in your band.', color: '#38bdf8' },
 ];
 

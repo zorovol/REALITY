@@ -46,7 +46,7 @@ export class UserBotEngine {
     this.discovery.refresh();
     this.timers.push(setInterval(() => this.discovery.refresh(), config.memecoinDiscoveryRefreshMs));
     this.timers.push(setInterval(() => this.tick(), 3_000));
-    console.log('[user-bots] Engine started — Robinhood Chain memecoins, 3s tick');
+    console.log('[user-bots] Engine started — Ape.Store + NOXA launchpad memecoins, 3s tick');
     setTimeout(() => this.tick(), 2_000);
   }
 
@@ -220,7 +220,7 @@ export class UserBotEngine {
     const candidates = this.filterCandidates(rules);
     if (!candidates.length) {
       const pool = this.discovery.list().length;
-      this.setStatus(bot, `no memecoins in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} on chain)`);
+      this.setStatus(bot, `no launchpad memecoins in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} listed)`);
       return;
     }
 
@@ -231,7 +231,7 @@ export class UserBotEngine {
     try {
       const routable = await this.trading.canSwapEthForToken(target.address, rules.buyAmountEth);
       if (!routable) {
-        this.setStatus(bot, `${target.symbol} has no Uniswap V2 WETH route — skipping`);
+        this.setStatus(bot, `${target.symbol} (${target.launchpad || 'launchpad'}) not swappable on Uniswap V3 yet — skipping`);
         return;
       }
       result = await this.trading.buyToken({

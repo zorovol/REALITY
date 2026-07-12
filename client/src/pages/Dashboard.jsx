@@ -406,7 +406,7 @@ export default function Dashboard() {
               <span className="dash-v2-balance-unit">ETH</span>
             </div>
             <code className="dash-v2-wallet-addr">{user?.walletAddress}</code>
-            <p className="dash-v2-wallet-hint">Fund with ETH on {BRAND.chainName} — bots swap via Uniswap V2.</p>
+            <p className="dash-v2-wallet-hint">Fund with ETH on {BRAND.chainName} — bots swap launchpad tokens via Uniswap V3.</p>
           </div>
         </header>
 
@@ -517,7 +517,7 @@ export default function Dashboard() {
                     <h3>{bots.length ? `${activeCount} of ${bots.length} trading` : 'No bots yet'}</h3>
                     <p className="dash-v2-card-text">
                       {bots.length
-                        ? 'Active bots scan DexScreener and execute on Uniswap V2.'
+                        ? 'Active bots scan Ape.Store + NOXA Fun and execute on Uniswap V3.'
                         : 'Create your first bot to start automated memecoin trading.'}
                     </p>
                     {bots.length > 0 && (
@@ -637,7 +637,7 @@ export default function Dashboard() {
                         <span className="home-v2-terminal-agent">SCAN</span>
                         <span className="home-v2-terminal-msg">
                           Memecoins in range: {diagnostics.candidatesInRange ?? '—'}
-                          {diagnostics.memecoinDiscovery?.poolSize != null && ` · Pool: ${diagnostics.memecoinDiscovery.poolSize} v2 pairs`}
+                          {diagnostics.memecoinDiscovery?.poolSize != null && ` · Pool: ${diagnostics.memecoinDiscovery.poolSize} launchpad tokens`}
                         </span>
                       </div>
                       {diagnostics.botStatus?.map((b) => (
@@ -698,7 +698,7 @@ export default function Dashboard() {
                   <span className="dash-v2-balance-val">{balance != null ? balance.toFixed(6) : '—'}</span>
                   <span className="dash-v2-balance-unit">ETH</span>
                 </div>
-                <p className="dash-v2-card-text">On {BRAND.chainName} · used for memecoin buys via Uniswap V2</p>
+                <p className="dash-v2-card-text">On {BRAND.chainName} · used for Ape.Store / NOXA memecoin buys via Uniswap V3</p>
               </div>
 
               <div className="dash-v2-wallet-grid">

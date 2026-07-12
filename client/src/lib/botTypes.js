@@ -20,7 +20,7 @@ export const BOT_META = {
   },
   gemini: {
     label: 'Gemini',
-    desc: 'Higher mcap — top of your DexScreener range.',
+    desc: 'Higher mcap — top of your launchpad range.',
     color: '#a78bfa',
   },
   deepseek: {

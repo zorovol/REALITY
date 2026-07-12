@@ -40,12 +40,16 @@ export const config = {
   nativeSymbol: process.env.NATIVE_SYMBOL || chainDefaults.nativeSymbol,
   wethAddress: process.env.WETH_ADDRESS || chainDefaults.weth,
   uniswapRouter: process.env.UNISWAP_V2_ROUTER || chainDefaults.uniswapV2Router,
+  uniswapV3Router: process.env.UNISWAP_V3_ROUTER || chainDefaults.uniswapV3Router,
+  uniswapV3Quoter: process.env.UNISWAP_V3_QUOTER || chainDefaults.uniswapV3Quoter,
+  uniswapV3Fee: Number(process.env.UNISWAP_V3_FEE) || chainDefaults.uniswapV3DefaultFee || 10000,
   stockTokens: parseStockTokens(process.env.STOCK_TOKENS_JSON),
   stockDiscoveryRefreshMs: Number(process.env.STOCK_DISCOVERY_REFRESH_MS) || 60_000,
-  // Robinhood Chain memecoins (DexScreener + Uniswap V2)
+  // Robinhood Chain memecoins (Ape.Store + NOXA Fun launchpads only)
   memecoinDiscoveryRefreshMs: Number(process.env.MEMECOIN_DISCOVERY_REFRESH_MS) || 45_000,
+  memecoinDefaultMcapUsd: Number(process.env.MEMECOIN_DEFAULT_MCAP_USD) || 1600,
   memecoinMinLiquidityUsd: Number(process.env.MEMECOIN_MIN_LIQUIDITY_USD) || 500,
-  memecoinMaxCandidates: Number(process.env.MEMECOIN_MAX_CANDIDATES) || 40,
+  memecoinMaxCandidates: Number(process.env.MEMECOIN_MAX_CANDIDATES) || 80,
   memecoinExtraAddresses: (process.env.MEMECOIN_EXTRA_ADDRESSES || '')
     .split(',').map((s) => s.trim()).filter(Boolean),
   authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY
@@ -89,5 +93,8 @@ export function chainConfig() {
     explorerUrl: config.chainExplorerUrl,
     weth: config.wethAddress,
     uniswapV2Router: config.uniswapRouter,
+    uniswapV3Router: config.uniswapV3Router,
+    uniswapV3Quoter: config.uniswapV3Quoter,
+    uniswapV3Fee: config.uniswapV3Fee,
   };
 }

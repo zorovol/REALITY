@@ -52,8 +52,8 @@ export default function Docs() {
             <p>
               {BRAND.name} is an automated trading platform on <strong>Robinhood Chain</strong> (EVM L2, chain ID 4663).
               You sign up with a password, receive an Ethereum wallet automatically, fund it with ETH,
-              then create trading bots that scan <strong>live memecoins</strong> via DexScreener
-              and execute buy/sell swaps through <strong>Uniswap V2</strong> on your behalf — 24/7.
+              then create trading bots that scan <strong>launchpad memecoins</strong> from Ape.Store and NOXA Fun
+              and execute buy/sell swaps through <strong>Uniswap V3</strong> on your behalf — 24/7.
             </p>
             <p>There are two parallel experiences:</p>
             <ul>
@@ -85,23 +85,23 @@ export default function Docs() {
               │  · Signup / login / sessions  │
               │  · Bot CRUD + execution       │
               │  · Live AI trading floor      │
-              │  · Uniswap V2 memecoin swaps    │
+              │  · Uniswap V3 launchpad swaps   │
               │  · Encrypted wallet keys      │
               └───────────────┬───────────────┘
                               │
               ┌───────────────┴───────────────┐
               ▼                               ▼
        PostgreSQL (optional)          Robinhood Chain RPC
-       Users · Sessions · Bots        DexScreener + Uniswap V2
+       Users · Sessions · Bots        Ape.Store + NOXA → Uniswap V3
 `}</pre>
             </div>
             <h3>Data flow for a user bot trade</h3>
             <ol className="docs-steps">
               <li>Backend loads all <strong>active</strong> bots from the database.</li>
               <li>For each bot, it decrypts the user&apos;s wallet server-side (never sent to browser).</li>
-              <li>Memecoin pool is refreshed from DexScreener (Robinhood Chain, Uniswap V2 / WETH pairs only).</li>
+              <li>Memecoin pool is refreshed from Ape.Store and NOXA Fun (Robinhood Chain launchpads only).</li>
               <li>The bot type determines <em>which</em> memecoin to pick from the filtered list.</li>
-              <li>A buy swap (ETH → memecoin) is submitted via Uniswap V2 if the bot has no open position.</li>
+              <li>A buy swap (ETH → memecoin) is submitted via Uniswap V3 if the bot has no open position and the token has a V3 pool.</li>
               <li>When take-profit, stop-loss, or a time limit hits, a sell swap is submitted.</li>
               <li>Trade results are logged to the database and visible on your dashboard.</li>
             </ol>
@@ -219,9 +219,9 @@ export default function Docs() {
               </table>
             </div>
             <p>
-              Live Robinhood Chain memecoins with Uniswap V2 WETH liquidity are considered.
+              Only memecoins launched on Ape.Store or NOXA Fun are considered.
               Official stock tokens (AAPL, NVDA, etc.) and stablecoins are excluded.
-              Tokens outside your mcap band are ignored.
+              Tokens outside your mcap band are ignored. NOXA tokens still on the bonding curve are skipped until they have a Uniswap V3 pool.
             </p>
           </section>
 
@@ -230,18 +230,17 @@ export default function Docs() {
             <p>The backend runs a continuous loop (approximately every 3 seconds) on Render:</p>
             <ol className="docs-steps">
               <li>Fetch all bots where <code>isActive = true</code>.</li>
-              <li>Refresh the memecoin discovery pool (DexScreener → Uniswap V2 WETH pairs).</li>
+              <li>Refresh the memecoin discovery pool (Ape.Store API + NOXA factory events).</li>
               <li>For each active bot:
                 <ul>
                   <li>If holding a position → check take-profit, stop-loss, or ~30s time limit → sell if triggered.</li>
-                  <li>If no position and wallet has enough ETH → filter by mcap range → apply bot type selection → verify V2 route → buy via Uniswap.</li>
+                  <li>If no position and wallet has enough ETH → filter by mcap range → apply bot type selection → verify Uniswap V3 route → buy.</li>
                 </ul>
               </li>
               <li>Log every buy/sell with transaction hash (viewable on Blockscout).</li>
             </ol>
             <p>
-              The engine uses the same Uniswap V2 trading service as the live AI trading floor —
-              real on-chain swaps on Robinhood Chain.
+              The engine uses Uniswap V3 on Robinhood Chain — real on-chain swaps for launchpad tokens.
             </p>
           </section>
 
