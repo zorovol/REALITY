@@ -2,7 +2,7 @@ import { config } from '../config.js';
 import { decryptWithServerKey } from '../auth/crypto.js';
 import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
 import { StockDiscovery } from '../evm/stockDiscovery.js';
-import { txExplorerUrl } from '../chain/robinhood.js';
+import { txExplorerUrl } from '../chain/ethereum.js';
 import { buildTradeCandidateOrder, normalizeRules, defaultTradingRules } from './strategies.js';
 
 export class UserBotEngine {
@@ -50,14 +50,14 @@ export class UserBotEngine {
   }
 
   gasNeededStatus(balanceEth, sym) {
-    return `need more ETH for gas on Robinhood Chain — have ${balanceEth.toFixed(6)} ${sym}`;
+    return `need more ETH for gas on Ethereum mainnet — have ${balanceEth.toFixed(6)} ${sym}`;
   }
 
   start() {
     this.discovery.refresh();
     this.timers.push(setInterval(() => this.discovery.refresh(), config.stockDiscoveryRefreshMs));
-    this.timers.push(setInterval(() => this.tick(), 3_000));
-    console.log('[user-bots] Engine started — Robinhood tokenized stocks (RWA) via Uniswap V4, 3s tick');
+    this.timers.push(setInterval(() => this.tick(), 5_000));
+    console.log('[user-bots] Engine started — Ethereum tokenized stocks via Uniswap V3, 5s tick');
     setTimeout(() => this.tick(), 2_000);
   }
 
@@ -242,7 +242,7 @@ export class UserBotEngine {
     const candidates = this.filterCandidates(rules);
     if (!candidates.length) {
       const pool = this.discovery.list().length;
-      this.setStatus(bot, `no tradable Robinhood stock tokens in your mcap band (${pool} stocks listed) — widen the range`);
+      this.setStatus(bot, `no tradable Ethereum stock tokens in your mcap band (${pool} listed) — widen the range`);
       return;
     }
 
@@ -250,7 +250,7 @@ export class UserBotEngine {
     let target = null;
     let result;
 
-    for (const candidate of ordered.slice(0, 25)) {
+    for (const candidate of ordered.slice(0, 20)) {
       try {
         const pools = this.discovery.poolsFor(candidate.address);
         const minOut = this.discovery.minOutForBuy(candidate.address, buyEth);
@@ -274,7 +274,7 @@ export class UserBotEngine {
     }
 
     if (!target) {
-      this.setStatus(bot, `0/${candidates.length} stock tokens with live V4 ETH liquidity right now — retrying`);
+      this.setStatus(bot, `0/${candidates.length} stock tokens with live Uniswap V3 liquidity — retrying`);
       return;
     }
 

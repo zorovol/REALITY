@@ -8,7 +8,7 @@ import { BOT_TYPES, defaultTradingRules } from '../lib/localBots.js';
 import { BOT_META, botMeta } from '../lib/botTypes.js';
 import Character from '../components/Character.jsx';
 import { BRAND } from '../config/brand.js';
-import { CHAIN, addRobinhoodChainToWallet } from '../config/chain.js';
+import { CHAIN, addEthereumToWallet } from '../config/chain.js';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -48,12 +48,12 @@ export default function Dashboard() {
   const [tab, setTab] = useState('overview');
   const [mmError, setMmError] = useState('');
 
-  const addRobinhoodNetwork = async () => {
+  const addEthereumNetwork = async () => {
     setMmError('');
     try {
-      await addRobinhoodChainToWallet();
+      await addEthereumToWallet();
     } catch (err) {
-      setMmError(err.message || 'Could not add network to MetaMask');
+      setMmError(err.message || 'Could not switch MetaMask to Ethereum');
     }
   };
 
@@ -330,7 +330,7 @@ export default function Dashboard() {
           <div className="dash-v2-rules-grid">
             {ruleInput('minMarketCap', 'Min on-chain cap ($)', 100)}
             {ruleInput('maxMarketCap', 'Max on-chain cap ($)', 100)}
-            {ruleInput('buyAmountEth', 'Buy amount (ETH, ~$5)', 0.0001)}
+            {ruleInput('buyAmountEth', 'Buy amount (ETH, ~$15)', 0.0001)}
             {ruleInput('takeProfitPercent', 'Take profit (%)', 1)}
             {ruleInput('stopLossPercent', 'Stop loss (%)', 1)}
           </div>
@@ -385,7 +385,7 @@ export default function Dashboard() {
               Command <em>center</em>
             </h1>
             <p className="dash-v2-hero-lead">
-              Name each bot, hit Start — {BRAND.name} trades Robinhood tokenized stocks every ~3s on {BRAND.chainName}.
+              Name each bot, hit Start — {BRAND.name} trades Ethereum tokenized stocks on Uniswap V3.
             </p>
             <div className="dash-v2-hero-cta">
               <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
@@ -494,7 +494,7 @@ export default function Dashboard() {
                             <> · Candidates: <strong>{diagnostics.candidatesInRange}</strong></>
                           )}
                           {diagnostics.routableInRange != null && (
-                            <> · V4 swappable: <strong>{diagnostics.routableInRange}</strong></>
+                            <> · V3 swappable: <strong>{diagnostics.routableInRange}</strong></>
                           )}
                         </p>
                       </>
@@ -522,7 +522,7 @@ export default function Dashboard() {
                     <h3>{bots.length ? `${activeCount} of ${bots.length} trading` : 'No bots yet'}</h3>
                     <p className="dash-v2-card-text">
                       {bots.length
-                        ? 'Active bots scan Robinhood stock tokens (RWAs) and execute on Uniswap V4.'
+                        ? 'Active bots scan Ethereum stock trackers and execute on Uniswap V3.'
                         : 'Create your first bot to start automated stock-token trading.'}
                     </p>
                     {bots.length > 0 && (
@@ -642,7 +642,7 @@ export default function Dashboard() {
                         <span className="home-v2-terminal-agent">SCAN</span>
                         <span className="home-v2-terminal-msg">
                           Stock tokens in range: {diagnostics.candidatesInRange ?? '—'}
-                          {diagnostics.stockDiscovery?.tradableCount != null && ` · ${diagnostics.stockDiscovery.tradableCount} tradable RWAs`}
+                          {diagnostics.stockDiscovery?.tradableCount != null && ` · ${diagnostics.stockDiscovery.tradableCount} tradable`}
                           {diagnostics.stockDiscovery?.poolSize != null && ` of ${diagnostics.stockDiscovery.poolSize} listed`}
                         </span>
                       </div>
@@ -704,7 +704,7 @@ export default function Dashboard() {
                   <span className="dash-v2-balance-val">{balance != null ? balance.toFixed(6) : '—'}</span>
                   <span className="dash-v2-balance-unit">ETH</span>
                 </div>
-                <p className="dash-v2-card-text">On {BRAND.chainName} · used to buy Robinhood tokenized stocks via Uniswap V4</p>
+                <p className="dash-v2-card-text">On {BRAND.chainName} · used to buy tokenized stocks via Uniswap V3</p>
               </div>
 
               <div className="dash-v2-wallet-grid">
@@ -730,12 +730,12 @@ export default function Dashboard() {
               <article className="dash-v2-card">
                 <span className="home-v2-split-tag">How to fund</span>
                 <p className="dash-v2-card-text">
-                  Send ETH to your address above on <strong>{BRAND.chainName}</strong> (chain ID {CHAIN.chainId}) — not Ethereum mainnet.
-                  If you import this wallet into MetaMask, add Robinhood Chain first or transactions will fail.
+                  Send ETH to your address above on <strong>{BRAND.chainName}</strong> (chain ID {CHAIN.chainId}) — Ethereum mainnet, not an L2.
+                  L1 gas is expensive; keep a reserve for swaps.
                 </p>
                 <div className="dash-v2-wallet-actions">
-                  <button type="button" className="home-v2-btn ghost" onClick={addRobinhoodNetwork}>
-                    Add Robinhood Chain to MetaMask
+                  <button type="button" className="home-v2-btn ghost" onClick={addEthereumNetwork}>
+                    Switch MetaMask to Ethereum
                   </button>
                   <Link to="/docs" className="home-v2-link">Read setup docs →</Link>
                 </div>

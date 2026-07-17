@@ -1,36 +1,35 @@
-/** Five trading bots — one per AI agent on the live floor. */
+/** Five trading bots — one per AI agent. */
 
 export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
 export const BOT_META = {
   chatgpt: {
     label: 'ChatGPT',
-    desc: 'Volume leader — most-traded stock tokens (NVDA, TSLA…).',
-    color: '#00c805',
+    desc: 'Volume leader — most-traded stock trackers.',
+    color: '#F5B800',
   },
   grok: {
     label: 'Grok',
-    desc: 'Turnover hunter — stocks with hottest on-chain activity.',
-    color: '#fb7185',
+    desc: 'Turnover hunter — hottest on-chain activity.',
+    color: '#FF3B30',
   },
   fable: {
     label: 'Fable',
-    desc: 'Chaos mode — random stock token picks.',
-    color: '#fbbf24',
+    desc: 'Chaos mode — random stock picks.',
+    color: '#E8E4D9',
   },
   gemini: {
     label: 'Gemini',
-    desc: 'Blue chips — biggest on-chain caps in your range.',
-    color: '#a78bfa',
+    desc: 'Liquidity first — deepest Uniswap pools.',
+    color: '#7DD3FC',
   },
   deepseek: {
     label: 'DeepSeek',
-    desc: 'Small caps — thinnest stock pools in your band.',
-    color: '#38bdf8',
+    desc: 'Thin pools — smaller liquidity bands.',
+    color: '#A3A3A3',
   },
 };
 
-/** Old strategy ids → AI names (existing saved bots). */
 export const LEGACY_BOT_TYPE = {
   sniper: 'chatgpt',
   momentum: 'grok',
@@ -41,5 +40,5 @@ export const LEGACY_BOT_TYPE = {
 
 export function botMeta(botType) {
   const id = LEGACY_BOT_TYPE[botType] || botType;
-  return BOT_META[id] ?? { label: botType, desc: '', color: '#94a3b8', id };
+  return BOT_META[id] ?? { label: botType, desc: '', color: '#A3A3A3', id };
 }

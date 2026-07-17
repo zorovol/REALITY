@@ -1,12 +1,17 @@
 import { ethers } from 'ethers';
 import { config } from '../config.js';
-import { robinhoodMainnet } from '../chain/robinhood.js';
+import { ethereumMainnet } from '../chain/ethereum.js';
 
-const BLOCKSCOUT = `${robinhoodMainnet.explorerUrl}/api/v2`;
-const POOL_MANAGER = robinhoodMainnet.uniswapV4.poolManager;
-const INIT_TOPIC = ethers.id('Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)');
-const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
-const ZERO_TOPIC = ethers.zeroPadValue(ZERO_ADDR, 32);
+const WETH = ethereumMainnet.weth.toLowerCase();
+const USDC = ethereumMainnet.usdc.toLowerCase();
+const STABLES = new Set([USDC, '0xdac17f958d2ee523a2206206994597c13d831ec7']); // USDT
+
+/** Search queries for Ondo (`*on`) and xStocks (`*x`) trackers. */
+const SEARCH_TICKERS = [
+  'NVDAon', 'TSLAon', 'AAPLon', 'GOOGLon', 'AMZNon', 'MSFTon', 'METALon',
+  'SPYon', 'QQQon', 'SPCXon', 'PLTRon', 'COINon', 'CRCLon', 'AMDLon',
+  'NVDAx', 'TSLAx', 'AAPLx', 'SPYx', 'QQQx', 'METAx', 'MSFTx',
+];
 
 async function fetchJson(url, retries = 2) {
   let lastErr;
@@ -14,123 +19,114 @@ async function fetchJson(url, retries = 2) {
     try {
       const res = await fetch(url, {
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(25_000),
+        signal: AbortSignal.timeout(20_000),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     } catch (err) {
       lastErr = err;
-      if (i < retries) await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+      if (i < retries) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
     }
   }
   throw lastErr;
 }
 
-/** Live ETH/USD from Blockscout chain stats. */
-async function fetchEthUsd() {
-  const stats = await fetchJson(`${BLOCKSCOUT}/stats`);
-  const price = Number(stats?.coin_price);
-  return Number.isFinite(price) && price > 0 ? price : 0;
+function isStockSymbol(sym) {
+  const s = String(sym || '');
+  return /on$/i.test(s) || /x$/i.test(s);
 }
 
-/** All Robinhood tokenized stocks/ETFs from Blockscout (name ends "Robinhood Token"). */
-async function fetchStockTokens() {
-  const found = [];
-  const seen = new Set();
-  let next = `${BLOCKSCOUT}/tokens?q=${encodeURIComponent('Robinhood Token')}`;
-  let pages = 0;
-  const maxPages = config.stockMaxPages;
+function pickRoute(pair) {
+  const base = pair.baseToken;
+  const quote = pair.quoteToken;
+  const quoteAddr = String(quote.address).toLowerCase();
+  const baseAddr = String(base.address).toLowerCase();
+  const feeHint = Number(pair.feeTier?.[0] || pair.labels?.includes?.('v3') && 3000) || 3000;
 
-  while (next && pages < maxPages) {
-    const data = await fetchJson(next);
-    for (const item of data.items ?? []) {
-      const addr = String(item.address_hash || item.address || '').toLowerCase();
-      const name = String(item.name || '');
-      if (!addr.startsWith('0x') || seen.has(addr)) continue;
-      if (!/robinhood token/i.test(name)) continue;
-      seen.add(addr);
-      found.push({
-        mint: addr,
-        address: addr,
-        symbol: String(item.symbol || 'STOCK').slice(0, 16),
-        name: name.replace(/\s*[•·]\s*Robinhood Token\s*$/i, '').trim() || item.symbol,
-        priceUsd: Number(item.exchange_rate) || 0,
-        usdMarketCap: Number(item.circulating_market_cap) || 0,
-        volumeH24: Number(item.volume_24h) || 0,
-        holders: Number(item.holders_count) || 0,
-        decimals: Number(item.decimals) || 18,
-      });
-    }
-    if (data.next_page_params) {
-      const params = new URLSearchParams(
-        Object.entries(data.next_page_params).map(([k, v]) => [k, String(v)]),
-      );
-      next = `${BLOCKSCOUT}/tokens?q=${encodeURIComponent('Robinhood Token')}&${params}`;
-    } else {
-      next = null;
-    }
-    pages += 1;
+  // Prefer stock as base
+  let stock = base;
+  let other = quote;
+  let otherAddr = quoteAddr;
+  if (!isStockSymbol(base.symbol) && isStockSymbol(quote.symbol)) {
+    stock = quote;
+    other = base;
+    otherAddr = baseAddr;
+  }
+  if (!isStockSymbol(stock.symbol)) return null;
+
+  const liq = Number(pair.liquidity?.usd) || 0;
+  const priceUsd = Number(pair.priceUsd) || Number(stock.priceUsd) || 0;
+  const volumeH24 = Number(pair.volume?.h24) || 0;
+  const mcap = Number(pair.fdv || pair.marketCap) || (priceUsd * 1_000_000);
+
+  let routeType = null;
+  let fee = 3000;
+  if (otherAddr === WETH) {
+    routeType = 'weth';
+    fee = 3000;
+  } else if (STABLES.has(otherAddr)) {
+    routeType = 'usdc';
+    fee = otherAddr === USDC ? 500 : 3000;
+  } else {
+    return null;
+  }
+
+  // DexScreener doesn't always expose fee tier — try common ones later in trading.
+  return {
+    mint: String(stock.address).toLowerCase(),
+    address: String(stock.address).toLowerCase(),
+    symbol: String(stock.symbol).slice(0, 16),
+    name: stock.name || stock.symbol,
+    priceUsd,
+    usdMarketCap: mcap,
+    volumeH24,
+    liquidityUsd: liq,
+    holders: 0,
+    decimals: 18,
+    routeType,
+    quoteToken: otherAddr,
+    feeHint: fee,
+    feeHintAlt: feeHint,
+    pairAddress: pair.pairAddress,
+    dexId: pair.dexId,
+    labels: pair.labels || [],
+    volatility: mcap > 0 ? volumeH24 / mcap : 0,
+    tradable: liq >= config.stockMinLiquidityUsd,
+    issuer: /on$/i.test(stock.symbol) ? 'ondo' : /x$/i.test(stock.symbol) ? 'xstocks' : 'unknown',
+  };
+}
+
+async function searchDex(query) {
+  const data = await fetchJson(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(query)}`);
+  const found = [];
+  for (const pair of data.pairs || []) {
+    if (pair.chainId !== 'ethereum') continue;
+    if (!String(pair.dexId || '').includes('uniswap')) continue;
+    const route = pickRoute(pair);
+    if (route) found.push(route);
   }
   return found;
 }
 
-/** Scan V4 PoolManager Initialize logs for native-ETH pools (currency0 = 0x0). */
-async function fetchNativePoolKeys(provider) {
-  const coder = ethers.AbiCoder.defaultAbiCoder();
-  const latest = await provider.getBlockNumber();
-  /** token address -> [{fee, tickSpacing}] (hookless pools only) */
-  const pools = new Map();
-
-  const collect = (logs) => {
-    for (const log of logs) {
-      const token = `0x${log.topics[3].slice(26)}`.toLowerCase();
-      const [fee, tickSpacing, hooks] = coder.decode(
-        ['uint24', 'int24', 'address', 'uint160', 'int24'],
-        log.data,
-      );
-      if (hooks.toLowerCase() !== ZERO_ADDR) continue;
-      if (!pools.has(token)) pools.set(token, []);
-      pools.get(token).push({ fee: Number(fee), tickSpacing: Number(tickSpacing) });
-    }
-  };
-
-  const filter = { address: POOL_MANAGER, topics: [INIT_TOPIC, null, ZERO_TOPIC] };
-
-  // Halve the range on RPC log-limit errors until each request fits.
-  const scan = async (from, to, depth = 0) => {
-    try {
-      collect(await provider.getLogs({ ...filter, fromBlock: from, toBlock: to }));
-    } catch (err) {
-      if (depth < 8 && to > from) {
-        const mid = Math.floor((from + to) / 2);
-        await scan(from, mid, depth + 1);
-        await scan(mid + 1, to, depth + 1);
-      } else {
-        console.warn(`[rwa-discovery] pool scan ${from}-${to} failed:`, err.message.slice(0, 120));
-      }
-    }
-  };
-
-  const chunk = config.stockPoolScanChunk;
-  for (let from = 0; from <= latest; from += chunk) {
-    await scan(from, Math.min(from + chunk - 1, latest));
+async function fetchEthUsd() {
+  try {
+    const data = await fetchJson('https://api.coinbase.com/v2/prices/ETH-USD/spot');
+    const price = Number(data?.data?.amount);
+    return Number.isFinite(price) && price > 0 ? price : 0;
+  } catch {
+    return 0;
   }
-  return pools;
 }
 
-/** Discovers Robinhood tokenized stocks (RWAs) with live Uniswap V4 ETH pools. */
+/** Discovers Ethereum tokenized stocks (Ondo / xStocks) with Uniswap liquidity. */
 export class StockDiscovery {
   constructor() {
     /** @type {Map<string, object>} */
     this.tokens = new Map();
-    /** token address -> candidate native pool keys (cached across refreshes) */
-    this.poolKeys = new Map();
     this.lastRefresh = 0;
-    this.lastPoolScan = 0;
     this.lastError = null;
     this.lastStockCount = 0;
     this.ethUsd = config.ethUsdFallback;
-    this.provider = new ethers.JsonRpcProvider(config.chainRpcUrl, config.chainId);
   }
 
   list() {
@@ -142,7 +138,9 @@ export class StockDiscovery {
   }
 
   poolsFor(address) {
-    return this.poolKeys.get(String(address).toLowerCase()) ?? [];
+    const t = this.get(address);
+    if (!t) return [];
+    return [{ routeType: t.routeType, fee: t.feeHint, quoteToken: t.quoteToken }];
   }
 
   async refresh() {
@@ -153,61 +151,77 @@ export class StockDiscovery {
     try {
       const price = await fetchEthUsd();
       if (price) this.ethUsd = price;
-    } catch {
-      /* keep last known ETH price */
+    } catch { /* keep last */ }
+
+    const merged = new Map();
+
+    // Seed curated addresses first
+    for (const seed of config.stockTokens) {
+      const addr = String(seed.address).toLowerCase();
+      merged.set(addr, {
+        mint: addr,
+        address: addr,
+        symbol: seed.symbol,
+        name: seed.symbol,
+        priceUsd: Number(seed.priceUsd) || 0,
+        usdMarketCap: (Number(seed.priceUsd) || 0) * 500_000,
+        volumeH24: 0,
+        liquidityUsd: 0,
+        holders: 0,
+        decimals: 18,
+        routeType: 'usdc',
+        quoteToken: USDC,
+        feeHint: 3000,
+        tradable: false,
+        volatility: 0,
+        issuer: /on$/i.test(seed.symbol) ? 'ondo' : 'xstocks',
+      });
     }
 
-    let stocks = [];
-    try {
-      stocks = await fetchStockTokens();
-    } catch (err) {
-      this.lastError = err.message;
-      console.warn('[rwa-discovery] blockscout stock list failed:', err.message);
-      if (!this.tokens.size) return;
+    // DexScreener searches (batched, limited concurrency)
+    const results = [];
+    for (let i = 0; i < SEARCH_TICKERS.length; i += 4) {
+      const batch = SEARCH_TICKERS.slice(i, i + 4);
+      const part = await Promise.all(batch.map(async (q) => {
+        try {
+          return await searchDex(q);
+        } catch (err) {
+          console.warn(`[rwa-discovery] search ${q}:`, err.message);
+          return [];
+        }
+      }));
+      results.push(...part.flat());
     }
-    this.lastStockCount = stocks.length;
 
-    // Pool scan is expensive — redo at most every 30 min.
-    if (now - this.lastPoolScan > config.stockPoolScanRefreshMs || !this.poolKeys.size) {
-      try {
-        this.poolKeys = await fetchNativePoolKeys(this.provider);
-        this.lastPoolScan = now;
-      } catch (err) {
-        console.warn('[rwa-discovery] V4 pool scan failed:', err.message);
+    for (const t of results) {
+      const existing = merged.get(t.address);
+      if (!existing || t.liquidityUsd > (existing.liquidityUsd || 0)) {
+        // Prefer WETH routes when liquidity is comparable
+        if (existing?.routeType === 'weth' && t.routeType === 'usdc'
+          && existing.liquidityUsd > t.liquidityUsd * 0.5) {
+          continue;
+        }
+        merged.set(t.address, { ...existing, ...t });
       }
     }
 
-    if (stocks.length) {
-      const merged = new Map();
-      for (const s of stocks) {
-        const pools = this.poolKeys.get(s.address) ?? [];
-        merged.set(s.address, {
-          ...s,
-          pools,
-          tradable: pools.length > 0 && s.priceUsd > 0,
-          // turnover ratio as a volatility-style signal for ranking
-          volatility: s.usdMarketCap > 0 ? s.volumeH24 / s.usdMarketCap : 0,
-        });
-      }
-      this.tokens = merged;
-    }
+    this.tokens = merged;
+    this.lastStockCount = merged.size;
     this.lastRefresh = now;
-
     const tradable = this.list().filter((t) => t.tradable).length;
-    console.log(`[rwa-discovery] ${this.tokens.size} Robinhood stock tokens, ${tradable} with native V4 ETH pools`);
+    console.log(`[rwa-discovery] ${merged.size} Ethereum stock tokens, ${tradable} with Uniswap liquidity ≥$${config.stockMinLiquidityUsd}`);
   }
 
   /**
-   * Minimum acceptable token output for an ETH buy — half of fair value at
-   * the stock's real price. Filters out dead/mispriced V4 pools.
+   * Minimum acceptable token output for an ETH buy — half of fair value.
    */
   minOutForBuy(address, ethAmount) {
     const token = this.get(address);
     if (!token?.priceUsd || !this.ethUsd) return 0n;
     const fairTokens = (ethAmount * this.ethUsd) / token.priceUsd;
-    const floor = fairTokens * 0.5;
+    const floor = fairTokens * 0.45;
     if (!Number.isFinite(floor) || floor <= 0) return 0n;
-    return ethers.parseUnits(floor.toFixed(Math.min(token.decimals ?? 18, 18)), token.decimals ?? 18);
+    return ethers.parseUnits(floor.toFixed(8), token.decimals ?? 18);
   }
 
   getMeta() {
@@ -218,7 +232,7 @@ export class StockDiscovery {
       stockCount: this.lastStockCount,
       poolSize: this.tokens.size,
       tradableCount: this.list().filter((t) => t.tradable).length,
-      sources: ['robinhood-chain-blockscout', 'uniswap-v4'],
+      sources: ['dexscreener', 'ondo', 'xstocks'],
     };
   }
 }

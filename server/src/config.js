@@ -1,16 +1,14 @@
 import dotenv from 'dotenv';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { robinhoodMainnet, robinhoodTestnet } from './chain/robinhood.js';
+import { ethereumMainnet } from './chain/ethereum.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 dotenv.config({ path: path.join(__dirname, '..', '.env'), override: true });
 
 const speed = Math.max(0.1, Number(process.env.SHOW_SPEED) || 1);
-
-const chainNetwork = process.env.CHAIN_NETWORK || 'mainnet';
-const chainDefaults = chainNetwork === 'testnet' ? robinhoodTestnet : robinhoodMainnet;
+const chainDefaults = ethereumMainnet;
 
 function parseStockTokens(raw) {
   if (!raw) return chainDefaults.stockTokens;
@@ -32,42 +30,39 @@ export const config = {
   geminiKey: process.env.GEMINI_API_KEY || '',
   contestantAiEnabled: process.env.ENABLE_CONTESTANT_AI === 'true',
   speed,
-  // Robinhood Chain (EVM L2)
+  // Ethereum mainnet
   chainId: Number(process.env.CHAIN_ID) || chainDefaults.chainId,
   chainName: process.env.CHAIN_NAME || chainDefaults.name,
-  chainRpcUrl: process.env.EVM_RPC_URL || process.env.ROBINHOOD_RPC_URL || chainDefaults.rpcUrl,
+  chainRpcUrl: process.env.EVM_RPC_URL || process.env.ETH_RPC_URL || chainDefaults.rpcUrl,
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || chainDefaults.explorerUrl,
   nativeSymbol: process.env.NATIVE_SYMBOL || chainDefaults.nativeSymbol,
   wethAddress: process.env.WETH_ADDRESS || chainDefaults.weth,
-  uniswapRouter: process.env.UNISWAP_V2_ROUTER || chainDefaults.uniswapV2Router,
+  usdcAddress: process.env.USDC_ADDRESS || chainDefaults.usdc,
   uniswapV3Router: process.env.UNISWAP_V3_ROUTER || chainDefaults.uniswapV3Router,
   uniswapV3Quoter: process.env.UNISWAP_V3_QUOTER || chainDefaults.uniswapV3Quoter,
-  uniswapV3Fee: Number(process.env.UNISWAP_V3_FEE) || chainDefaults.uniswapV3DefaultFee || 10000,
+  uniswapV3Fee: Number(process.env.UNISWAP_V3_FEE) || chainDefaults.uniswapV3DefaultFee || 3000,
   stockTokens: parseStockTokens(process.env.STOCK_TOKENS_JSON),
-  // Robinhood tokenized stocks (RWA) — discovery + Uniswap V4 pool scan
-  stockDiscoveryRefreshMs: Number(process.env.STOCK_DISCOVERY_REFRESH_MS) || 60_000,
-  stockMaxPages: Number(process.env.STOCK_MAX_PAGES) || 10,
-  stockPoolScanChunk: Number(process.env.STOCK_POOL_SCAN_CHUNK) || 2_000_000,
-  stockPoolScanRefreshMs: Number(process.env.STOCK_POOL_SCAN_REFRESH_MS) || 30 * 60_000,
+  stockDiscoveryRefreshMs: Number(process.env.STOCK_DISCOVERY_REFRESH_MS) || 90_000,
+  stockMinLiquidityUsd: Number(process.env.STOCK_MIN_LIQUIDITY_USD) || 1_000,
   /** Max time a bot holds a stock position before time-based exit. */
-  botMaxHoldMs: Number(process.env.BOT_MAX_HOLD_MS) || 10 * 60_000,
+  botMaxHoldMs: Number(process.env.BOT_MAX_HOLD_MS) || 15 * 60_000,
   authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY
     || (process.env.NODE_ENV !== 'production' ? 'local-dev-auth-key-32chars!!' : ''),
   encryptionKey: process.env.ENCRYPTION_KEY || process.env.AUTH_SERVER_KEY || '',
   simulationFallback: process.env.SIMULATION_FALLBACK === 'true',
-  minEthForTrade: Number(process.env.MIN_ETH_FOR_TRADE) || 0.0005,
+  minEthForTrade: Number(process.env.MIN_ETH_FOR_TRADE) || 0.005,
   minEthForLaunch: Number(process.env.MIN_ETH_FOR_LAUNCH) || 0.01,
   maxTradesPerMinute: Number(process.env.MAX_TRADES_PER_MINUTE) || 30,
   tradeIntervalMs: Number(process.env.TRADE_INTERVAL_MS) || 2_000,
   balanceRefreshMs: Number(process.env.BALANCE_REFRESH_MS) || 5_000,
   tradeSellAfterBuyMs: Number(process.env.TRADE_SELL_AFTER_BUY_MS) || 20_000,
   tradeUsdPerSide: Number(process.env.TRADE_USD_PER_SIDE) || 2,
-  ethUsdFallback: Number(process.env.ETH_USD_PRICE) || 3500,
+  ethUsdFallback: Number(process.env.ETH_USD_PRICE) || 2500,
   /** Default stock-bot buy size (~USD per swap). */
-  botBuyUsd: Number(process.env.BOT_BUY_USD) || 5,
-  /** ETH kept aside for gas on each buy/sell (Robinhood L2). */
-  botGasReserveEth: Number(process.env.BOT_GAS_RESERVE_ETH) || 0.0002,
-  // Legacy Solana island show (optional — not used for user stock bots)
+  botBuyUsd: Number(process.env.BOT_BUY_USD) || 15,
+  /** ETH kept aside for gas on each buy/sell (Ethereum L1 is expensive). */
+  botGasReserveEth: Number(process.env.BOT_GAS_RESERVE_ETH) || 0.005,
+  // Legacy Solana island show (optional)
   solanaRpcUrl: process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   solanaNetwork: process.env.SOLANA_NETWORK || 'mainnet-beta',
   minSolForTrade: Number(process.env.MIN_SOL_FOR_TRADE) || 0.02,
@@ -95,10 +90,9 @@ export function chainConfig() {
     rpcUrl: config.chainRpcUrl,
     explorerUrl: config.chainExplorerUrl,
     weth: config.wethAddress,
-    uniswapV2Router: config.uniswapRouter,
+    usdc: config.usdcAddress,
     uniswapV3Router: config.uniswapV3Router,
     uniswapV3Quoter: config.uniswapV3Quoter,
     uniswapV3Fee: config.uniswapV3Fee,
-    uniswapV4: robinhoodMainnet.uniswapV4,
   };
 }

@@ -1,19 +1,19 @@
-# Backend for RobinBot trading + websockets (Vercel hosts the static UI).
-# Render dashboard → Blueprint → connect repo, OR set env vars manually on ai-drama-island-api.
+# Backend for TICKWIRE trading + websockets (Vercel hosts the static UI).
+# Render dashboard → Blueprint → connect repo, OR set env vars manually.
 #
 # DATABASE_URL: use Neon (recommended) OR the Render Postgres database below.
 # After adding DATABASE_URL, redeploy — /api/health should show db: "postgres".
 
 databases:
-  - name: robinhoodbot-db
+  - name: tickwire-db
     plan: free
     region: oregon
-    databaseName: robinhoodbot
-    user: robinhoodbot
+    databaseName: tickwire
+    user: tickwire
 
 services:
   - type: web
-    name: ai-drama-island-api
+    name: tickwire-api
     runtime: node
     plan: free
     region: oregon
@@ -27,35 +27,41 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://robinbot.app,https://www.robinbot.app,https://botsforge.tech,https://www.botsforge.tech,https://ai-drama-island.vercel.app
+        value: https://tickwire.app,https://www.tickwire.app,https://robinbot.app,https://www.robinbot.app,https://ai-drama-island.vercel.app
       - key: SIMULATION_FALLBACK
         value: "false"
       - key: AUTH_SERVER_KEY
         sync: false
-      # Neon: paste postgresql://...?sslmode=require from console.neon.tech
-      # Render Postgres: auto-wired if you deploy this blueprint with the database above
       - key: DATABASE_URL
         fromDatabase:
-          name: robinhoodbot-db
+          name: tickwire-db
           property: connectionString
-      # Robinhood Chain
-      - key: CHAIN_NETWORK
-        value: mainnet
+      # Ethereum mainnet
       - key: EVM_RPC_URL
-        value: https://rpc.mainnet.chain.robinhood.com
+        value: https://ethereum.publicnode.com
       - key: CHAIN_ID
-        value: "4663"
+        value: "1"
+      - key: CHAIN_NAME
+        value: Ethereum
       - key: CHAIN_EXPLORER_URL
-        value: https://robinhoodchain.blockscout.com
+        value: https://etherscan.io
       - key: NATIVE_SYMBOL
         value: ETH
       - key: WETH_ADDRESS
-        value: 0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73
-      - key: UNISWAP_V2_ROUTER
-        value: 0x89e5DB8B5aA49aA85AC63f691524311AEB649eba
-      - key: MEMECOIN_DISCOVERY_REFRESH_MS
-        value: "45000"
-      - key: MEMECOIN_MIN_LIQUIDITY_USD
-        value: "500"
+        value: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+      - key: USDC_ADDRESS
+        value: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+      - key: UNISWAP_V3_ROUTER
+        value: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45
+      - key: UNISWAP_V3_QUOTER
+        value: 0x61fFE014bA17989E743c5F6cB21bF9697530B21e
+      - key: BOT_BUY_USD
+        value: "15"
+      - key: BOT_GAS_RESERVE_ETH
+        value: "0.005"
+      - key: ETH_USD_PRICE
+        value: "2500"
+      - key: STOCK_MIN_LIQUIDITY_USD
+        value: "1000"
       - key: ENABLE_SOLANA_ISLAND
         value: "false"

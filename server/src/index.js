@@ -127,7 +127,7 @@ app.get('/api/wallets', (req, res) => {
       chainId: config.chainId,
       mode: config.simulationFallback ? 'simulation_fallback' : 'real',
       minEthRecommended: config.minEthForTrade,
-      disclaimer: `Fund your Robinhood Chain wallet with ETH. Private keys never leave the server.`,
+      disclaimer: `Fund your Ethereum wallet with ETH. Private keys never leave the server.`,
       wallets: {},
     });
   }
@@ -239,7 +239,7 @@ async function main() {
 
   const providers = availableProviders().map((p) => p.id);
   console.log(`[server] AI providers: ${providers.length ? providers.join(', ') : 'none (persona engine active)'}`);
-  console.log(`[server] Robinhood Chain: ${config.chainName} (${config.chainId}) — ${config.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'}`);
+  console.log(`[server] Chain: ${config.chainName} (${config.chainId}) — ${config.simulationFallback ? 'SIMULATION_FALLBACK' : 'REAL on-chain'}`);
   if (solanaEnabled) {
     console.log(`[server] Solana island: ${solanaConfig.network}`);
     console.log(`[server] Fund island wallets: npm run wallets:addresses --prefix server`);

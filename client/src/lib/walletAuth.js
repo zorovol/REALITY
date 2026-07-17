@@ -1,5 +1,5 @@
 /**
- * Browser-only wallet accounts — EVM wallets for Robinhood Chain.
+ * Browser-only wallet accounts — EVM wallets for Ethereum mainnet.
  */
 
 const WALLETS_KEY = 'botforge_wallets';

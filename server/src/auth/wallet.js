@@ -1,7 +1,7 @@
 import { requireAuth } from './routes.js';
 import { handleWalletBalance, sendJson } from './handlers.js';
 
-/** Robinhood Chain ETH balance for the logged-in user wallet. */
+/** Ethereum ETH balance for the logged-in user wallet. */
 export function mountWalletRoutes(app) {
   app.get('/api/wallet/balance', requireAuth, async (req, res) => {
     try {
