@@ -28,6 +28,29 @@ function shortAddr(addr) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+function HudCorners() {
+  return (
+    <>
+      <i className="tw-hud-c tl" /><i className="tw-hud-c tr" />
+      <i className="tw-hud-c bl" /><i className="tw-hud-c br" />
+    </>
+  );
+}
+
+function RadarRing({ on }) {
+  return (
+    <svg className={`tw-radar ${on ? 'on' : ''}`} viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(0,200,5,0.15)" strokeWidth="1" />
+      <circle cx="60" cy="60" r="36" fill="none" stroke="rgba(0,200,5,0.2)" strokeWidth="1" />
+      <circle cx="60" cy="60" r="20" fill="none" stroke="rgba(0,200,5,0.3)" strokeWidth="1" />
+      <circle cx="60" cy="60" r="4" fill="#00c805" />
+      <line className="tw-radar-sweep" x1="60" y1="60" x2="60" y2="8" stroke="#00c805" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="82" cy="38" r="2.5" fill="#00c805" className="tw-radar-blip" />
+      <circle cx="40" cy="70" r="2" fill="#7dff7a" className="tw-radar-blip d2" />
+    </svg>
+  );
+}
+
 export default function Dashboard() {
   const nav = useNavigate();
   const [user, setUser] = useState(null);
@@ -222,7 +245,8 @@ export default function Dashboard() {
     const meta = botMeta(bot.botType);
     const onFloor = (bot.name || '').trim().length >= 2;
     return (
-      <article key={bot.id} className={`tw-bot ${bot.isActive ? 'is-active' : ''}`} style={{ '--accent': meta.color }}>
+      <article key={bot.id} className={`tw-bot tw-hud ${bot.isActive ? 'is-active' : ''}`} style={{ '--accent': meta.color }}>
+        <HudCorners />
         <div className="tw-bot-head">
           <div className="tw-bot-id">
             <Character id={bot.botType} size={44} className="tw-bot-char" />
@@ -284,10 +308,11 @@ export default function Dashboard() {
   function renderCreatePanel() {
     if (!showCreate) return null;
     return (
-      <section className="tw-create">
+      <section className="tw-create tw-hud">
+        <HudCorners />
         <div className="tw-create-head">
           <div>
-            <p className="tw-eyebrow">New bot</p>
+            <p className="tw-eyebrow">// NEW_AGENT</p>
             <h2>Configure your agent</h2>
           </div>
           <button type="button" className="tw-close" onClick={() => setShowCreate(false)} aria-label="Close">×</button>
@@ -346,25 +371,29 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="tw tw-dash">
+      <div className="tw tw-x tw-dash">
         <div className="tw-bg" aria-hidden="true">
           <div className="tw-wash" />
+          <div className="tw-hex" />
           <div className="tw-chart" />
+          <div className="tw-scanline" />
         </div>
         <PlatformNav />
         <div className="tw-dash-loading">
           <span className="tw-live-dot" />
-          Loading command desk…
+          BOOTING_COMMAND_DESK…
         </div>
       </div>
     );
   }
 
   return (
-    <div className="tw tw-dash">
+    <div className="tw tw-x tw-dash">
       <div className="tw-bg" aria-hidden="true">
         <div className="tw-wash" />
+        <div className="tw-hex" />
         <div className="tw-chart" />
+        <div className="tw-scanline" />
       </div>
 
       <PlatformNav user={user} />
@@ -374,16 +403,17 @@ export default function Dashboard() {
           <div className="tw-dash-hero-main">
             <p className="tw-live">
               <span className="tw-live-dot" />
-              {BRAND.chainName.toUpperCase()} · COMMAND DESK
+              SYS · {BRAND.chainName.toUpperCase()} · CIC
             </p>
             <h1>
-              <span className="tw-brand-accent">Trade</span> desk
+              <span className="tw-brand-accent">CIC</span> desk
             </h1>
             <p className="tw-dash-lead">
               Name each bot, hit Start — {BRAND.name} trades Robinhood stocks on Ethereum via Uniswap V3.
             </p>
             <div className="tw-cta">
               <button type="button" className="tw-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
+                <span className="tw-btn-glow" />
                 + Create bot
               </button>
               <Link to="/live" className="tw-btn ghost">Trading floor</Link>
@@ -391,29 +421,42 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="tw-wallet-card">
-            <div className="tw-wallet-top">
-              <span className="tw-wallet-label">Wallet balance</span>
-              <button type="button" className="tw-copy" onClick={copyWallet}>
-                {copied ? 'Copied' : 'Copy'}
-              </button>
+          <div className="tw-dash-side">
+            <div className="tw-wallet-card tw-hud">
+              <HudCorners />
+              <div className="tw-wallet-top">
+                <span className="tw-wallet-label">WALLET_BAL</span>
+                <button type="button" className="tw-copy" onClick={copyWallet}>
+                  {copied ? 'COPIED' : 'COPY'}
+                </button>
+              </div>
+              <div className="tw-balance">
+                <span className="tw-balance-val">{balance != null ? balance.toFixed(4) : '—'}</span>
+                <span className="tw-balance-unit">ETH</span>
+              </div>
+              <code className="tw-wallet-addr">{user?.walletAddress}</code>
+              <p className="tw-hint">Fund ETH on {BRAND.chainName} — bots spend balance minus gas.</p>
             </div>
-            <div className="tw-balance">
-              <span className="tw-balance-val">{balance != null ? balance.toFixed(4) : '—'}</span>
-              <span className="tw-balance-unit">ETH</span>
+            <div className="tw-radar-card tw-hud">
+              <HudCorners />
+              <RadarRing on={!!engineRunning} />
+              <div className="tw-radar-meta">
+                <span>ENGINE</span>
+                <strong className={engineRunning ? 'ok' : ''}>{engineRunning ? 'ONLINE' : 'OFFLINE'}</strong>
+                <em>{engineMode.toUpperCase()}</em>
+              </div>
             </div>
-            <code className="tw-wallet-addr">{user?.walletAddress}</code>
-            <p className="tw-hint">Fund with ETH on {BRAND.chainName} — bot uses balance minus gas per swap.</p>
           </div>
         </header>
 
         <div className="tw-metrics">
-          <div><strong>{bots.length}</strong><span>Total bots</span></div>
-          <div><strong>{activeCount}</strong><span>Trading now</span></div>
-          <div><strong>{onFloorCount}</strong><span>On floor</span></div>
-          <div className={engineRunning ? 'is-live' : ''}>
-            <strong>{engineRunning ? 'Live' : 'Offline'}</strong>
-            <span>Engine · {engineMode}</span>
+          <div className="tw-hud"><HudCorners /><strong>{bots.length}</strong><span>TOTAL_BOTS</span></div>
+          <div className="tw-hud"><HudCorners /><strong>{activeCount}</strong><span>TRADING_NOW</span></div>
+          <div className="tw-hud"><HudCorners /><strong>{onFloorCount}</strong><span>ON_FLOOR</span></div>
+          <div className={`tw-hud ${engineRunning ? 'is-live' : ''}`}>
+            <HudCorners />
+            <strong>{engineRunning ? 'LIVE' : 'OFF'}</strong>
+            <span>ENGINE · {engineMode.toUpperCase()}</span>
           </div>
         </div>
 
@@ -453,10 +496,12 @@ export default function Dashboard() {
           {tab === 'overview' && (
             <div className="tw-overview">
               <div className="tw-overview-grid">
-                <div className="tw-terminal tw-dash-term">
+                <div className="tw-terminal tw-dash-term tw-hud">
+                  <HudCorners />
                   <div className="tw-terminal-bar">
                     <span /><span /><span />
-                    <p>tickwire-engine · {engineRunning ? 'live' : 'offline'}</p>
+                    <p>tickwire://engine · {engineRunning ? 'live' : 'offline'}</p>
+                    <em className="tw-term-live">{engineRunning ? 'LIVE' : 'IDLE'}</em>
                   </div>
                   <div className="tw-terminal-body">
                     {terminalLines.map((line) => (
@@ -471,8 +516,9 @@ export default function Dashboard() {
                 </div>
 
                 <div className="tw-side-stack">
-                  <article className="tw-panel accent">
-                    <span className="tw-panel-tag">Engine status</span>
+                  <article className="tw-panel accent tw-hud">
+                    <HudCorners />
+                    <span className="tw-panel-tag">// ENGINE_STATUS</span>
                     {diagError ? (
                       <p className="tw-panel-text">Could not load: {diagError}</p>
                     ) : diagnostics ? (
@@ -495,8 +541,9 @@ export default function Dashboard() {
                     <button type="button" className="tw-link-btn" onClick={() => setTab('engine')}>View details →</button>
                   </article>
 
-                  <article className="tw-panel">
-                    <span className="tw-panel-tag">Quick actions</span>
+                  <article className="tw-panel tw-hud">
+                    <HudCorners />
+                    <span className="tw-panel-tag">// QUICK_ACTIONS</span>
                     <div className="tw-quick">
                       <button type="button" className="tw-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
                         + New bot
@@ -508,8 +555,9 @@ export default function Dashboard() {
                     </div>
                   </article>
 
-                  <article className="tw-panel">
-                    <span className="tw-panel-tag">Your bots</span>
+                  <article className="tw-panel tw-hud">
+                    <HudCorners />
+                    <span className="tw-panel-tag">// FLEET</span>
                     <h3>{bots.length ? `${activeCount} of ${bots.length} trading` : 'No bots yet'}</h3>
                     <p className="tw-panel-text">
                       {bots.length
@@ -526,7 +574,7 @@ export default function Dashboard() {
               {bots.length > 0 && (
                 <section className="tw-fleet">
                   <div className="tw-section-head">
-                    <p className="tw-eyebrow">Active fleet</p>
+                    <p className="tw-eyebrow">// ACTIVE_FLEET</p>
                     <h2>Your trading bots</h2>
                   </div>
                   <div className="tw-bot-grid compact">
@@ -556,7 +604,7 @@ export default function Dashboard() {
             <div className="tw-bots-panel">
               <div className="tw-panel-head">
                 <div>
-                  <p className="tw-eyebrow">Fleet management</p>
+                  <p className="tw-eyebrow">// FLEET_MGMT</p>
                   <h2>My bots</h2>
                 </div>
                 {!showCreate && (
@@ -590,7 +638,7 @@ export default function Dashboard() {
             <div className="tw-engine-panel">
               <div className="tw-panel-head">
                 <div>
-                  <p className="tw-eyebrow">Trading engine</p>
+                  <p className="tw-eyebrow">// DIAGNOSTICS</p>
                   <h2>System diagnostics</h2>
                 </div>
                 <span className="tw-build-stamp">
@@ -598,10 +646,12 @@ export default function Dashboard() {
                 </span>
               </div>
 
-              <div className="tw-terminal tw-dash-term large">
+              <div className="tw-terminal tw-dash-term large tw-hud">
+                <HudCorners />
                 <div className="tw-terminal-bar">
                   <span /><span /><span />
-                  <p>tickwire-engine · diagnostics</p>
+                  <p>tickwire://engine · diagnostics</p>
+                  <em className="tw-term-live">{engineRunning ? 'LIVE' : 'IDLE'}</em>
                 </div>
                 <div className="tw-terminal-body">
                   {diagError ? (
@@ -682,13 +732,14 @@ export default function Dashboard() {
             <div className="tw-wallet-panel">
               <div className="tw-panel-head">
                 <div>
-                  <p className="tw-eyebrow">Your account</p>
+                  <p className="tw-eyebrow">// ACCOUNT</p>
                   <h2>Wallet</h2>
                 </div>
               </div>
 
-              <div className="tw-wallet-hero">
-                <span className="tw-wallet-label">Available balance</span>
+              <div className="tw-wallet-hero tw-hud">
+                <HudCorners />
+                <span className="tw-wallet-label">AVAILABLE_BALANCE</span>
                 <div className="tw-balance large">
                   <span className="tw-balance-val">{balance != null ? balance.toFixed(6) : '—'}</span>
                   <span className="tw-balance-unit">ETH</span>
@@ -697,16 +748,18 @@ export default function Dashboard() {
               </div>
 
               <div className="tw-wallet-grid">
-                <article className="tw-panel">
-                  <span className="tw-panel-tag">Address</span>
+                <article className="tw-panel tw-hud">
+                  <HudCorners />
+                  <span className="tw-panel-tag">// ADDRESS</span>
                   <code className="tw-full-addr">{user?.walletAddress}</code>
                   <button type="button" className="tw-btn ghost" onClick={copyWallet}>
                     {copied ? 'Copied!' : 'Copy full address'}
                   </button>
                 </article>
 
-                <article className="tw-panel">
-                  <span className="tw-panel-tag">Account</span>
+                <article className="tw-panel tw-hud">
+                  <HudCorners />
+                  <span className="tw-panel-tag">// ACCOUNT</span>
                   <ul className="tw-info-list">
                     <li><span>Chain</span><strong>{BRAND.chainName}</strong></li>
                     <li><span>Native token</span><strong>{BRAND.nativeSymbol}</strong></li>
@@ -716,8 +769,9 @@ export default function Dashboard() {
                 </article>
               </div>
 
-              <article className="tw-panel">
-                <span className="tw-panel-tag">How to fund</span>
+              <article className="tw-panel tw-hud">
+                <HudCorners />
+                <span className="tw-panel-tag">// FUND</span>
                 <p className="tw-panel-text">
                   Send ETH to your address above on <strong>{BRAND.chainName}</strong> (chain ID {CHAIN.chainId}) — Ethereum mainnet, not an L2.
                   L1 gas is expensive; keep a reserve for swaps.
