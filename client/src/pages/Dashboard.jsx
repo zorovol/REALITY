@@ -187,7 +187,7 @@ export default function Dashboard() {
 
   function ruleInput(key, label, step = 'any') {
     return (
-      <label key={key} className="dash-v2-rule-field">
+      <label key={key} className="tw-field">
         <span>{label}</span>
         <input
           type="number"
@@ -222,20 +222,20 @@ export default function Dashboard() {
     const meta = botMeta(bot.botType);
     const onFloor = (bot.name || '').trim().length >= 2;
     return (
-      <article key={bot.id} className={`dash-v2-bot-card ${bot.isActive ? 'is-active' : ''}`} style={{ '--accent': meta.color }}>
-        <div className="dash-v2-bot-head">
-          <div className="dash-v2-bot-identity">
-            <Character id={bot.botType} size={44} className="dash-v2-bot-char" />
+      <article key={bot.id} className={`tw-bot ${bot.isActive ? 'is-active' : ''}`} style={{ '--accent': meta.color }}>
+        <div className="tw-bot-head">
+          <div className="tw-bot-id">
+            <Character id={bot.botType} size={44} className="tw-bot-char" />
             <div>
-              <span className="dash-v2-bot-type" style={{ color: meta.color }}>{meta.label}</span>
-              <span className={`dash-v2-bot-pill ${bot.isActive ? 'on' : 'off'}`}>
-                {bot.isActive ? '● TRADING' : '○ STOPPED'}
+              <span className="tw-bot-type" style={{ color: meta.color }}>{meta.label}</span>
+              <span className={`tw-bot-pill ${bot.isActive ? 'on' : 'off'}`}>
+                {bot.isActive ? 'TRADING' : 'STOPPED'}
               </span>
             </div>
           </div>
         </div>
 
-        <label className="dash-v2-bot-name-field">
+        <label className="tw-field">
           <span>Floor name</span>
           <input
             type="text"
@@ -246,36 +246,36 @@ export default function Dashboard() {
           />
         </label>
         {!onFloor && (
-          <p className="dash-v2-bot-hint">Add a name (2+ chars) to appear on the trading floor.</p>
+          <p className="tw-hint">Add a name (2+ chars) to appear on the trading floor.</p>
         )}
 
         {bot.position && (
-          <div className="dash-v2-position">
+          <div className="tw-position">
             Holding <strong>{bot.position.symbol}</strong>
             {bot.position.entryPrice
               ? ` · entry $${Number(bot.position.entryPrice).toLocaleString()}`
               : bot.position.entryMcap ? ` · ~$${Math.round(bot.position.entryMcap)} mcap` : ''}
-            <button type="button" className="dash-v2-clear-pos" onClick={() => clearPosition(bot)}>
+            <button type="button" className="tw-link-btn" onClick={() => clearPosition(bot)}>
               Clear stuck position
             </button>
           </div>
         )}
 
-        <ul className="dash-v2-bot-rules">
+        <ul className="tw-bot-rules">
           <li><strong>On-chain cap</strong> ${bot.tradingRules.minMarketCap?.toLocaleString()} – ${bot.tradingRules.maxMarketCap?.toLocaleString()}</li>
           <li><strong>Buy</strong> {bot.tradingRules.buyAmountEth ?? bot.tradingRules.buyAmountSol} ETH</li>
           <li><strong>TP / SL</strong> {bot.tradingRules.takeProfitPercent}% / {bot.tradingRules.stopLossPercent}%</li>
         </ul>
 
-        <div className="dash-v2-bot-actions">
+        <div className="tw-bot-actions">
           <button
             type="button"
-            className={bot.isActive ? 'home-v2-btn ghost' : 'home-v2-btn primary'}
+            className={bot.isActive ? 'tw-btn ghost' : 'tw-btn primary'}
             onClick={() => toggleBot(bot)}
           >
             {bot.isActive ? 'Stop' : 'Start trading'}
           </button>
-          <button type="button" className="dash-v2-delete" onClick={() => removeBot(bot.id)}>Delete</button>
+          <button type="button" className="tw-btn danger" onClick={() => removeBot(bot.id)}>Delete</button>
         </div>
       </article>
     );
@@ -284,17 +284,17 @@ export default function Dashboard() {
   function renderCreatePanel() {
     if (!showCreate) return null;
     return (
-      <section className="dash-v2-create">
-        <div className="dash-v2-create-head">
+      <section className="tw-create">
+        <div className="tw-create-head">
           <div>
-            <p className="home-v2-eyebrow">New bot</p>
+            <p className="tw-eyebrow">New bot</p>
             <h2>Configure your agent</h2>
           </div>
-          <button type="button" className="dash-v2-close" onClick={() => setShowCreate(false)} aria-label="Close">×</button>
+          <button type="button" className="tw-close" onClick={() => setShowCreate(false)} aria-label="Close">×</button>
         </div>
 
-        <form onSubmit={createBotSubmit} className="dash-v2-create-form">
-          <label className="dash-v2-name-field">
+        <form onSubmit={createBotSubmit} className="tw-create-form">
+          <label className="tw-field">
             <span>Bot name <em>(shows on trading floor)</em></span>
             <input
               type="text"
@@ -307,18 +307,18 @@ export default function Dashboard() {
           </label>
 
           <h3>AI type</h3>
-          <div className="dash-v2-type-grid">
+          <div className="tw-type-grid">
             {BOT_TYPES.map((t) => {
               const meta = BOT_META[t] ?? { label: t, desc: '', color: '#94a3b8' };
               return (
                 <button
                   key={t}
                   type="button"
-                  className={`dash-v2-type-card ${form.botType === t ? 'selected' : ''}`}
+                  className={`tw-type-card ${form.botType === t ? 'selected' : ''}`}
                   style={{ '--accent': meta.color }}
                   onClick={() => setForm({ ...form, botType: t })}
                 >
-                  <Character id={t} size={40} className="dash-v2-type-char" />
+                  <Character id={t} size={40} className="tw-type-char" />
                   <strong>{meta.label}</strong>
                   <span>{meta.desc}</span>
                 </button>
@@ -327,7 +327,7 @@ export default function Dashboard() {
           </div>
 
           <h3>Trading rules</h3>
-          <div className="dash-v2-rules-grid">
+          <div className="tw-rules-grid">
             {ruleInput('minMarketCap', 'Min on-chain cap ($)', 100)}
             {ruleInput('maxMarketCap', 'Max on-chain cap ($)', 100)}
             {ruleInput('buyAmountEth', 'Buy amount (ETH, ~$15)', 0.0001)}
@@ -335,9 +335,9 @@ export default function Dashboard() {
             {ruleInput('stopLossPercent', 'Stop loss (%)', 1)}
           </div>
           {error && <div className="auth-error">{error}</div>}
-          <div className="dash-v2-create-actions">
-            <button type="button" className="home-v2-btn ghost" onClick={() => setShowCreate(false)}>Cancel</button>
-            <button type="submit" className="home-v2-btn primary">Create & publish to floor</button>
+          <div className="tw-create-actions">
+            <button type="button" className="tw-btn ghost" onClick={() => setShowCreate(false)}>Cancel</button>
+            <button type="submit" className="tw-btn primary">Create & publish to floor</button>
           </div>
         </form>
       </section>
@@ -346,74 +346,68 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="dash-v2">
-        <div className="dash-v2-bg" aria-hidden="true">
-          <div className="home-v2-orb home-v2-orb-a" />
-          <div className="home-v2-orb home-v2-orb-b" />
-          <div className="home-v2-grid" />
+      <div className="tw tw-dash">
+        <div className="tw-bg" aria-hidden="true">
+          <div className="tw-wash" />
+          <div className="tw-chart" />
         </div>
         <PlatformNav />
-        <div className="dash-v2-loading">
-          <span className="home-v2-live-dot" />
-          Loading your dashboard…
+        <div className="tw-dash-loading">
+          <span className="tw-live-dot" />
+          Loading command desk…
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dash-v2">
-      <div className="dash-v2-bg" aria-hidden="true">
-        <div className="home-v2-orb home-v2-orb-a" />
-        <div className="home-v2-orb home-v2-orb-b" />
-        <div className="home-v2-orb home-v2-orb-c" />
-        <div className="home-v2-grid" />
-        <div className="home-v2-noise" />
+    <div className="tw tw-dash">
+      <div className="tw-bg" aria-hidden="true">
+        <div className="tw-wash" />
+        <div className="tw-chart" />
       </div>
 
       <PlatformNav user={user} />
 
-      <div className="dash-v2-body">
-        {/* Hero */}
-        <header className="dash-v2-hero">
-          <div className="dash-v2-hero-main">
-            <div className="home-v2-live">
-              <span className="home-v2-live-dot" />
-              {BRAND.chainName.toUpperCase()} · YOUR DASHBOARD
-            </div>
+      <div className="tw-dash-body">
+        <header className="tw-dash-hero">
+          <div className="tw-dash-hero-main">
+            <p className="tw-live">
+              <span className="tw-live-dot" />
+              {BRAND.chainName.toUpperCase()} · COMMAND DESK
+            </p>
             <h1>
-              Command <em>center</em>
+              <span className="tw-brand-accent">Trade</span> desk
             </h1>
-            <p className="dash-v2-hero-lead">
+            <p className="tw-dash-lead">
               Name each bot, hit Start — {BRAND.name} trades Robinhood stocks on Ethereum via Uniswap V3.
             </p>
-            <div className="dash-v2-hero-cta">
-              <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
+            <div className="tw-cta">
+              <button type="button" className="tw-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
                 + Create bot
               </button>
-              <Link to="/live" className="home-v2-btn ghost">Trading floor</Link>
-              <button type="button" className="home-v2-btn ghost subtle" onClick={logout}>Log out</button>
+              <Link to="/live" className="tw-btn ghost">Trading floor</Link>
+              <button type="button" className="tw-btn ghost subtle" onClick={logout}>Log out</button>
             </div>
           </div>
 
-          <div className="dash-v2-wallet-card">
-            <div className="dash-v2-wallet-top">
-              <span className="dash-v2-wallet-label">Wallet balance</span>
-              <button type="button" className="dash-v2-copy-btn" onClick={copyWallet}>
-                {copied ? 'Copied!' : 'Copy address'}
+          <div className="tw-wallet-card">
+            <div className="tw-wallet-top">
+              <span className="tw-wallet-label">Wallet balance</span>
+              <button type="button" className="tw-copy" onClick={copyWallet}>
+                {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <div className="dash-v2-balance">
-              <span className="dash-v2-balance-val">{balance != null ? balance.toFixed(4) : '—'}</span>
-              <span className="dash-v2-balance-unit">ETH</span>
+            <div className="tw-balance">
+              <span className="tw-balance-val">{balance != null ? balance.toFixed(4) : '—'}</span>
+              <span className="tw-balance-unit">ETH</span>
             </div>
-            <code className="dash-v2-wallet-addr">{user?.walletAddress}</code>
-            <p className="dash-v2-wallet-hint">Fund with ETH on {BRAND.chainName} — bot uses your balance minus gas for each swap.</p>
+            <code className="tw-wallet-addr">{user?.walletAddress}</code>
+            <p className="tw-hint">Fund with ETH on {BRAND.chainName} — bot uses balance minus gas per swap.</p>
           </div>
         </header>
 
-        {/* Metrics strip */}
-        <div className="dash-v2-metrics">
+        <div className="tw-metrics">
           <div><strong>{bots.length}</strong><span>Total bots</span></div>
           <div><strong>{activeCount}</strong><span>Trading now</span></div>
           <div><strong>{onFloorCount}</strong><span>On floor</span></div>
@@ -423,11 +417,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Sync warning */}
         {(!tradingReady || syncWarning) && (
-          <div className="dash-v2-sync-banner">
+          <div className="tw-sync-banner">
             <p>{syncWarning || 'Wallet not synced for on-chain trading — bots cannot sign transactions.'}</p>
-            <form onSubmit={resyncWallet} className="dash-v2-sync-form">
+            <form onSubmit={resyncWallet} className="tw-sync-form">
               <input
                 type="password"
                 value={syncPassword}
@@ -436,15 +429,14 @@ export default function Dashboard() {
                 autoComplete="current-password"
                 required
               />
-              <button type="submit" className="home-v2-btn primary" disabled={syncLoading}>
+              <button type="submit" className="tw-btn primary" disabled={syncLoading}>
                 {syncLoading ? 'Syncing…' : 'Sync wallet'}
               </button>
             </form>
           </div>
         )}
 
-        {/* Tabs */}
-        <nav className="dash-v2-tabs">
+        <nav className="tw-tabs">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -457,37 +449,36 @@ export default function Dashboard() {
           ))}
         </nav>
 
-        {/* Tab content */}
-        <div className="dash-v2-content">
+        <div className="tw-dash-content">
           {tab === 'overview' && (
-            <div className="dash-v2-overview">
-              <div className="dash-v2-overview-grid">
-                <div className="home-v2-terminal dash-v2-terminal">
-                  <div className="home-v2-terminal-bar">
+            <div className="tw-overview">
+              <div className="tw-overview-grid">
+                <div className="tw-terminal tw-dash-term">
+                  <div className="tw-terminal-bar">
                     <span /><span /><span />
-                    <p>botforge-engine · {engineRunning ? 'live' : 'offline'}</p>
+                    <p>tickwire-engine · {engineRunning ? 'live' : 'offline'}</p>
                   </div>
-                  <div className="home-v2-terminal-body">
+                  <div className="tw-terminal-body">
                     {terminalLines.map((line) => (
-                      <div key={`${line.time}-${line.msg}`} className={`home-v2-terminal-line ${line.type}`}>
-                        <span className="home-v2-terminal-time">{line.time}</span>
-                        <span className="home-v2-terminal-agent">{line.agent}</span>
-                        <span className="home-v2-terminal-msg">{line.msg}</span>
+                      <div key={`${line.time}-${line.msg}`} className={`tw-terminal-line ${line.type}`}>
+                        <span className="t">{line.time}</span>
+                        <span className="a">{line.agent}</span>
+                        <span className="m">{line.msg}</span>
                       </div>
                     ))}
-                    <span className="home-v2-terminal-cursor">▊</span>
+                    <span className="tw-terminal-cursor">▊</span>
                   </div>
                 </div>
 
-                <div className="dash-v2-side-stack">
-                  <article className="dash-v2-card accent">
-                    <span className="home-v2-split-tag">Engine status</span>
+                <div className="tw-side-stack">
+                  <article className="tw-panel accent">
+                    <span className="tw-panel-tag">Engine status</span>
                     {diagError ? (
-                      <p className="dash-v2-card-text">Could not load: {diagError}</p>
+                      <p className="tw-panel-text">Could not load: {diagError}</p>
                     ) : diagnostics ? (
                       <>
                         <h3>{diagnostics.engineRunning ? 'Engine running' : 'Engine offline'}</h3>
-                        <p className="dash-v2-card-text">
+                        <p className="tw-panel-text">
                           Mode: <strong>{engineMode}</strong>
                           {' · '}Wallet synced: <strong>{diagnostics.tradingReady ? 'yes' : 'no'}</strong>
                           {diagnostics.candidatesInRange != null && (
@@ -499,50 +490,50 @@ export default function Dashboard() {
                         </p>
                       </>
                     ) : (
-                      <p className="dash-v2-card-text">Loading engine status…</p>
+                      <p className="tw-panel-text">Loading engine status…</p>
                     )}
-                    <button type="button" className="home-v2-link" onClick={() => setTab('engine')}>View details →</button>
+                    <button type="button" className="tw-link-btn" onClick={() => setTab('engine')}>View details →</button>
                   </article>
 
-                  <article className="dash-v2-card">
-                    <span className="home-v2-split-tag">Quick actions</span>
-                    <div className="dash-v2-quick-actions">
-                      <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
+                  <article className="tw-panel">
+                    <span className="tw-panel-tag">Quick actions</span>
+                    <div className="tw-quick">
+                      <button type="button" className="tw-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
                         + New bot
                       </button>
-                      <Link to="/live" className="home-v2-btn ghost">View floor</Link>
-                      <button type="button" className="home-v2-btn ghost subtle" onClick={() => setTab('wallet')}>
+                      <Link to="/live" className="tw-btn ghost">View floor</Link>
+                      <button type="button" className="tw-btn ghost subtle" onClick={() => setTab('wallet')}>
                         Wallet details
                       </button>
                     </div>
                   </article>
 
-                  <article className="dash-v2-card">
-                    <span className="home-v2-split-tag">Your bots</span>
+                  <article className="tw-panel">
+                    <span className="tw-panel-tag">Your bots</span>
                     <h3>{bots.length ? `${activeCount} of ${bots.length} trading` : 'No bots yet'}</h3>
-                    <p className="dash-v2-card-text">
+                    <p className="tw-panel-text">
                       {bots.length
                         ? 'Active bots scan Ethereum stock trackers and execute on Uniswap V3.'
                         : 'Create your first bot to start automated stock-token trading.'}
                     </p>
                     {bots.length > 0 && (
-                      <button type="button" className="home-v2-link" onClick={() => setTab('bots')}>Manage bots →</button>
+                      <button type="button" className="tw-link-btn" onClick={() => setTab('bots')}>Manage bots →</button>
                     )}
                   </article>
                 </div>
               </div>
 
               {bots.length > 0 && (
-                <section className="dash-v2-active-section">
-                  <div className="dash-v2-section-head">
-                    <p className="home-v2-eyebrow">Active fleet</p>
+                <section className="tw-fleet">
+                  <div className="tw-section-head">
+                    <p className="tw-eyebrow">Active fleet</p>
                     <h2>Your trading bots</h2>
                   </div>
-                  <div className="dash-v2-bot-grid compact">
+                  <div className="tw-bot-grid compact">
                     {bots.slice(0, 3).map(renderBotCard)}
                   </div>
                   {bots.length > 3 && (
-                    <button type="button" className="home-v2-link dash-v2-see-all" onClick={() => setTab('bots')}>
+                    <button type="button" className="tw-link-btn tw-see-all" onClick={() => setTab('bots')}>
                       View all {bots.length} bots →
                     </button>
                   )}
@@ -550,11 +541,10 @@ export default function Dashboard() {
               )}
 
               {!bots.length && (
-                <div className="dash-v2-empty">
-                  <div className="dash-v2-empty-icon">⚡</div>
+                <div className="tw-empty">
                   <h3>No bots yet</h3>
                   <p>Create a named bot, fund your wallet with ETH on {BRAND.chainName}, then hit Start to trade on-chain.</p>
-                  <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
+                  <button type="button" className="tw-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
                     Create your first bot
                   </button>
                 </div>
@@ -563,14 +553,14 @@ export default function Dashboard() {
           )}
 
           {tab === 'bots' && (
-            <div className="dash-v2-bots-panel">
-              <div className="dash-v2-panel-head">
+            <div className="tw-bots-panel">
+              <div className="tw-panel-head">
                 <div>
-                  <p className="home-v2-eyebrow">Fleet management</p>
+                  <p className="tw-eyebrow">Fleet management</p>
                   <h2>My bots</h2>
                 </div>
                 {!showCreate && (
-                  <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); }}>
+                  <button type="button" className="tw-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); }}>
                     + Create bot
                   </button>
                 )}
@@ -579,99 +569,98 @@ export default function Dashboard() {
               {renderCreatePanel()}
 
               {!bots.length && !showCreate && (
-                <div className="dash-v2-empty">
-                  <div className="dash-v2-empty-icon">🤖</div>
+                <div className="tw-empty">
                   <h3>No bots yet</h3>
                   <p>Create a named bot, fund your wallet, then hit Start to trade on-chain.</p>
-                  <button type="button" className="home-v2-btn primary" onClick={() => setShowCreate(true)}>Create bot</button>
+                  <button type="button" className="tw-btn primary" onClick={() => setShowCreate(true)}>Create bot</button>
                 </div>
               )}
 
               {bots.length > 0 && (
-                <div className="dash-v2-bot-grid">
+                <div className="tw-bot-grid">
                   {bots.map(renderBotCard)}
                 </div>
               )}
 
-              <p className="dash-v2-footer-link"><Link to="/live">View the public trading floor →</Link></p>
+              <p className="tw-footer-link"><Link to="/live">View the public trading floor →</Link></p>
             </div>
           )}
 
           {tab === 'engine' && (
-            <div className="dash-v2-engine-panel">
-              <div className="dash-v2-panel-head">
+            <div className="tw-engine-panel">
+              <div className="tw-panel-head">
                 <div>
-                  <p className="home-v2-eyebrow">Trading engine</p>
+                  <p className="tw-eyebrow">Trading engine</p>
                   <h2>System diagnostics</h2>
                 </div>
-                <span className="dash-v2-build-stamp">
+                <span className="tw-build-stamp">
                   Build {typeof __BUILD_SHA__ !== 'undefined' ? __BUILD_SHA__ : 'local'}
                 </span>
               </div>
 
-              <div className="home-v2-terminal dash-v2-terminal large">
-                <div className="home-v2-terminal-bar">
+              <div className="tw-terminal tw-dash-term large">
+                <div className="tw-terminal-bar">
                   <span /><span /><span />
-                  <p>botforge-engine · diagnostics</p>
+                  <p>tickwire-engine · diagnostics</p>
                 </div>
-                <div className="home-v2-terminal-body">
+                <div className="tw-terminal-body">
                   {diagError ? (
-                    <div className="home-v2-terminal-line info">
-                      <span className="home-v2-terminal-time">ERR</span>
-                      <span className="home-v2-terminal-agent">SYSTEM</span>
-                      <span className="home-v2-terminal-msg">Could not load engine status: {diagError}</span>
+                    <div className="tw-terminal-line info">
+                      <span className="t">ERR</span>
+                      <span className="a">SYSTEM</span>
+                      <span className="m">Could not load engine status: {diagError}</span>
                     </div>
                   ) : diagnostics ? (
                     <>
-                      <div className="home-v2-terminal-line info">
-                        <span className="home-v2-terminal-time">SYS</span>
-                        <span className="home-v2-terminal-agent">ENGINE</span>
-                        <span className="home-v2-terminal-msg">
+                      <div className="tw-terminal-line info">
+                        <span className="t">SYS</span>
+                        <span className="a">ENGINE</span>
+                        <span className="m">
                           Status: {diagnostics.engineRunning ? 'running' : 'offline'} · Mode: {engineMode}
                         </span>
                       </div>
-                      <div className="home-v2-terminal-line info">
-                        <span className="home-v2-terminal-time">SYS</span>
-                        <span className="home-v2-terminal-agent">WALLET</span>
-                        <span className="home-v2-terminal-msg">
+                      <div className="tw-terminal-line info">
+                        <span className="t">SYS</span>
+                        <span className="a">WALLET</span>
+                        <span className="m">
                           Synced: {diagnostics.tradingReady ? 'yes' : 'no — sync below'} · Address: {shortAddr(user?.walletAddress)}
                         </span>
                       </div>
-                      <div className="home-v2-terminal-line buy">
-                        <span className="home-v2-terminal-time">SYS</span>
-                        <span className="home-v2-terminal-agent">SCAN</span>
-                        <span className="home-v2-terminal-msg">
+                      <div className="tw-terminal-line buy">
+                        <span className="t">SYS</span>
+                        <span className="a">SCAN</span>
+                        <span className="m">
                           Stock tokens in range: {diagnostics.candidatesInRange ?? '—'}
                           {diagnostics.stockDiscovery?.tradableCount != null && ` · ${diagnostics.stockDiscovery.tradableCount} tradable`}
                           {diagnostics.stockDiscovery?.poolSize != null && ` of ${diagnostics.stockDiscovery.poolSize} listed`}
                         </span>
                       </div>
                       {diagnostics.botStatus?.map((b) => (
-                        <div key={b.id} className={`home-v2-terminal-line ${b.isActive ? 'buy' : 'info'}`}>
-                          <span className="home-v2-terminal-time">BOT</span>
-                          <span className="home-v2-terminal-agent">{(b.name || 'unnamed').slice(0, 8).toUpperCase()}</span>
-                          <span className="home-v2-terminal-msg">
+                        <div key={b.id} className={`tw-terminal-line ${b.isActive ? 'buy' : 'info'}`}>
+                          <span className="t">BOT</span>
+                          <span className="a">{(b.name || 'unnamed').slice(0, 8).toUpperCase()}</span>
+                          <span className="m">
                             {b.lastStatus ? b.lastStatus.reason : b.isActive ? 'scanning for trades…' : 'stopped'}
                           </span>
                         </div>
                       ))}
                     </>
                   ) : (
-                    <div className="home-v2-terminal-line info">
-                      <span className="home-v2-terminal-msg">Loading engine status…</span>
+                    <div className="tw-terminal-line info">
+                      <span className="m">Loading engine status…</span>
                     </div>
                   )}
-                  <span className="home-v2-terminal-cursor">▊</span>
+                  <span className="tw-terminal-cursor">▊</span>
                 </div>
               </div>
 
               {(!tradingReady || syncWarning) && (
-                <article className="dash-v2-card accent">
-                  <span className="home-v2-split-tag">Wallet sync required</span>
-                  <p className="dash-v2-card-text">
+                <article className="tw-panel accent">
+                  <span className="tw-panel-tag">Wallet sync required</span>
+                  <p className="tw-panel-text">
                     {syncWarning || 'Your wallet keys are not synced to the server. Bots cannot sign on-chain transactions until you sync.'}
                   </p>
-                  <form onSubmit={resyncWallet} className="dash-v2-sync-form">
+                  <form onSubmit={resyncWallet} className="tw-sync-form">
                     <input
                       type="password"
                       value={syncPassword}
@@ -680,7 +669,7 @@ export default function Dashboard() {
                       autoComplete="current-password"
                       required
                     />
-                    <button type="submit" className="home-v2-btn primary" disabled={syncLoading}>
+                    <button type="submit" className="tw-btn primary" disabled={syncLoading}>
                       {syncLoading ? 'Syncing…' : 'Sync wallet for trading'}
                     </button>
                   </form>
@@ -690,54 +679,54 @@ export default function Dashboard() {
           )}
 
           {tab === 'wallet' && (
-            <div className="dash-v2-wallet-panel">
-              <div className="dash-v2-panel-head">
+            <div className="tw-wallet-panel">
+              <div className="tw-panel-head">
                 <div>
-                  <p className="home-v2-eyebrow">Your account</p>
+                  <p className="tw-eyebrow">Your account</p>
                   <h2>Wallet</h2>
                 </div>
               </div>
 
-              <div className="dash-v2-wallet-hero">
-                <span className="dash-v2-wallet-label">Available balance</span>
-                <div className="dash-v2-balance large">
-                  <span className="dash-v2-balance-val">{balance != null ? balance.toFixed(6) : '—'}</span>
-                  <span className="dash-v2-balance-unit">ETH</span>
+              <div className="tw-wallet-hero">
+                <span className="tw-wallet-label">Available balance</span>
+                <div className="tw-balance large">
+                  <span className="tw-balance-val">{balance != null ? balance.toFixed(6) : '—'}</span>
+                  <span className="tw-balance-unit">ETH</span>
                 </div>
-                <p className="dash-v2-card-text">On {BRAND.chainName} · used to buy tokenized stocks via Uniswap V3</p>
+                <p className="tw-panel-text">On {BRAND.chainName} · used to buy tokenized stocks via Uniswap V3</p>
               </div>
 
-              <div className="dash-v2-wallet-grid">
-                <article className="dash-v2-card">
-                  <span className="home-v2-split-tag">Address</span>
-                  <code className="dash-v2-full-addr">{user?.walletAddress}</code>
-                  <button type="button" className="home-v2-btn ghost" onClick={copyWallet}>
+              <div className="tw-wallet-grid">
+                <article className="tw-panel">
+                  <span className="tw-panel-tag">Address</span>
+                  <code className="tw-full-addr">{user?.walletAddress}</code>
+                  <button type="button" className="tw-btn ghost" onClick={copyWallet}>
                     {copied ? 'Copied!' : 'Copy full address'}
                   </button>
                 </article>
 
-                <article className="dash-v2-card">
-                  <span className="home-v2-split-tag">Account</span>
-                  <ul className="dash-v2-info-list">
+                <article className="tw-panel">
+                  <span className="tw-panel-tag">Account</span>
+                  <ul className="tw-info-list">
                     <li><span>Chain</span><strong>{BRAND.chainName}</strong></li>
                     <li><span>Native token</span><strong>{BRAND.nativeSymbol}</strong></li>
-                    <li><span>Trading ready</span><strong className={tradingReady ? 'green' : 'warn'}>{tradingReady ? 'Yes' : 'No — sync required'}</strong></li>
+                    <li><span>Trading ready</span><strong className={tradingReady ? 'ok' : 'warn'}>{tradingReady ? 'Yes' : 'No — sync required'}</strong></li>
                     <li><span>Created</span><strong>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</strong></li>
                   </ul>
                 </article>
               </div>
 
-              <article className="dash-v2-card">
-                <span className="home-v2-split-tag">How to fund</span>
-                <p className="dash-v2-card-text">
+              <article className="tw-panel">
+                <span className="tw-panel-tag">How to fund</span>
+                <p className="tw-panel-text">
                   Send ETH to your address above on <strong>{BRAND.chainName}</strong> (chain ID {CHAIN.chainId}) — Ethereum mainnet, not an L2.
                   L1 gas is expensive; keep a reserve for swaps.
                 </p>
-                <div className="dash-v2-wallet-actions">
-                  <button type="button" className="home-v2-btn ghost" onClick={addEthereumNetwork}>
+                <div className="tw-wallet-actions">
+                  <button type="button" className="tw-btn ghost" onClick={addEthereumNetwork}>
                     Switch MetaMask to Ethereum
                   </button>
-                  <Link to="/docs" className="home-v2-link">Read setup docs →</Link>
+                  <Link to="/docs" className="tw-link-btn">Read setup docs →</Link>
                 </div>
                 {mmError && <p className="auth-error">{mmError}</p>}
               </article>

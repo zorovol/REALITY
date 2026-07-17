@@ -3,22 +3,24 @@ import PlatformNav from '../components/PlatformNav.jsx';
 import { BRAND } from '../config/brand.js';
 
 const TAPE = [
-  { s: 'NVDAon', d: '+1.24%' },
-  { s: 'TSLAon', d: '-0.61%' },
-  { s: 'AAPLon', d: '+0.38%' },
-  { s: 'SPYon', d: '+0.19%' },
-  { s: 'QQQon', d: '+0.72%' },
-  { s: 'GOOGLon', d: '-0.22%' },
-  { s: 'SPCXon', d: '+2.11%' },
-  { s: 'MSFTon', d: '+0.44%' },
+  { s: 'NVDAon', d: '+1.24%', p: '$128.40' },
+  { s: 'TSLAon', d: '-0.61%', p: '$248.12' },
+  { s: 'AAPLon', d: '+0.38%', p: '$214.90' },
+  { s: 'SPYon', d: '+0.19%', p: '$581.05' },
+  { s: 'QQQon', d: '+0.72%', p: '$512.33' },
+  { s: 'GOOGLon', d: '-0.22%', p: '$176.48' },
+  { s: 'SPCXon', d: '+2.11%', p: '$42.17' },
+  { s: 'MSFTon', d: '+0.44%', p: '$428.60' },
+  { s: 'AMZNon', d: '+0.91%', p: '$198.04' },
+  { s: 'METAx', d: '-0.35%', p: '$561.22' },
 ];
 
 const STRATEGIES = [
-  { id: 'chatgpt', name: 'ChatGPT', desc: 'Volume leader — most-traded Robinhood stock trackers.' },
-  { id: 'grok', name: 'Grok', desc: 'Turnover hunter — hottest ETH pool activity.' },
-  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random across the stock universe.' },
-  { id: 'gemini', name: 'Gemini', desc: 'Liquidity first — deepest Uniswap V3 routes.' },
-  { id: 'deepseek', name: 'DeepSeek', desc: 'Thin-pool sniper — smaller liquidity bands.' },
+  { id: 'chatgpt', name: 'ChatGPT', tag: 'VOLUME', desc: 'Volume leader — most-traded Robinhood stock trackers.' },
+  { id: 'grok', name: 'Grok', tag: 'TURNOVER', desc: 'Turnover hunter — hottest ETH pool activity.' },
+  { id: 'fable', name: 'Fable', tag: 'CHAOS', desc: 'Chaos mode — random across the stock universe.' },
+  { id: 'gemini', name: 'Gemini', tag: 'DEPTH', desc: 'Liquidity first — deepest Uniswap V3 routes.' },
+  { id: 'deepseek', name: 'DeepSeek', tag: 'SNIPE', desc: 'Thin-pool sniper — smaller liquidity bands.' },
 ];
 
 const PIPELINE = [
@@ -28,7 +30,7 @@ const PIPELINE = [
   { n: '04', t: 'Exit', d: 'Take-profit, stop-loss, or time exit — unwrap back to ETH.' },
 ];
 
-const STACK = ['Ethereum L1', 'Uniswap V3', 'WETH / USDC', 'Ondo · xStocks', 'Encrypted keys', '24/7 engine'];
+const STACK = ['Ethereum L1', 'Uniswap V3', 'WETH / USDC', 'Ondo · xStocks', 'Encrypted keys', '24/7 engine', 'DexScreener', 'Fair-price guard'];
 
 const TERMINAL = [
   { t: '04:12:01', a: 'ENGINE', m: 'scan · 11 Robinhood stocks · ETH routes live', c: 'info' },
@@ -36,6 +38,23 @@ const TERMINAL = [
   { t: '04:12:18', a: 'GEMINI', m: 'SELL NVDAon +2.8% · tx 0x8f…a1', c: 'sell' },
   { t: '04:12:22', a: 'CHATGPT', m: 'routing TSLAon via WETH→USDC hop…', c: 'info' },
   { t: '04:12:25', a: 'CHATGPT', m: 'BUY 0.006 ETH → TSLAon', c: 'buy' },
+  { t: '04:12:31', a: 'GROK', m: 'quote QQQon · fee 0.3% · slip ok', c: 'info' },
+];
+
+const MARKET = [
+  { s: 'NVDAon', ch: '+1.24%', liq: '$2.1M', route: 'WETH' },
+  { s: 'TSLAon', ch: '-0.61%', liq: '$890K', route: 'USDC' },
+  { s: 'AAPLon', ch: '+0.38%', liq: '$1.4M', route: 'WETH' },
+  { s: 'SPYon', ch: '+0.19%', liq: '$3.2M', route: 'WETH' },
+  { s: 'QQQon', ch: '+0.72%', liq: '$1.8M', route: 'USDC' },
+  { s: 'SPCXon', ch: '+2.11%', liq: '$420K', route: 'WETH' },
+];
+
+const STATS = [
+  { k: 'Chain', v: 'Ethereum L1' },
+  { k: 'DEX', v: 'Uniswap V3' },
+  { k: 'Settlement', v: 'ETH / WETH' },
+  { k: 'Assets', v: 'Ondo · xStocks' },
 ];
 
 function ChartBackdrop() {
@@ -43,7 +62,7 @@ function ChartBackdrop() {
     <svg className="tw-hero-svg" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="twFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#00c805" stopOpacity="0.35" />
+          <stop offset="0%" stopColor="#00c805" stopOpacity="0.38" />
           <stop offset="100%" stopColor="#00c805" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="twLine" x1="0" y1="0" x2="1" y2="0">
@@ -54,6 +73,9 @@ function ChartBackdrop() {
       </defs>
       {[120, 220, 320, 420, 520].map((y) => (
         <line key={y} x1="0" y1={y} x2="1200" y2={y} stroke="rgba(0,200,5,0.08)" strokeWidth="1" />
+      ))}
+      {[200, 400, 600, 800, 1000].map((x) => (
+        <line key={x} x1={x} y1="0" x2={x} y2="700" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
       ))}
       <path
         className="tw-hero-area"
@@ -69,7 +91,34 @@ function ChartBackdrop() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      <circle className="tw-hero-pulse" cx="1200" cy="90" r="6" fill="#00c805" />
     </svg>
+  );
+}
+
+function RouteViz() {
+  return (
+    <div className="tw-route" aria-hidden="true">
+      <div className="tw-route-node">
+        <span>ETH</span>
+        <small>wallet</small>
+      </div>
+      <div className="tw-route-wire"><i /></div>
+      <div className="tw-route-node mid">
+        <span>WETH</span>
+        <small>wrap</small>
+      </div>
+      <div className="tw-route-wire"><i /></div>
+      <div className="tw-route-node mid">
+        <span>V3</span>
+        <small>pool</small>
+      </div>
+      <div className="tw-route-wire"><i /></div>
+      <div className="tw-route-node end">
+        <span>STOCK</span>
+        <small>NVDAon</small>
+      </div>
+    </div>
   );
 }
 
@@ -79,6 +128,7 @@ export default function Home() {
       <div className="tw-bg" aria-hidden="true">
         <div className="tw-wash" />
         <div className="tw-chart" />
+        <div className="tw-scanline" />
       </div>
 
       <PlatformNav />
@@ -89,7 +139,7 @@ export default function Home() {
           <div className="tw-tape-track">
             {[...TAPE, ...TAPE].map((row, i) => (
               <span key={`${row.s}-${i}`} className={row.d.startsWith('-') ? 'down' : 'up'}>
-                <b>{row.s}</b> {row.d}
+                <b>{row.s}</b> {row.p} {row.d}
               </span>
             ))}
           </div>
@@ -131,6 +181,17 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="tw-rail" aria-label="Stack facts">
+        <div className="tw-rail-inner">
+          {STATS.map((s) => (
+            <div key={s.k} className="tw-rail-item">
+              <span>{s.k}</span>
+              <strong>{s.v}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="tw-section tw-why">
         <div className="tw-section-head">
           <p className="tw-eyebrow">Why Ethereum</p>
@@ -142,18 +203,48 @@ export default function Home() {
         </div>
         <div className="tw-why-grid">
           <article>
+            <span className="tw-why-num">01</span>
             <h3>Stock universe</h3>
             <p>NVDA, TSLA, AAPL, SPY, QQQ and more as on-chain trackers with Uniswap depth.</p>
           </article>
           <article>
+            <span className="tw-why-num">02</span>
             <h3>ETH settlement</h3>
             <p>Buys and sells with ETH via WETH — or multi-hop through USDC when that&apos;s the liquid pool.</p>
           </article>
           <article>
+            <span className="tw-why-num">03</span>
             <h3>Real fills</h3>
             <p>Uniswap V3 swaps on chain ID 1. Etherscan receipts. No simulated Robinhood Chain hops.</p>
           </article>
         </div>
+      </section>
+
+      <section className="tw-section tw-markets">
+        <div className="tw-section-head tw-section-head-row">
+          <div>
+            <p className="tw-eyebrow">Live desk</p>
+            <h2>Markets the bots hunt.</h2>
+          </div>
+          <p className="tw-sub tw-sub-tight">Illustrative board — real discovery pulls live Uniswap depth on ETH.</p>
+        </div>
+        <div className="tw-market-board">
+          <div className="tw-market-head">
+            <span>Symbol</span>
+            <span>24h</span>
+            <span>Liquidity</span>
+            <span>Route</span>
+          </div>
+          {MARKET.map((row) => (
+            <div key={row.s} className={`tw-market-row ${row.ch.startsWith('-') ? 'down' : 'up'}`}>
+              <strong>{row.s}</strong>
+              <span className="ch">{row.ch}</span>
+              <span className="liq">{row.liq}</span>
+              <span className="route">{row.route}</span>
+            </div>
+          ))}
+        </div>
+        <RouteViz />
       </section>
 
       <section className="tw-section">
@@ -180,6 +271,7 @@ export default function Home() {
         <div className="tw-strat-row">
           {STRATEGIES.map((s) => (
             <article key={s.id} className="tw-strat">
+              <span className="tw-strat-tag">{s.tag}</span>
               <h3>{s.name}</h3>
               <p>{s.desc}</p>
             </article>
@@ -205,6 +297,7 @@ export default function Home() {
       </section>
 
       <section className="tw-final">
+        <div className="tw-final-glow" aria-hidden="true" />
         <h2>Trade Robinhood stocks where they live — on ETH.</h2>
         <p>Sign up free. Fund Ethereum. Let TICKWIRE run Uniswap bots around the clock.</p>
         <Link to="/signup" className="tw-btn primary">Create free account</Link>
