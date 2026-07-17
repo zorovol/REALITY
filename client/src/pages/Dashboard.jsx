@@ -211,7 +211,7 @@ export default function Dashboard() {
     ? diagnostics.botStatus.slice(0, 6).map((b, i) => ({
         time: `04:${String(12 + i).padStart(2, '0')}:${String(i * 7).padStart(2, '0')}`,
         agent: (b.name || 'BOT').slice(0, 8).toUpperCase(),
-        msg: b.lastStatus?.reason || (b.isActive ? 'scanning memecoins…' : 'stopped'),
+        msg: b.lastStatus?.reason || (b.isActive ? 'scanning stock tokens…' : 'stopped'),
         type: b.isActive ? 'buy' : 'info',
       }))
     : [
@@ -251,8 +251,10 @@ export default function Dashboard() {
 
         {bot.position && (
           <div className="dash-v2-position">
-            Holding <strong>${bot.position.symbol}</strong>
-            {bot.position.entryMcap && ` · ~$${Math.round(bot.position.entryMcap)} mcap`}
+            Holding <strong>{bot.position.symbol}</strong>
+            {bot.position.entryPrice
+              ? ` · entry $${Number(bot.position.entryPrice).toLocaleString()}`
+              : bot.position.entryMcap ? ` · ~$${Math.round(bot.position.entryMcap)} mcap` : ''}
             <button type="button" className="dash-v2-clear-pos" onClick={() => clearPosition(bot)}>
               Clear stuck position
             </button>
@@ -260,7 +262,7 @@ export default function Dashboard() {
         )}
 
         <ul className="dash-v2-bot-rules">
-          <li><strong>MCap</strong> ${bot.tradingRules.minMarketCap?.toLocaleString()} – ${bot.tradingRules.maxMarketCap?.toLocaleString()}</li>
+          <li><strong>On-chain cap</strong> ${bot.tradingRules.minMarketCap?.toLocaleString()} – ${bot.tradingRules.maxMarketCap?.toLocaleString()}</li>
           <li><strong>Buy</strong> {bot.tradingRules.buyAmountEth ?? bot.tradingRules.buyAmountSol} ETH</li>
           <li><strong>TP / SL</strong> {bot.tradingRules.takeProfitPercent}% / {bot.tradingRules.stopLossPercent}%</li>
         </ul>
@@ -326,8 +328,8 @@ export default function Dashboard() {
 
           <h3>Trading rules</h3>
           <div className="dash-v2-rules-grid">
-            {ruleInput('minMarketCap', 'Min market cap ($)', 100)}
-            {ruleInput('maxMarketCap', 'Max market cap ($)', 100)}
+            {ruleInput('minMarketCap', 'Min on-chain cap ($)', 100)}
+            {ruleInput('maxMarketCap', 'Max on-chain cap ($)', 100)}
             {ruleInput('buyAmountEth', 'Buy amount (ETH, ~$5)', 0.0001)}
             {ruleInput('takeProfitPercent', 'Take profit (%)', 1)}
             {ruleInput('stopLossPercent', 'Stop loss (%)', 1)}
@@ -383,7 +385,7 @@ export default function Dashboard() {
               Command <em>center</em>
             </h1>
             <p className="dash-v2-hero-lead">
-              Name each bot, hit Start — {BRAND.name} trades live memecoins every ~3s on {BRAND.chainName}.
+              Name each bot, hit Start — {BRAND.name} trades Robinhood tokenized stocks every ~3s on {BRAND.chainName}.
             </p>
             <div className="dash-v2-hero-cta">
               <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>
@@ -492,7 +494,7 @@ export default function Dashboard() {
                             <> · Candidates: <strong>{diagnostics.candidatesInRange}</strong></>
                           )}
                           {diagnostics.routableInRange != null && (
-                            <> · V3 swappable: <strong>{diagnostics.routableInRange}</strong></>
+                            <> · V4 swappable: <strong>{diagnostics.routableInRange}</strong></>
                           )}
                         </p>
                       </>
@@ -520,8 +522,8 @@ export default function Dashboard() {
                     <h3>{bots.length ? `${activeCount} of ${bots.length} trading` : 'No bots yet'}</h3>
                     <p className="dash-v2-card-text">
                       {bots.length
-                        ? 'Active bots scan Ape.Store + NOXA Fun and execute on Uniswap V3.'
-                        : 'Create your first bot to start automated memecoin trading.'}
+                        ? 'Active bots scan Robinhood stock tokens (RWAs) and execute on Uniswap V4.'
+                        : 'Create your first bot to start automated stock-token trading.'}
                     </p>
                     {bots.length > 0 && (
                       <button type="button" className="home-v2-link" onClick={() => setTab('bots')}>Manage bots →</button>
@@ -639,8 +641,9 @@ export default function Dashboard() {
                         <span className="home-v2-terminal-time">SYS</span>
                         <span className="home-v2-terminal-agent">SCAN</span>
                         <span className="home-v2-terminal-msg">
-                          Memecoins in range: {diagnostics.candidatesInRange ?? '—'}
-                          {diagnostics.memecoinDiscovery?.poolSize != null && ` · Pool: ${diagnostics.memecoinDiscovery.poolSize} launchpad tokens`}
+                          Stock tokens in range: {diagnostics.candidatesInRange ?? '—'}
+                          {diagnostics.stockDiscovery?.tradableCount != null && ` · ${diagnostics.stockDiscovery.tradableCount} tradable RWAs`}
+                          {diagnostics.stockDiscovery?.poolSize != null && ` of ${diagnostics.stockDiscovery.poolSize} listed`}
                         </span>
                       </div>
                       {diagnostics.botStatus?.map((b) => (
@@ -701,7 +704,7 @@ export default function Dashboard() {
                   <span className="dash-v2-balance-val">{balance != null ? balance.toFixed(6) : '—'}</span>
                   <span className="dash-v2-balance-unit">ETH</span>
                 </div>
-                <p className="dash-v2-card-text">On {BRAND.chainName} · used for Ape.Store / NOXA memecoin buys via Uniswap V3</p>
+                <p className="dash-v2-card-text">On {BRAND.chainName} · used to buy Robinhood tokenized stocks via Uniswap V4</p>
               </div>
 
               <div className="dash-v2-wallet-grid">

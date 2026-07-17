@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { decryptWithServerKey } from '../auth/crypto.js';
 import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
-import { MemecoinDiscovery } from '../evm/memecoinDiscovery.js';
+import { StockDiscovery } from '../evm/stockDiscovery.js';
 import { txExplorerUrl } from '../chain/robinhood.js';
 import { buildTradeCandidateOrder, normalizeRules, defaultTradingRules } from './strategies.js';
 
@@ -11,7 +11,7 @@ export class UserBotEngine {
    */
   constructor(trading) {
     this.trading = trading;
-    this.discovery = new MemecoinDiscovery();
+    this.discovery = new StockDiscovery();
     this.busy = false;
     this.timers = [];
     this.walletCache = new Map();
@@ -55,9 +55,9 @@ export class UserBotEngine {
 
   start() {
     this.discovery.refresh();
-    this.timers.push(setInterval(() => this.discovery.refresh(), config.memecoinDiscoveryRefreshMs));
+    this.timers.push(setInterval(() => this.discovery.refresh(), config.stockDiscoveryRefreshMs));
     this.timers.push(setInterval(() => this.tick(), 3_000));
-    console.log('[user-bots] Engine started — Ape.Store + NOXA launchpad memecoins, 3s tick');
+    console.log('[user-bots] Engine started — Robinhood tokenized stocks (RWA) via Uniswap V4, 3s tick');
     setTimeout(() => this.tick(), 2_000);
   }
 
@@ -81,21 +81,30 @@ export class UserBotEngine {
     }
   }
 
+  /** Tradable stock tokens whose on-chain market cap fits the bot's band. */
   filterCandidates(rules) {
     return this.discovery.list().filter(
-      (t) => t.usdMarketCap >= rules.minMarketCap && t.usdMarketCap <= rules.maxMarketCap,
+      (t) => t.tradable
+        && t.usdMarketCap >= rules.minMarketCap
+        && t.usdMarketCap <= rules.maxMarketCap,
     );
   }
 
-  shouldTakeProfit(position, currentMcap, rules) {
-    if (!position?.entryMcap || !currentMcap) return false;
-    const pct = ((currentMcap - position.entryMcap) / position.entryMcap) * 100;
+  positionEntryPrice(position) {
+    return Number(position?.entryPrice) || 0;
+  }
+
+  shouldTakeProfit(position, currentPrice, rules) {
+    const entry = this.positionEntryPrice(position);
+    if (!entry || !currentPrice) return false;
+    const pct = ((currentPrice - entry) / entry) * 100;
     return pct >= rules.takeProfitPercent;
   }
 
-  shouldStopLoss(position, currentMcap, rules) {
-    if (!position?.entryMcap || !currentMcap) return false;
-    const pct = ((position.entryMcap - currentMcap) / position.entryMcap) * 100;
+  shouldStopLoss(position, currentPrice, rules) {
+    const entry = this.positionEntryPrice(position);
+    if (!entry || !currentPrice) return false;
+    const pct = ((entry - currentPrice) / entry) * 100;
     return pct >= rules.stopLossPercent;
   }
 
@@ -167,56 +176,58 @@ export class UserBotEngine {
     const tokenAddr = bot.position?.mint || bot.position?.address;
     if (tokenAddr) {
       await this.clearGhostPosition(bot, wallet);
+      if (!bot.position) return;
 
       const token = this.discovery.get(tokenAddr);
-      const currentMcap = token?.usdMarketCap ?? 0;
-      const takeProfit = this.shouldTakeProfit(bot.position, currentMcap, rules);
-      const stopLoss = this.shouldStopLoss(bot.position, currentMcap, rules);
-      const stale = Date.now() - (bot.position.boughtAt ?? 0) > 30_000;
+      const currentPrice = token?.priceUsd ?? 0;
+      const takeProfit = this.shouldTakeProfit(bot.position, currentPrice, rules);
+      const stopLoss = this.shouldStopLoss(bot.position, currentPrice, rules);
+      const maxHoldMs = config.botMaxHoldMs;
+      const stale = Date.now() - (bot.position.boughtAt ?? 0) > maxHoldMs;
 
       if (!takeProfit && !stopLoss && !stale) {
-        this.setStatus(bot, `holding ${bot.position.symbol} — waiting for TP/SL or 30s`);
+        const entry = this.positionEntryPrice(bot.position);
+        const pnl = entry && currentPrice ? (((currentPrice - entry) / entry) * 100).toFixed(2) : '—';
+        this.setStatus(bot, `holding ${bot.position.symbol} stock @ $${currentPrice || '—'} (${pnl}%) — waiting for TP/SL`);
         return;
       }
 
-      if (takeProfit || stopLoss || stale) {
-        const sellEth = Math.min(rules.buyAmountEth, balanceEth);
-        if (balanceEth < feeReserve) {
-          this.setStatus(bot, this.gasNeededStatus(balanceEth, sym));
-          return;
-        }
+      if (balanceEth < feeReserve) {
+        this.setStatus(bot, this.gasNeededStatus(balanceEth, sym));
+        return;
+      }
 
-        const result = await this.trading.sellToken({
-          wallet,
-          mintAddress: tokenAddr,
-          targetEth: sellEth,
+      const result = await this.trading.sellToken({
+        wallet,
+        mintAddress: tokenAddr,
+        pools: this.discovery.poolsFor(tokenAddr),
+      });
+
+      if (result) {
+        await insertBotTrade({
+          botId: bot.id,
+          userId: bot.userId,
+          side: 'sell',
+          mint: tokenAddr,
+          symbol: bot.position.symbol,
+          solAmount: result.ethAmount,
+          signature: result.signature,
+          explorerUrl: result.explorerUrl || txExplorerUrl(config.chainExplorerUrl, result.signature),
         });
-
-        if (result) {
-          await insertBotTrade({
-            botId: bot.id,
-            userId: bot.userId,
-            side: 'sell',
-            mint: tokenAddr,
-            symbol: bot.position.symbol,
-            solAmount: result.ethAmount,
-            signature: result.signature,
-            explorerUrl: result.explorerUrl || txExplorerUrl(config.chainExplorerUrl, result.signature),
-          });
+        await updateBot(bot.id, bot.userId, { position: null });
+        console.log(`[user-bots] ${bot.name || bot.botType} sold ${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
+        this.botStatus.delete(String(bot.id));
+        this.sellFailCounts.delete(bot.id);
+      } else {
+        const fails = (this.sellFailCounts.get(bot.id) ?? 0) + 1;
+        this.sellFailCounts.set(bot.id, fails);
+        if (fails >= 3) {
           await updateBot(bot.id, bot.userId, { position: null });
-          console.log(`[user-bots] ${bot.name || bot.botType} sold ${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
-          this.botStatus.delete(String(bot.id));
+          bot.position = null;
+          this.sellFailCounts.delete(bot.id);
+          this.setStatus(bot, 'cleared stuck position after sell failures — will buy again');
         } else {
-          const fails = (this.sellFailCounts.get(bot.id) ?? 0) + 1;
-          this.sellFailCounts.set(bot.id, fails);
-          if (fails >= 3) {
-            await updateBot(bot.id, bot.userId, { position: null });
-            bot.position = null;
-            this.sellFailCounts.delete(bot.id);
-            this.setStatus(bot, 'cleared stuck position after sell failures — will buy again');
-          } else {
-            this.setStatus(bot, `sell failed (${fails}/3) — retrying`);
-          }
+          this.setStatus(bot, `sell failed (${fails}/3) — retrying`);
         }
       }
       return;
@@ -231,10 +242,7 @@ export class UserBotEngine {
     const candidates = this.filterCandidates(rules);
     if (!candidates.length) {
       const pool = this.discovery.list().length;
-      const hint = rules.minMarketCap > 2_000
-        ? ' — try lowering min market cap (~$1.6k for fresh launchpad tokens)'
-        : '';
-      this.setStatus(bot, `no launchpad memecoins in $${rules.minMarketCap}-$${rules.maxMarketCap} mcap (${pool} listed)${hint}`);
+      this.setStatus(bot, `no tradable Robinhood stock tokens in your mcap band (${pool} stocks listed) — widen the range`);
       return;
     }
 
@@ -242,15 +250,19 @@ export class UserBotEngine {
     let target = null;
     let result;
 
-    for (const candidate of ordered.slice(0, 50)) {
+    for (const candidate of ordered.slice(0, 25)) {
       try {
-        const routable = await this.trading.canSwapEthForToken(candidate.address, buyEth);
+        const pools = this.discovery.poolsFor(candidate.address);
+        const minOut = this.discovery.minOutForBuy(candidate.address, buyEth);
+        const routable = await this.trading.canSwapEthForToken(candidate.address, buyEth, pools, minOut);
         if (!routable) continue;
         target = candidate;
         result = await this.trading.buyToken({
           wallet,
           mintAddress: candidate.address,
           ethAmount: buyEth,
+          pools,
+          minOut,
         });
         break;
       } catch (err) {
@@ -262,7 +274,7 @@ export class UserBotEngine {
     }
 
     if (!target) {
-      this.setStatus(bot, `0/${candidates.length} launchpad tokens swappable on Uniswap V3 in your mcap range — waiting for pools`);
+      this.setStatus(bot, `0/${candidates.length} stock tokens with live V4 ETH liquidity right now — retrying`);
       return;
     }
 
@@ -282,13 +294,14 @@ export class UserBotEngine {
           mint: target.address,
           address: target.address,
           symbol: target.symbol,
+          entryPrice: target.priceUsd,
           entryMcap: target.usdMarketCap,
           entryEth: result.ethAmount,
           entrySol: result.ethAmount,
           boughtAt: Date.now(),
         },
       });
-      console.log(`[user-bots] ${bot.name || bot.botType} bought $${target.symbol} (~$${Math.round(target.usdMarketCap)} mcap)`);
+      console.log(`[user-bots] ${bot.name || bot.botType} bought ${target.symbol} stock @ $${target.priceUsd}`);
       this.botStatus.delete(String(bot.id));
     }
   }
@@ -298,12 +311,14 @@ export class UserBotEngine {
     const active = bots.filter((b) => b.isActive);
     const pool = this.discovery.list();
     const rules = normalizeRules(active[0]?.tradingRules ?? defaultTradingRules());
-    const candidates = pool.filter(
-      (t) => t.usdMarketCap >= rules.minMarketCap && t.usdMarketCap <= rules.maxMarketCap,
-    );
+    const candidates = this.filterCandidates(rules);
     let routableInRange = 0;
-    for (const t of candidates.slice(0, 25)) {
-      if (await this.trading.canSwapEthForToken(t.address, rules.buyAmountEth)) routableInRange += 1;
+    for (const t of candidates.slice(0, 15)) {
+      const pools = this.discovery.poolsFor(t.address);
+      const minOut = this.discovery.minOutForBuy(t.address, rules.buyAmountEth);
+      if (await this.trading.canSwapEthForToken(t.address, rules.buyAmountEth, pools, minOut)) {
+        routableInRange += 1;
+      }
     }
     return {
       engineRunning: true,
@@ -314,7 +329,7 @@ export class UserBotEngine {
       discoveryPool: pool.length,
       candidatesInRange: candidates.length,
       routableInRange,
-      memecoinDiscovery: this.discovery.getMeta(),
+      stockDiscovery: this.discovery.getMeta(),
       mcapRange: { min: rules.minMarketCap, max: rules.maxMarketCap },
       activeBots: active.length,
       botStatus: active.map((b) => ({

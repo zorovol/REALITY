@@ -14,8 +14,9 @@ const BOTS = [
 const TICKER = [
   'ROBINBOT',
   'ROBINHOOD CHAIN',
-  'UNISWAP V2 EXECUTE',
-  'DEXSCREENER SCAN',
+  'REAL-WORLD ASSETS',
+  'TOKENIZED STOCKS',
+  'UNISWAP V4 EXECUTE',
   'AUTO WALLET',
   '5 AI AGENTS',
   '24/7 ENGINE',
@@ -23,20 +24,20 @@ const TICKER = [
 ];
 
 const STRATEGIES = [
-  { id: 'chatgpt', name: 'ChatGPT', desc: 'Fresh memecoins — newest launches on Robinhood Chain.', color: '#00c805' },
-  { id: 'grok', name: 'Grok', desc: 'Volatility hunter — rides hype and volume spikes.', color: '#fb7185' },
-  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random memecoin picks.', color: '#fbbf24' },
-  { id: 'gemini', name: 'Gemini', desc: 'Higher mcap — top of your launchpad range.', color: '#a78bfa' },
-  { id: 'deepseek', name: 'DeepSeek', desc: 'Low cap sniper — smallest mcap in your band.', color: '#38bdf8' },
+  { id: 'chatgpt', name: 'ChatGPT', desc: 'Volume leader — most-traded stock tokens (NVDA, TSLA…).', color: '#00c805' },
+  { id: 'grok', name: 'Grok', desc: 'Turnover hunter — stocks with hottest on-chain activity.', color: '#fb7185' },
+  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random stock token picks.', color: '#fbbf24' },
+  { id: 'gemini', name: 'Gemini', desc: 'Blue chips — biggest on-chain caps in your range.', color: '#a78bfa' },
+  { id: 'deepseek', name: 'DeepSeek', desc: 'Small caps — thinnest stock pools in your band.', color: '#38bdf8' },
 ];
 
 const TERMINAL_LINES = [
-  { time: '04:12:01', agent: 'SNIPER', msg: 'BUY ~$5 ETH → $PEPE', type: 'buy' },
-  { time: '04:12:04', agent: 'ENGINE', msg: 'mcap $42k · TP +8% · SL -5%', type: 'info' },
-  { time: '04:12:18', agent: 'SNIPER', msg: 'SELL +6.2% · tx 0x8f…9mQ', type: 'sell' },
-  { time: '04:12:22', agent: 'MOMENTUM', msg: 'scanning 12 memecoins on-chain…', type: 'info' },
-  { time: '04:12:25', agent: 'MOMENTUM', msg: 'BUY ~$5 ETH → $GORO', type: 'buy' },
-  { time: '04:12:41', agent: 'MOMENTUM', msg: 'SELL -2.1% · time limit', type: 'sell' },
+  { time: '04:12:01', agent: 'GEMINI', msg: 'BUY ~$5 ETH → NVDA @ $203.43', type: 'buy' },
+  { time: '04:12:04', agent: 'ENGINE', msg: '49 stock tokens live · TP +3% · SL -2%', type: 'info' },
+  { time: '04:12:18', agent: 'GEMINI', msg: 'SELL NVDA +3.1% · tx 0x8f…9mQ', type: 'sell' },
+  { time: '04:12:22', agent: 'CHATGPT', msg: 'scanning V4 pools: TSLA · AAPL · SPY…', type: 'info' },
+  { time: '04:12:25', agent: 'CHATGPT', msg: 'BUY ~$5 ETH → TSLA @ $390.17', type: 'buy' },
+  { time: '04:12:41', agent: 'CHATGPT', msg: 'SELL TSLA -1.8% · stop loss', type: 'sell' },
 ];
 
 const BENTO = [
@@ -54,7 +55,7 @@ const BENTO = [
   },
   {
     title: 'Your rules',
-    desc: 'Market cap range, buy size, take profit & stop loss. You configure, the engine executes.',
+    desc: 'On-chain cap range, buy size, take profit & stop loss. You configure, the engine executes.',
     span: 'narrow',
     icon: '◎',
   },
@@ -222,7 +223,7 @@ export default function Home() {
       <section className="home-v2-final">
         <div className="home-v2-final-glow" aria-hidden="true" />
         <h2>Stop watching. Start trading.</h2>
-        <p className="home-v2-final-sub">Free to sign up. Real ETH. Real Robinhood Chain memecoin trades via Uniswap.</p>
+        <p className="home-v2-final-sub">Free to sign up. Real ETH. Real Robinhood tokenized-stock trades via Uniswap V4.</p>
         <Link to="/signup" className="home-v2-btn primary large">Create free account</Link>
         <p className="home-v2-disclaimer">Not financial advice. You can lose funds. Trade responsibly.</p>
       </section>

@@ -7,12 +7,12 @@ const DEFAULT_BUY_ETH = Math.round((5 / 3500) * 1_000_000) / 1_000_000;
 
 export function defaultTradingRules() {
   return {
-    minMarketCap: 500,
-    maxMarketCap: 500_000,
+    minMarketCap: 1_000,
+    maxMarketCap: 10_000_000,
     buyAmountEth: DEFAULT_BUY_ETH,
     buyAmountSol: DEFAULT_BUY_ETH,
-    takeProfitPercent: 8,
-    stopLossPercent: 5,
+    takeProfitPercent: 3,
+    stopLossPercent: 2,
   };
 }
 

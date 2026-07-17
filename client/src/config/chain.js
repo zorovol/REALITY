@@ -7,7 +7,7 @@ export const CHAIN = {
   explorerUrl: 'https://robinhoodchain.blockscout.com',
 };
 
-export const MEMECOIN_EXAMPLES = ['GORO', 'PEPE', 'DOGE', 'WIF'];
+export const STOCK_TOKEN_EXAMPLES = ['NVDA', 'TSLA', 'AAPL', 'SPY'];
 
 /** Add Robinhood Chain to MetaMask (for imported bot wallet viewing). */
 export async function addRobinhoodChainToWallet() {

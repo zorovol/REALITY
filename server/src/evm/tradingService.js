@@ -1,14 +1,21 @@
 import { ethers } from 'ethers';
 import { txExplorerUrl } from '../chain/robinhood.js';
 
-const ROUTER_V3_ABI = [
-  'function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96)) payable returns (uint256 amountOut)',
-  'function multicall(bytes[] data) payable returns (bytes[] results)',
-  'function unwrapWETH9(uint256 amountMinimum, address recipient) payable',
+/** UniversalRouter command + v4-periphery action bytes. */
+const CMD_V4_SWAP = '0x10';
+const ACTIONS = '0x060c0f'; // SWAP_EXACT_IN_SINGLE, SETTLE_ALL, TAKE_ALL
+
+const UR_ABI = [
+  'function execute(bytes commands, bytes[] inputs, uint256 deadline) payable',
 ];
 
-const QUOTER_ABI = [
-  'function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96)) returns (uint256 amountOut,uint160,uint32,uint256)',
+const V4_QUOTER_ABI = [
+  'function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData)) returns (uint256 amountOut,uint256 gasEstimate)',
+];
+
+const PERMIT2_ABI = [
+  'function approve(address token, address spender, uint160 amount, uint48 expiration)',
+  'function allowance(address owner, address token, address spender) view returns (uint160 amount, uint48 expiration, uint48 nonce)',
 ];
 
 const ERC20_ABI = [
@@ -19,10 +26,27 @@ const ERC20_ABI = [
   'function allowance(address owner, address spender) view returns (uint256)',
 ];
 
-/** Uniswap V3 swaps on Robinhood Chain — launchpad memecoin buys/sells with ETH. */
+const ZERO = '0x0000000000000000000000000000000000000000';
+const MAX_UINT160 = (1n << 160n) - 1n;
+const MAX_UINT48 = (1n << 48n) - 1n;
+
+/** Fee/tickSpacing combos to try when discovery has no pool info for a token. */
+const FALLBACK_POOLS = [
+  { fee: 10000, tickSpacing: 200 },
+  { fee: 3000, tickSpacing: 60 },
+  { fee: 50000, tickSpacing: 1000 },
+  { fee: 30000, tickSpacing: 600 },
+  { fee: 500, tickSpacing: 10 },
+  { fee: 100, tickSpacing: 1 },
+];
+
+/**
+ * Uniswap V4 swaps on Robinhood Chain — buys/sells Robinhood tokenized
+ * stocks (RWAs) against native ETH through the UniversalRouter.
+ */
 export class TradingService {
   /**
-   * @param {{ rpcUrl: string, chainId: number, weth: string, uniswapV3Router: string, uniswapV3Quoter: string, uniswapV3Fee: number, explorerUrl: string }} chain
+   * @param {{ rpcUrl: string, chainId: number, explorerUrl: string, uniswapV4: object }} chain
    */
   constructor(chain) {
     this.chain = chain;
@@ -30,10 +54,11 @@ export class TradingService {
       chainId: chain.chainId,
       name: chain.name || 'robinhood',
     });
-    this.router = new ethers.Contract(chain.uniswapV3Router, ROUTER_V3_ABI, this.provider);
-    this.quoter = new ethers.Contract(chain.uniswapV3Quoter, QUOTER_ABI, this.provider);
-    this.weth = chain.weth;
-    this.v3Fee = chain.uniswapV3Fee ?? 10000;
+    this.routerAddress = chain.uniswapV4.universalRouter;
+    this.permit2Address = chain.uniswapV4.permit2;
+    this.router = new ethers.Contract(this.routerAddress, UR_ABI, this.provider);
+    this.quoter = new ethers.Contract(chain.uniswapV4.quoter, V4_QUOTER_ABI, this.provider);
+    this.coder = ethers.AbiCoder.defaultAbiCoder();
     this.explorerUrl = chain.explorerUrl;
   }
 
@@ -82,56 +107,113 @@ export class TradingService {
       return 'need more ETH for gas on Robinhood Chain (chain ID 4663) — not Ethereum L1';
     }
     if (/nonce/i.test(msg)) return `${msg} — retrying next tick`;
-    if (/slippage|STF|INSUFFICIENT_OUTPUT|TF/i.test(msg)) {
-      return `${msg} — memecoin moved too fast or still on bonding curve, will retry`;
+    if (/V4TooLittleReceived|slippage|PriceLimit/i.test(msg)) {
+      return `${msg} — stock pool moved, will retry`;
     }
     return msg.slice(0, 200);
   }
 
-  async quoteEthForToken(tokenAddress, ethAmount) {
-    const value = ethers.parseEther(String(Math.max(ethAmount, 0.00001)));
-    const out = await this.quoter.quoteExactInputSingle.staticCall({
-      tokenIn: this.weth,
-      tokenOut: tokenAddress,
-      amountIn: value,
-      fee: this.v3Fee,
-      sqrtPriceLimitX96: 0,
-    });
-    return out[0];
+  /** poolKey for a native-ETH V4 pool (currency0 = native, currency1 = token). */
+  poolKey(tokenAddress, { fee, tickSpacing }) {
+    return {
+      currency0: ZERO,
+      currency1: ethers.getAddress(tokenAddress),
+      fee,
+      tickSpacing,
+      hooks: ZERO,
+    };
   }
 
-  async canSwapEthForToken(tokenAddress, ethAmount) {
+  /**
+   * Quote a swap and return the best pool for it.
+   * @param {boolean} buying true = ETH -> token, false = token -> ETH
+   * @param {bigint} [minOut] reject quotes below this — guards against dead
+   *   pools priced far off the stock's real price.
+   */
+  async quoteBestPool(tokenAddress, amountIn, pools, buying, minOut = 0n) {
+    const candidates = pools?.length ? pools : FALLBACK_POOLS;
+    let best = null;
+    for (const pool of candidates) {
+      try {
+        const [out] = await this.quoter.quoteExactInputSingle.staticCall({
+          poolKey: this.poolKey(tokenAddress, pool),
+          zeroForOne: buying,
+          exactAmount: amountIn,
+          hookData: '0x',
+        });
+        if (out > 0n && out >= minOut && (!best || out > best.amountOut)) {
+          best = { amountOut: out, pool };
+        }
+      } catch {
+        /* pool doesn't exist or no liquidity at this tier */
+      }
+    }
+    return best;
+  }
+
+  async quoteEthForToken(tokenAddress, ethAmount, pools, minOut = 0n) {
+    const value = ethers.parseEther(String(Math.max(ethAmount, 0.00001)));
+    const best = await this.quoteBestPool(tokenAddress, value, pools, true, minOut);
+    return best?.amountOut ?? 0n;
+  }
+
+  async canSwapEthForToken(tokenAddress, ethAmount, pools, minOut = 0n) {
     try {
-      const out = await this.quoteEthForToken(tokenAddress, ethAmount);
+      const out = await this.quoteEthForToken(tokenAddress, ethAmount, pools, minOut);
       return out > 0n;
     } catch {
       return false;
     }
   }
 
-  async buyToken({ wallet, mintAddress, ethAmount }) {
-    const value = ethers.parseEther(String(ethAmount));
-    const quoted = await this.quoteEthForToken(mintAddress, ethAmount);
-    const amountOutMin = (quoted * 80n) / 100n; // 20% slippage
-
-    const signer = wallet.connect(this.provider);
-    const router = this.router.connect(signer);
-    const tx = await router.exactInputSingle(
-      {
-        tokenIn: this.weth,
-        tokenOut: mintAddress,
-        fee: this.v3Fee,
-        recipient: wallet.address,
-        amountIn: value,
-        amountOutMinimum: amountOutMin,
-        sqrtPriceLimitX96: 0n,
-      },
-      { ...(await this.buildTxOverrides()), value },
+  /** Encode the UniversalRouter V4 swap input for an exact-in single swap. */
+  encodeV4Swap({ tokenAddress, pool, zeroForOne, amountIn, amountOutMin }) {
+    const key = this.poolKey(tokenAddress, pool);
+    const swapParams = this.coder.encode(
+      ['tuple(tuple(address,address,uint24,int24,address),bool,uint128,uint128,bytes)'],
+      [[
+        [key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks],
+        zeroForOne,
+        amountIn,
+        amountOutMin,
+        '0x',
+      ]],
     );
+    const settleCurrency = zeroForOne ? key.currency0 : key.currency1;
+    const takeCurrency = zeroForOne ? key.currency1 : key.currency0;
+    const settleParams = this.coder.encode(['address', 'uint256'], [settleCurrency, amountIn]);
+    const takeParams = this.coder.encode(['address', 'uint256'], [takeCurrency, amountOutMin]);
+    return this.coder.encode(['bytes', 'bytes[]'], [ACTIONS, [swapParams, settleParams, takeParams]]);
+  }
+
+  async executeSwap(wallet, v4Input, value = 0n) {
+    const router = this.router.connect(wallet.connect(this.provider));
+    const deadline = Math.floor(Date.now() / 1000) + 300;
+    const overrides = await this.buildTxOverrides(value > 0n ? { value } : {});
+    const tx = await router.execute(CMD_V4_SWAP, [v4Input], deadline, overrides);
     const receipt = await tx.wait();
     if (!receipt || receipt.status !== 1) {
-      throw new Error('buy transaction reverted on-chain');
+      throw new Error('swap transaction reverted on-chain');
     }
+    return receipt;
+  }
+
+  /** Buy a tokenized stock with native ETH. */
+  async buyToken({ wallet, mintAddress, ethAmount, pools, minOut = 0n }) {
+    const value = ethers.parseEther(String(ethAmount));
+    const best = await this.quoteBestPool(mintAddress, value, pools, true, minOut);
+    if (!best) throw new Error('no fairly-priced V4 ETH pool for this stock token');
+    const amountOutMin = (best.amountOut * 90n) / 100n; // 10% slippage — thin RWA pools
+
+    const v4Input = this.encodeV4Swap({
+      tokenAddress: mintAddress,
+      pool: best.pool,
+      zeroForOne: true,
+      amountIn: value,
+      amountOutMin,
+    });
+    const receipt = await this.executeSwap(wallet, v4Input, value);
+
     return {
       signature: receipt.hash,
       ethAmount: Number(ethAmount),
@@ -140,66 +222,55 @@ export class TradingService {
     };
   }
 
-  async sellToken({ wallet, mintAddress, targetEth }) {
-    const token = new ethers.Contract(mintAddress, ERC20_ABI, wallet.connect(this.provider));
+  /** UniversalRouter pulls ERC20s through Permit2 — set both approvals once. */
+  async ensurePermit2Approval(wallet, tokenAddress) {
+    const signer = wallet.connect(this.provider);
+    const token = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+
+    const erc20Allowance = await token.allowance(wallet.address, this.permit2Address);
+    if (erc20Allowance < MAX_UINT160) {
+      const tx = await token.approve(this.permit2Address, ethers.MaxUint256, await this.buildTxOverrides());
+      const receipt = await tx.wait();
+      if (!receipt || receipt.status !== 1) throw new Error('token approve (permit2) reverted');
+    }
+
+    const permit2 = new ethers.Contract(this.permit2Address, PERMIT2_ABI, signer);
+    const [amount, expiration] = await permit2.allowance(wallet.address, tokenAddress, this.routerAddress);
+    const nowSec = BigInt(Math.floor(Date.now() / 1000));
+    if (amount < MAX_UINT160 / 2n || (expiration !== 0n && expiration < nowSec + 3600n)) {
+      const tx = await permit2.approve(
+        tokenAddress,
+        this.routerAddress,
+        MAX_UINT160,
+        MAX_UINT48,
+        await this.buildTxOverrides(),
+      );
+      const receipt = await tx.wait();
+      if (!receipt || receipt.status !== 1) throw new Error('permit2 approve reverted');
+    }
+  }
+
+  /** Sell full stock token balance back to native ETH. */
+  async sellToken({ wallet, mintAddress, pools }) {
+    const token = new ethers.Contract(mintAddress, ERC20_ABI, this.provider);
     const balance = await token.balanceOf(wallet.address);
     if (balance === 0n) return null;
 
-    const routerAddr = this.chain.uniswapV3Router;
-    const allowance = await token.allowance(wallet.address, routerAddr);
-    if (allowance < balance) {
-      const approveTx = await token.approve(routerAddr, ethers.MaxUint256, await this.buildTxOverrides());
-      const approveReceipt = await approveTx.wait();
-      if (!approveReceipt || approveReceipt.status !== 1) {
-        throw new Error('token approve reverted on-chain');
-      }
-    }
+    const best = await this.quoteBestPool(mintAddress, balance, pools, false);
+    if (!best) throw new Error('no V4 ETH pool with liquidity to sell this stock token');
+    const amountOutMin = (best.amountOut * 90n) / 100n;
 
-    let amountIn = balance;
-    const targetWei = ethers.parseEther(String(Math.max(targetEth, 0.00001)));
-    try {
-      const quoted = await this.quoter.quoteExactInputSingle.staticCall({
-        tokenIn: mintAddress,
-        tokenOut: this.weth,
-        amountIn,
-        fee: this.v3Fee,
-        sqrtPriceLimitX96: 0,
-      });
-      if (quoted[0] < targetWei && amountIn > 1n) {
-        amountIn = (amountIn * targetWei) / quoted[0];
-      }
-    } catch {
-      /* sell full balance */
-    }
+    await this.ensurePermit2Approval(wallet, mintAddress);
 
-    const quotedOut = await this.quoter.quoteExactInputSingle.staticCall({
-      tokenIn: mintAddress,
-      tokenOut: this.weth,
-      amountIn,
-      fee: this.v3Fee,
-      sqrtPriceLimitX96: 0,
+    const v4Input = this.encodeV4Swap({
+      tokenAddress: mintAddress,
+      pool: best.pool,
+      zeroForOne: false,
+      amountIn: balance,
+      amountOutMin,
     });
-    const amountOutMin = (quotedOut[0] * 85n) / 100n; // 15% slippage on sells
-
-    const router = this.router.connect(wallet.connect(this.provider));
-    const iface = router.interface;
-    const swapData = iface.encodeFunctionData('exactInputSingle', [{
-      tokenIn: mintAddress,
-      tokenOut: this.weth,
-      fee: this.v3Fee,
-      recipient: routerAddr,
-      amountIn,
-      amountOutMinimum: amountOutMin,
-      sqrtPriceLimitX96: 0n,
-    }]);
-    const unwrapData = iface.encodeFunctionData('unwrapWETH9', [amountOutMin, wallet.address]);
-
-    const tx = await router.multicall([swapData, unwrapData], await this.buildTxOverrides());
-    const receipt = await tx.wait();
-    if (!receipt || receipt.status !== 1) {
-      throw new Error('sell transaction reverted on-chain');
-    }
-    const ethOut = Number(ethers.formatEther(quotedOut[0] ?? 0n));
+    const receipt = await this.executeSwap(wallet, v4Input);
+    const ethOut = Number(ethers.formatEther(best.amountOut));
 
     return {
       signature: receipt.hash,

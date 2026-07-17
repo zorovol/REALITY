@@ -1,8 +1,6 @@
-/** Bot type selection — each AI agent uses a different token ranking style. */
+/** Bot type selection — each AI agent ranks Robinhood stock tokens differently. */
 
 import { config } from '../config.js';
-
-const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
@@ -25,7 +23,7 @@ function normalizeType(botType) {
   return LEGACY[botType] || botType;
 }
 
-/** Rank launchpad candidates for a bot type (first = highest priority). */
+/** Rank stock-token candidates for a bot type (first = highest priority). */
 export function rankCandidates(botType, candidates) {
   if (!candidates.length) return [];
   const pool = [...candidates];
@@ -33,18 +31,22 @@ export function rankCandidates(botType, candidates) {
 
   switch (type) {
     case 'chatgpt':
-      pool.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      // Most traded — highest 24h on-chain volume.
+      pool.sort((a, b) => (b.volumeH24 ?? 0) - (a.volumeH24 ?? 0));
       return pool;
 
     case 'grok':
+      // Turnover hunter — volume relative to on-chain cap.
       pool.sort((a, b) => (b.volatility ?? 0) - (a.volatility ?? 0));
       return pool;
 
     case 'deepseek':
+      // Smallest on-chain caps — thin, fast-moving stock pools.
       pool.sort((a, b) => a.usdMarketCap - b.usdMarketCap);
       return pool;
 
     case 'gemini':
+      // Blue chips — biggest on-chain caps (NVDA, AAPL, TSLA…).
       pool.sort((a, b) => b.usdMarketCap - a.usdMarketCap);
       return pool;
 
@@ -58,11 +60,11 @@ export function rankCandidates(botType, candidates) {
   }
 }
 
-/** Merge strategy-ranked tokens with older launchpad coins so bots trade both. */
+/** Merge strategy-ranked stocks with most-held names so bots see both. */
 export function buildTradeCandidateOrder(botType, candidates) {
   if (!candidates.length) return [];
   const ranked = rankCandidates(botType, candidates);
-  const oldest = [...candidates].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+  const popular = [...candidates].sort((a, b) => (b.holders ?? 0) - (a.holders ?? 0));
   const merged = [];
   const seen = new Set();
 
@@ -72,10 +74,10 @@ export function buildTradeCandidateOrder(botType, candidates) {
     merged.push(t);
   };
 
-  const maxLen = Math.max(ranked.length, oldest.length);
+  const maxLen = Math.max(ranked.length, popular.length);
   for (let i = 0; i < maxLen; i += 1) {
     push(ranked[i]);
-    push(oldest[i]);
+    push(popular[i]);
   }
 
   return merged;
@@ -84,13 +86,14 @@ export function buildTradeCandidateOrder(botType, candidates) {
 export function defaultTradingRules() {
   const buyEth = defaultBuyAmountEth();
   return {
-    // Ape.Store / NOXA launches on Robinhood are typically ~$1.5k–$2.5k mcap at deploy.
-    minMarketCap: 500,
-    maxMarketCap: 500_000,
+    // On-chain circulating caps of Robinhood stock tokens: ~$1k (long tail) to ~$1M (NVDA/AAPL).
+    minMarketCap: 1_000,
+    maxMarketCap: 10_000_000,
     buyAmountEth: buyEth,
     buyAmountSol: buyEth,
-    takeProfitPercent: 8,
-    stopLossPercent: 5,
+    // Tokenized stocks move slower than memecoins — tighter bands.
+    takeProfitPercent: 3,
+    stopLossPercent: 2,
   };
 }
 
@@ -98,15 +101,24 @@ export function normalizeRules(input = {}) {
   const d = defaultTradingRules();
   let buyEth = Number(input.buyAmountEth ?? input.buyAmountSol) || d.buyAmountEth;
   if (buyEth === 0.0005) buyEth = d.buyAmountEth;
+
   let minMarketCap = Number(input.minMarketCap) || d.minMarketCap;
-  // Legacy default blocked ~$1.6k launchpad tokens on Ape.Store / NOXA.
-  if (minMarketCap === 2_500) minMarketCap = d.minMarketCap;
+  let maxMarketCap = Number(input.maxMarketCap) || d.maxMarketCap;
+  // Migrate memecoin-era defaults to the stock-token band.
+  if (minMarketCap === 500 || minMarketCap === 2_500) minMarketCap = d.minMarketCap;
+  if (maxMarketCap === 500_000) maxMarketCap = d.maxMarketCap;
+
+  let takeProfitPercent = Number(input.takeProfitPercent) || d.takeProfitPercent;
+  let stopLossPercent = Number(input.stopLossPercent) || d.stopLossPercent;
+  if (takeProfitPercent === 8) takeProfitPercent = d.takeProfitPercent;
+  if (stopLossPercent === 5) stopLossPercent = d.stopLossPercent;
+
   return {
     minMarketCap,
-    maxMarketCap: Number(input.maxMarketCap) || d.maxMarketCap,
+    maxMarketCap,
     buyAmountEth: buyEth,
     buyAmountSol: buyEth,
-    takeProfitPercent: Number(input.takeProfitPercent) || d.takeProfitPercent,
-    stopLossPercent: Number(input.stopLossPercent) || d.stopLossPercent,
+    takeProfitPercent,
+    stopLossPercent,
   };
 }

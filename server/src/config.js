@@ -44,18 +44,13 @@ export const config = {
   uniswapV3Quoter: process.env.UNISWAP_V3_QUOTER || chainDefaults.uniswapV3Quoter,
   uniswapV3Fee: Number(process.env.UNISWAP_V3_FEE) || chainDefaults.uniswapV3DefaultFee || 10000,
   stockTokens: parseStockTokens(process.env.STOCK_TOKENS_JSON),
+  // Robinhood tokenized stocks (RWA) — discovery + Uniswap V4 pool scan
   stockDiscoveryRefreshMs: Number(process.env.STOCK_DISCOVERY_REFRESH_MS) || 60_000,
-  // Robinhood Chain memecoins (Ape.Store + NOXA Fun launchpads only)
-  memecoinDiscoveryRefreshMs: Number(process.env.MEMECOIN_DISCOVERY_REFRESH_MS) || 45_000,
-  memecoinDefaultMcapUsd: Number(process.env.MEMECOIN_DEFAULT_MCAP_USD) || 1600,
-  memecoinMinLiquidityUsd: Number(process.env.MEMECOIN_MIN_LIQUIDITY_USD) || 500,
-  memecoinMaxCandidates: Number(process.env.MEMECOIN_MAX_CANDIDATES) || 400,
-  memecoinApeMaxPages: Number(process.env.MEMECOIN_APE_MAX_PAGES) || 120,
-  memecoinNoxaMaxPages: Number(process.env.MEMECOIN_NOXA_MAX_PAGES) || 40,
-  memecoinNoxaRpcChunkSize: Number(process.env.MEMECOIN_NOXA_RPC_CHUNK) || 75_000,
-  memecoinNoxaMaxRpcChunks: Number(process.env.MEMECOIN_NOXA_RPC_CHUNKS) || 12,
-  memecoinExtraAddresses: (process.env.MEMECOIN_EXTRA_ADDRESSES || '')
-    .split(',').map((s) => s.trim()).filter(Boolean),
+  stockMaxPages: Number(process.env.STOCK_MAX_PAGES) || 10,
+  stockPoolScanChunk: Number(process.env.STOCK_POOL_SCAN_CHUNK) || 2_000_000,
+  stockPoolScanRefreshMs: Number(process.env.STOCK_POOL_SCAN_REFRESH_MS) || 30 * 60_000,
+  /** Max time a bot holds a stock position before time-based exit. */
+  botMaxHoldMs: Number(process.env.BOT_MAX_HOLD_MS) || 10 * 60_000,
   authServerKey: process.env.AUTH_SERVER_KEY || process.env.ENCRYPTION_KEY
     || (process.env.NODE_ENV !== 'production' ? 'local-dev-auth-key-32chars!!' : ''),
   encryptionKey: process.env.ENCRYPTION_KEY || process.env.AUTH_SERVER_KEY || '',
@@ -68,7 +63,7 @@ export const config = {
   tradeSellAfterBuyMs: Number(process.env.TRADE_SELL_AFTER_BUY_MS) || 20_000,
   tradeUsdPerSide: Number(process.env.TRADE_USD_PER_SIDE) || 2,
   ethUsdFallback: Number(process.env.ETH_USD_PRICE) || 3500,
-  /** Default memecoin bot buy size (~USD per swap). */
+  /** Default stock-bot buy size (~USD per swap). */
   botBuyUsd: Number(process.env.BOT_BUY_USD) || 5,
   /** ETH kept aside for gas on each buy/sell (Robinhood L2). */
   botGasReserveEth: Number(process.env.BOT_GAS_RESERVE_ETH) || 0.0002,
@@ -104,5 +99,6 @@ export function chainConfig() {
     uniswapV3Router: config.uniswapV3Router,
     uniswapV3Quoter: config.uniswapV3Quoter,
     uniswapV3Fee: config.uniswapV3Fee,
+    uniswapV4: robinhoodMainnet.uniswapV4,
   };
 }

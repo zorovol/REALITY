@@ -113,7 +113,7 @@
     <circle cx="28" cy="-12" r="1.5" fill="#e8ffe8"/>
   </g>
 
-  <!-- Memecoin moon accent -->
+  <!-- Stock-token accent -->
   <g transform="translate(92, 18)">
     <circle cx="0" cy="0" r="10" fill="#00c805" opacity="0.12"/>
     <path

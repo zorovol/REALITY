@@ -43,7 +43,7 @@ export default function Docs() {
             <h1>{BRAND.fullName}</h1>
             <p className="docs-lead">
               Everything you need to understand how {BRAND.name} works — from account creation
-              to automated memecoin trading on Robinhood Chain.
+              to automated trading of Robinhood real-world assets (tokenized stocks) on Robinhood Chain.
             </p>
           </header>
 
@@ -52,8 +52,9 @@ export default function Docs() {
             <p>
               {BRAND.name} is an automated trading platform on <strong>Robinhood Chain</strong> (EVM L2, chain ID 4663).
               You sign up with a password, receive an Ethereum wallet automatically, fund it with ETH,
-              then create trading bots that scan <strong>launchpad memecoins</strong> from Ape.Store and NOXA Fun
-              and execute buy/sell swaps through <strong>Uniswap V3</strong> on your behalf — 24/7.
+              then create trading bots that scan <strong>Robinhood real-world assets</strong> — tokenized stocks and ETFs
+              like NVDA, TSLA, AAPL and SPY issued as &quot;Robinhood Token&quot; ERC-20s — and execute buy/sell swaps
+              through <strong>Uniswap V4</strong> on your behalf — 24/7.
             </p>
             <p>There are two parallel experiences:</p>
             <ul>
@@ -85,24 +86,24 @@ export default function Docs() {
               │  · Signup / login / sessions  │
               │  · Bot CRUD + execution       │
               │  · Live AI trading floor      │
-              │  · Uniswap V3 launchpad swaps   │
+              │  · Uniswap V4 stock swaps     │
               │  · Encrypted wallet keys      │
               └───────────────┬───────────────┘
                               │
               ┌───────────────┴───────────────┐
               ▼                               ▼
        PostgreSQL (optional)          Robinhood Chain RPC
-       Users · Sessions · Bots        Ape.Store + NOXA → Uniswap V3
+       Users · Sessions · Bots        Stock tokens → Uniswap V4
 `}</pre>
             </div>
             <h3>Data flow for a user bot trade</h3>
             <ol className="docs-steps">
               <li>Backend loads all <strong>active</strong> bots from the database.</li>
               <li>For each bot, it decrypts the user&apos;s wallet server-side (never sent to browser).</li>
-              <li>Memecoin pool is refreshed from Ape.Store and NOXA Fun (Robinhood Chain launchpads only).</li>
-              <li>The bot type determines <em>which</em> memecoin to pick from the filtered list.</li>
-              <li>A buy swap (ETH → memecoin) is submitted via Uniswap V3 if the bot has no open position and the token has a V3 pool.</li>
-              <li>When take-profit, stop-loss, or a time limit hits, a sell swap is submitted.</li>
+              <li>The stock-token pool is refreshed from Robinhood Chain — every official &quot;Robinhood Token&quot; RWA plus its Uniswap V4 ETH pools.</li>
+              <li>The bot type determines <em>which</em> stock token to pick from the filtered list.</li>
+              <li>A buy swap (ETH → stock token) is submitted through the Uniswap V4 UniversalRouter if the bot has no open position and the token has a live V4 pool.</li>
+              <li>When take-profit, stop-loss (tracked against the live stock price), or a time limit hits, a sell swap is submitted.</li>
               <li>Trade results are logged to the database and visible on your dashboard.</li>
             </ol>
           </section>
@@ -187,11 +188,11 @@ export default function Docs() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td><code>chatgpt</code></td><td>Prioritizes the newest tokens (fresh bonding-curve launches).</td></tr>
-                  <tr><td><code>grok</code></td><td>Prioritizes tokens with highest volatility / activity score.</td></tr>
+                  <tr><td><code>chatgpt</code></td><td>Prioritizes the most-traded stock tokens (highest 24h on-chain volume).</td></tr>
+                  <tr><td><code>grok</code></td><td>Prioritizes turnover — volume relative to on-chain cap (hottest pools).</td></tr>
                   <tr><td><code>fable</code></td><td>Random selection — chaos mode.</td></tr>
-                  <tr><td><code>gemini</code></td><td>Prioritizes highest market cap tokens in range (more liquidity).</td></tr>
-                  <tr><td><code>deepseek</code></td><td>Always picks the smallest market cap in your configured range.</td></tr>
+                  <tr><td><code>gemini</code></td><td>Blue chips — biggest on-chain caps in range (NVDA, TSLA, AAPL…).</td></tr>
+                  <tr><td><code>deepseek</code></td><td>Always picks the smallest on-chain cap in your configured range.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -210,18 +211,19 @@ export default function Docs() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td><code>minMarketCap</code></td><td>Minimum USD market cap for a token to be considered.</td><td>$500</td></tr>
-                  <tr><td><code>maxMarketCap</code></td><td>Maximum USD market cap for a token to be considered.</td><td>$500,000</td></tr>
+                  <tr><td><code>minMarketCap</code></td><td>Minimum on-chain circulating cap (USD) for a stock token to be considered.</td><td>$1,000</td></tr>
+                  <tr><td><code>maxMarketCap</code></td><td>Maximum on-chain circulating cap (USD) for a stock token to be considered.</td><td>$10,000,000</td></tr>
                   <tr><td><code>buyAmountEth</code></td><td>ETH spent per buy swap (~$5 default).</td><td>~0.00143 ETH</td></tr>
-                  <tr><td><code>takeProfitPercent</code></td><td>Sell when token mcap rises this % above entry.</td><td>8%</td></tr>
-                  <tr><td><code>stopLossPercent</code></td><td>Sell when token mcap drops this % below entry.</td><td>5%</td></tr>
+                  <tr><td><code>takeProfitPercent</code></td><td>Sell when the stock price rises this % above entry.</td><td>3%</td></tr>
+                  <tr><td><code>stopLossPercent</code></td><td>Sell when the stock price drops this % below entry.</td><td>2%</td></tr>
                 </tbody>
               </table>
             </div>
             <p>
-              Only memecoins launched on Ape.Store or NOXA Fun are considered.
-              Official stock tokens (AAPL, NVDA, etc.) and stablecoins are excluded.
-              Tokens outside your mcap band are ignored. NOXA tokens still on the bonding curve are skipped until they have a Uniswap V3 pool.
+              Only official Robinhood stock tokens (name ends in &quot;Robinhood Token&quot;) are considered —
+              tokenized US stocks and ETFs like NVDA, TSLA, AAPL, AMZN, SPY and QQQ.
+              The &quot;on-chain cap&quot; is the circulating cap of the token on Robinhood Chain, not the company&apos;s
+              real market cap — NVDA on-chain is roughly $1.7M. Tokens without a live Uniswap V4 ETH pool are skipped.
             </p>
           </section>
 
@@ -230,17 +232,18 @@ export default function Docs() {
             <p>The backend runs a continuous loop (approximately every 3 seconds) on Render:</p>
             <ol className="docs-steps">
               <li>Fetch all bots where <code>isActive = true</code>.</li>
-              <li>Refresh the memecoin discovery pool (Ape.Store API + NOXA factory events).</li>
+              <li>Refresh the stock-token pool (Robinhood Chain token registry + Uniswap V4 pool scan).</li>
               <li>For each active bot:
                 <ul>
-                  <li>If holding a position → check take-profit, stop-loss, or ~30s time limit → sell if triggered.</li>
-                  <li>If no position and wallet has enough ETH → filter by mcap range → apply bot type selection → verify Uniswap V3 route → buy.</li>
+                  <li>If holding a position → check take-profit / stop-loss against the live stock price, or a 10-minute time limit → sell if triggered.</li>
+                  <li>If no position and wallet has enough ETH → filter by on-chain cap range → apply bot type selection → verify a live V4 quote → buy.</li>
                 </ul>
               </li>
               <li>Log every buy/sell with transaction hash (viewable on Blockscout).</li>
             </ol>
             <p>
-              The engine uses Uniswap V3 on Robinhood Chain — real on-chain swaps for launchpad tokens.
+              The engine swaps through the Uniswap V4 UniversalRouter on Robinhood Chain —
+              real on-chain trades of tokenized stocks against native ETH.
             </p>
           </section>
 
@@ -298,7 +301,10 @@ export default function Docs() {
               <dd>Not through the UI. Keys are server-managed for automated trading.</dd>
 
               <dt>Why isn&apos;t my bot trading?</dt>
-              <dd>Check: bot is started, wallet has ETH on Robinhood Chain, memecoins exist in your mcap range, Render backend is running.</dd>
+              <dd>Check: bot is started, wallet has ETH on Robinhood Chain, stock tokens exist in your on-chain cap range, Render backend is running.</dd>
+
+              <dt>Do I own real shares?</dt>
+              <dd>No. These are Robinhood&apos;s tokenized stock ERC-20s on Robinhood Chain — on-chain tokens that track the stock, not brokerage shares.</dd>
 
               <dt>Do bots trade while I&apos;m offline?</dt>
               <dd>Yes — active bots run 24/7 on the backend using the server-encrypted wallet key.</dd>
