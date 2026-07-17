@@ -385,7 +385,7 @@ export default function Dashboard() {
               Command <em>center</em>
             </h1>
             <p className="dash-v2-hero-lead">
-              Name each bot, hit Start — {BRAND.name} trades Ethereum tokenized stocks on Uniswap V3.
+              Name each bot, hit Start — {BRAND.name} trades Robinhood stocks on Ethereum via Uniswap V3.
             </p>
             <div className="dash-v2-hero-cta">
               <button type="button" className="home-v2-btn primary" onClick={() => { setForm(emptyForm()); setShowCreate(true); setTab('bots'); }}>

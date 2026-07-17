@@ -35,7 +35,7 @@ export default function Docs() {
             <BrandLogo size={48} className="docs-hero-logo-wrap" />
             <h1>{BRAND.fullName}</h1>
             <p className="docs-lead">
-              Automated trading of tokenized stocks on Ethereum mainnet — Uniswap V3 fills, ETH settlement.
+              Auto-trade Robinhood-style tokenized stocks on Ethereum — because that&apos;s where those markets live.
             </p>
           </header>
 
@@ -43,8 +43,8 @@ export default function Docs() {
             <h2>Overview</h2>
             <p>
               {BRAND.name} runs trading bots on <strong>Ethereum</strong> (chain ID 1).
-              You get an EVM wallet, fund it with ETH, and bots buy/sell tokenized stock trackers
-              (Ondo <code>*on</code>, xStocks <code>*x</code>) through Uniswap V3.
+              Robinhood-style stock trackers (Ondo <code>*on</code>, xStocks <code>*x</code>) are ERC-20s with Uniswap liquidity on ETH —
+              so we trade them on ETH with your wallet, not on a fake L2 detour.
             </p>
             <div className="docs-callout">
               <strong>Not financial advice.</strong> These are tokenized trackers, not brokerage shares.
