@@ -1,10 +1,14 @@
 /**
- * Browser-only wallet accounts — no server required.
- * Wallet + encrypted key stored in localStorage on this device.
+ * Browser-only Solana wallet accounts.
+ * Wallet + encrypted key are scoped to the Solana product in localStorage.
  */
 
-const WALLETS_KEY = 'botforge_wallets';
-const SESSION_KEY = 'botforge_session';
+const WALLETS_KEY = 'tickwire_solana_wallets_v1';
+const SESSION_KEY = 'tickwire_solana_session_v1';
+
+function isLegacyEvmAddress(address) {
+  return /^0x[a-fA-F0-9]{40}$/.test(String(address || '').trim());
+}
 
 function readWallets() {
   try {
@@ -76,6 +80,10 @@ export function getSession() {
     if (!raw) return null;
     const session = JSON.parse(raw);
     if (!session?.walletAddress) return null;
+    if (isLegacyEvmAddress(session.walletAddress)) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
     const wallets = readWallets();
     if (!wallets[session.walletAddress]) {
       sessionStorage.removeItem(SESSION_KEY);
@@ -91,6 +99,9 @@ export function getSession() {
 }
 
 export function setSession(walletAddress) {
+  if (isLegacyEvmAddress(walletAddress)) {
+    throw new Error('This is an old Ethereum wallet. Create a new Solana wallet to use Pump.fun bots.');
+  }
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ walletAddress }));
 }
 
@@ -139,6 +150,9 @@ export async function getWalletSecretKey(walletAddress, password) {
 
 export async function loginAccount(walletAddress, password) {
   const addr = String(walletAddress || '').trim();
+  if (isLegacyEvmAddress(addr)) {
+    throw new Error('Ethereum wallets are no longer supported. Create a new Solana wallet.');
+  }
   const wallets = readWallets();
   const record = wallets[addr];
   if (!record) {

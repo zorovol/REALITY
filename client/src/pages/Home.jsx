@@ -4,30 +4,30 @@ import Character from '../components/Character.jsx';
 import { BRAND } from '../config/brand.js';
 
 const BOTS = [
-  { id: 'chatgpt', label: 'ChatGPT', color: '#34d399' },
-  { id: 'grok', label: 'Grok', color: '#fb7185' },
-  { id: 'fable', label: 'Fable', color: '#fbbf24' },
-  { id: 'gemini', label: 'Gemini', color: '#a78bfa' },
-  { id: 'deepseek', label: 'DeepSeek', color: '#38bdf8' },
+  { id: 'chatgpt', label: 'ChatGPT', color: '#14f1d9' },
+  { id: 'grok', label: 'Grok', color: '#ff63df' },
+  { id: 'fable', label: 'Fable', color: '#b8ff42' },
+  { id: 'gemini', label: 'Gemini', color: '#8c7bff' },
+  { id: 'deepseek', label: 'DeepSeek', color: '#56a8ff' },
 ];
 
 const TICKER = [
-  'SNIPER BOT LIVE',
-  'MOMENTUM SCAN',
-  'PUMP.FUN EXECUTE',
-  'SOLANA MAINNET',
-  'AUTO WALLET',
-  '5 AI AGENTS',
-  '24/7 ENGINE',
+  'AI SCANNER LIVE',
+  'PUMP.FUN RADAR',
+  'SOLANA EXECUTION',
+  'AGENT SWARM ONLINE',
+  'SIGNAL → FILL',
+  'AUTONOMOUS TRADING',
+  '24/7 ON-CHAIN',
   'ENCRYPTED KEYS',
 ];
 
 const STRATEGIES = [
-  { id: 'chatgpt', name: 'ChatGPT', desc: 'Fresh launches — first on new bonding curves.', color: '#34d399' },
-  { id: 'grok', name: 'Grok', desc: 'Volatility hunter — rides hype and volume spikes.', color: '#fb7185' },
-  { id: 'fable', name: 'Fable', desc: 'Chaos mode — random picks, story-driven plays.', color: '#fbbf24' },
-  { id: 'gemini', name: 'Gemini', desc: 'Whale lane — deeper liquidity at the top of your range.', color: '#a78bfa' },
-  { id: 'deepseek', name: 'DeepSeek', desc: 'Low cap sniper — smallest mcap in your band.', color: '#38bdf8' },
+  { id: 'chatgpt', name: 'ChatGPT', desc: 'Fresh-launch hunter — early on new bonding curves.', color: '#14f1d9' },
+  { id: 'grok', name: 'Grok', desc: 'Volatility hunter — tracks momentum spikes.', color: '#ff63df' },
+  { id: 'fable', name: 'Fable', desc: 'Chaos agent — explores the long tail of Pumps.', color: '#b8ff42' },
+  { id: 'gemini', name: 'Gemini', desc: 'Liquidity agent — favors the upper end of your range.', color: '#8c7bff' },
+  { id: 'deepseek', name: 'DeepSeek', desc: 'Low-cap sniper — smallest market caps in your band.', color: '#56a8ff' },
 ];
 
 const TERMINAL_LINES = [
@@ -95,12 +95,12 @@ export default function Home() {
               {BRAND.name.toUpperCase()} · SOLANA MAINNET
             </div>
             <h1>
-              Forge your bots.
+              Your AI hunts.
               <br />
-              <em>Trade on autopilot.</em>
+              <em>You stay in control.</em>
             </h1>
             <p className="home-v2-lead">
-              {BRAND.description} No seed phrase. No manual keys. Just fund, configure, and let the engine run.
+              {BRAND.description} Your AI agents scan Pump.fun, follow the rules you set, and execute on Solana.
             </p>
             <div className="home-v2-cta">
               <Link to="/signup" className="home-v2-btn primary">
@@ -144,7 +144,7 @@ export default function Home() {
             <div className="home-v2-terminal" aria-hidden="true">
               <div className="home-v2-terminal-bar">
                 <span /><span /><span />
-                <p>botforge-engine · live</p>
+                <p>tickwire-agent-swarm · live</p>
               </div>
               <div className="home-v2-terminal-body">
                 {TERMINAL_LINES.map((line) => (
@@ -164,8 +164,8 @@ export default function Home() {
       <section className="home-v2-strategies">
         <div className="home-v2-strategies-head">
           <p className="home-v2-eyebrow">Pick your edge</p>
-          <h2>Five bot types. One engine.</h2>
-          <p>ChatGPT, Grok, Fable, Gemini, DeepSeek — same rules, different pick logic.</p>
+          <h2>Five AI agents. One execution layer.</h2>
+          <p>Every agent sees the same Pump.fun universe. Your rules decide the risk; its selection logic decides the hunt.</p>
         </div>
         <div className="home-v2-strategy-grid">
           {STRATEGIES.map((s) => (
@@ -194,7 +194,7 @@ export default function Home() {
       </section>
 
       <section className="home-v2-bento-wrap">
-        <h2>Everything you need. Nothing you don&apos;t.</h2>
+          <h2>AI trading, with your guardrails.</h2>
         <div className="home-v2-bento">
           {BENTO.map((b) => (
             <article key={b.title} className={`home-v2-bento-card ${b.span}`}>

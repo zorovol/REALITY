@@ -11915,3 +11915,89 @@ body {
   .tw-market-head span:nth-child(4), .tw-market-row .tw-spark { display: none; }
   .tw-market-head, .tw-market-row { grid-template-columns: 1.2fr 0.7fr 0.8fr 0.7fr; }
 }
+
+/* ── Solana AI trading layer ──────────────────────────────────────────────── */
+.home-v2,
+.dash-shell {
+  --sol-cyan: #14f1d9;
+  --sol-purple: #8c7bff;
+  --sol-pink: #ff63df;
+  --sol-lime: #b8ff42;
+  background:
+    radial-gradient(ellipse 85% 55% at 50% -10%, rgba(140,123,255,0.2), transparent 60%),
+    radial-gradient(ellipse 45% 45% at 100% 35%, rgba(20,241,217,0.11), transparent 65%),
+    #05050b;
+}
+.home-v2-bg { background: #05050b; }
+.home-v2-orb { filter: blur(95px); }
+.home-v2-orb-a { background: rgba(140,123,255,0.28); }
+.home-v2-orb-b { background: rgba(20,241,217,0.18); }
+.home-v2-orb-c { background: rgba(255,99,223,0.13); }
+.home-v2-grid {
+  background-image:
+    linear-gradient(rgba(140,123,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,241,217,0.06) 1px, transparent 1px);
+}
+.home-v2-live {
+  color: var(--sol-cyan);
+  border-color: rgba(20,241,217,0.4);
+  background: rgba(20,241,217,0.08);
+  box-shadow: 0 0 24px rgba(20,241,217,0.12);
+}
+.home-v2-live-dot { background: var(--sol-cyan); box-shadow: 0 0 12px var(--sol-cyan); }
+.home-v2-copy h1 em {
+  background: linear-gradient(105deg, var(--sol-cyan) 0%, var(--sol-purple) 48%, var(--sol-pink) 100%);
+  -webkit-background-clip: text; background-clip: text;
+}
+.home-v2-btn.primary,
+.auth-submit,
+.home-btn.primary {
+  background: linear-gradient(105deg, var(--sol-cyan), #62ceff 48%, var(--sol-purple)) !important;
+  color: #070711 !important;
+  box-shadow: 0 8px 35px rgba(20,241,217,0.22), 0 0 42px rgba(140,123,255,0.18) !important;
+}
+.home-v2-btn.primary:hover,
+.auth-submit:hover,
+.home-btn.primary:hover {
+  background: linear-gradient(105deg, #50ffe9, #88d9ff 48%, #ad9dff) !important;
+}
+.home-v2-ticker { border-color: rgba(140,123,255,0.3); background: rgba(6,6,14,0.72); }
+.home-v2-ticker-track span { color: rgba(20,241,217,0.84); }
+.home-v2-metrics div,
+.home-v2-terminal,
+.home-v2-strategy-card,
+.home-v2-split-card,
+.home-v2-bento-card,
+.dash-wallet-panel,
+.dash-sidebar-stats div,
+.dash-bot-card,
+.dash-create-panel {
+  border-color: rgba(140,123,255,0.26) !important;
+  background: linear-gradient(145deg, rgba(21,20,42,0.88), rgba(8,8,17,0.86)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 16px 45px rgba(0,0,0,0.22);
+}
+.home-v2-metrics strong,
+.dash-balance-val,
+.dash-sidebar-stats span { color: var(--sol-cyan) !important; }
+.home-v2-stage-ring,
+.home-v2-stage-ring::before { border-color: rgba(140,123,255,0.5); }
+.home-v2-stage-core {
+  border-color: var(--sol-cyan);
+  box-shadow: 0 0 28px rgba(20,241,217,0.35), 0 0 80px rgba(140,123,255,0.25);
+}
+.home-v2-stage-badge { color: var(--sol-cyan); border-color: rgba(20,241,217,0.4); background: rgba(20,241,217,0.1); }
+.home-v2-terminal-bar { background: linear-gradient(90deg, rgba(140,123,255,0.15), rgba(20,241,217,0.07)); }
+.home-v2-terminal-agent { color: var(--sol-cyan); }
+.home-v2-terminal-line.buy .home-v2-terminal-msg { color: var(--sol-lime); }
+.home-v2-terminal-line.sell .home-v2-terminal-msg { color: var(--sol-pink); }
+.home-v2-strategy-card:hover,
+.dash-bot-card.is-active { border-color: rgba(20,241,217,0.65) !important; box-shadow: 0 0 0 1px rgba(20,241,217,0.12), 0 18px 55px rgba(20,241,217,0.12) !important; }
+.home-v2-split-card.accent,
+.home-v2-final { background: linear-gradient(135deg, rgba(140,123,255,0.22), rgba(20,241,217,0.1), rgba(7,7,17,0.9)) !important; border-color: rgba(20,241,217,0.3) !important; }
+.dash-shell { min-height: 100vh; }
+.dash-sidebar { background: rgba(7,7,17,0.72); border-color: rgba(140,123,255,0.3); backdrop-filter: blur(20px); }
+.dash-header h1,
+.dash-create-head h2 { text-shadow: 0 0 28px rgba(140,123,255,0.28); }
+.dash-hint::before { content: 'AI EXECUTION · '; color: var(--sol-purple); font-family: var(--font-mono); font-size: 9px; }
+.auth-shell { background: radial-gradient(ellipse at 20% 0%, rgba(140,123,255,0.22), transparent 45%), #05050b !important; }
+.auth-card { border-color: rgba(140,123,255,0.35) !important; box-shadow: 0 20px 80px rgba(0,0,0,0.5), 0 0 45px rgba(140,123,255,0.12) !important; }
