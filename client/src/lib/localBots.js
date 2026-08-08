@@ -2,16 +2,13 @@ const BOTS_KEY = 'botforge_bots';
 
 export const BOT_TYPES = ['chatgpt', 'grok', 'fable', 'gemini', 'deepseek'];
 
-const DEFAULT_BUY_ETH = Math.round((15 / 2500) * 1_000_000) / 1_000_000;
-
 export function defaultTradingRules() {
   return {
-    minMarketCap: 10_000,
-    maxMarketCap: 50_000_000,
-    buyAmountEth: DEFAULT_BUY_ETH,
-    buyAmountSol: DEFAULT_BUY_ETH,
-    takeProfitPercent: 3,
-    stopLossPercent: 2,
+    minMarketCap: 2500,
+    maxMarketCap: 6000,
+    buyAmountSol: 0.015,
+    takeProfitPercent: 8,
+    stopLossPercent: 5,
   };
 }
 

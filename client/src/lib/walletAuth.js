@@ -1,5 +1,6 @@
 /**
- * Browser-only wallet accounts — EVM wallets for Ethereum mainnet.
+ * Browser-only wallet accounts — no server required.
+ * Wallet + encrypted key stored in localStorage on this device.
  */
 
 const WALLETS_KEY = 'botforge_wallets';
@@ -76,14 +77,13 @@ export function getSession() {
     const session = JSON.parse(raw);
     if (!session?.walletAddress) return null;
     const wallets = readWallets();
-    if (!wallets[session.walletAddress.toLowerCase()] && !wallets[session.walletAddress]) {
+    if (!wallets[session.walletAddress]) {
       sessionStorage.removeItem(SESSION_KEY);
       return null;
     }
     return {
       walletAddress: session.walletAddress,
-      createdAt: wallets[session.walletAddress]?.createdAt
-        ?? wallets[session.walletAddress.toLowerCase()]?.createdAt,
+      createdAt: wallets[session.walletAddress].createdAt,
     };
   } catch {
     return null;
@@ -99,21 +99,22 @@ export function clearSession() {
 }
 
 export async function createAccount(password) {
-  const { Wallet } = await import('ethers');
-  const wallet = Wallet.createRandom();
-  const walletAddress = wallet.address;
-  const secretKey = wallet.privateKey;
+  const { Keypair } = await import('@solana/web3.js');
+  const bs58 = (await import('bs58')).default;
+
+  const keypair = Keypair.generate();
+  const walletAddress = keypair.publicKey.toBase58();
+  const secretKey = bs58.encode(keypair.secretKey);
 
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const encryptedKey = await encryptSecret(secretKey, password, salt);
 
   const wallets = readWallets();
-  const key = walletAddress.toLowerCase();
-  if (wallets[key] || wallets[walletAddress]) {
+  if (wallets[walletAddress]) {
     throw new Error('Wallet already exists on this device.');
   }
 
-  wallets[key] = {
+  wallets[walletAddress] = {
     walletAddress,
     salt: toHex(salt),
     encryptedKey,
@@ -127,8 +128,7 @@ export async function createAccount(password) {
 
 export async function getWalletSecretKey(walletAddress, password) {
   const wallets = readWallets();
-  const addr = String(walletAddress).trim();
-  const record = wallets[addr] ?? wallets[addr.toLowerCase()];
+  const record = wallets[String(walletAddress).trim()];
   if (!record) return null;
   try {
     return await decryptSecret(record.encryptedKey, password, fromHex(record.salt));
@@ -140,7 +140,7 @@ export async function getWalletSecretKey(walletAddress, password) {
 export async function loginAccount(walletAddress, password) {
   const addr = String(walletAddress || '').trim();
   const wallets = readWallets();
-  const record = wallets[addr] ?? wallets[addr.toLowerCase()];
+  const record = wallets[addr];
   if (!record) {
     throw new Error('Wallet not found on this device. Sign up here first, or use the browser where you created it.');
   }
@@ -151,14 +151,13 @@ export async function loginAccount(walletAddress, password) {
     throw new Error('Invalid wallet address or password.');
   }
 
-  setSession(record.walletAddress || addr);
-  return { walletAddress: record.walletAddress || addr, createdAt: record.createdAt };
+  setSession(addr);
+  return { walletAddress: addr, createdAt: record.createdAt };
 }
 
 export async function getWalletBalance(walletAddress) {
-  const { JsonRpcProvider, formatEther } = await import('ethers');
-  const { CHAIN } = await import('../config/chain.js');
-  const provider = new JsonRpcProvider(CHAIN.rpcUrl, CHAIN.chainId);
-  const bal = await provider.getBalance(walletAddress);
-  return Number(formatEther(bal));
+  const { Connection, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+  const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+  const lamports = await connection.getBalance(new PublicKey(walletAddress));
+  return lamports / LAMPORTS_PER_SOL;
 }

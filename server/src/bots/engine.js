@@ -1,63 +1,30 @@
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import bs58 from 'bs58';
 import { config } from '../config.js';
 import { decryptWithServerKey } from '../auth/crypto.js';
 import { findUserById, listActiveBots, listBotsForUser, updateBot, insertBotTrade } from '../auth/store.js';
-import { StockDiscovery } from '../evm/stockDiscovery.js';
-import { txExplorerUrl } from '../chain/ethereum.js';
-import { buildTradeCandidateOrder, normalizeRules, defaultTradingRules } from './strategies.js';
+import { PumpDiscovery } from '../solana/pumpDiscovery.js';
+import { solscanTxUrl } from '../solana/config.js';
+import { selectToken, defaultTradingRules, normalizeRules } from './strategies.js';
 
 export class UserBotEngine {
   /**
-   * @param {import('../evm/tradingService.js').TradingService} trading
+   * @param {import('../solana/pump.js').PumpService} pump
    */
-  constructor(trading) {
-    this.trading = trading;
-    this.discovery = new StockDiscovery();
+  constructor(pump) {
+    this.pump = pump;
+    this.discovery = new PumpDiscovery();
     this.busy = false;
     this.timers = [];
-    this.walletCache = new Map();
-    this.skipLogAt = new Map();
+    this.keypairCache = new Map();
     this.botStatus = new Map();
-    this.sellFailCounts = new Map();
-    this.simulationLogged = false;
-  }
-
-  setStatus(bot, reason) {
-    this.botStatus.set(String(bot.id), { reason, at: Date.now() });
-    this.logSkip(bot, reason);
-  }
-
-  getStatus(botId) {
-    return this.botStatus.get(String(botId)) ?? null;
-  }
-
-  getAllStatus() {
-    return Object.fromEntries(this.botStatus);
-  }
-
-  logSkip(bot, reason) {
-    const now = Date.now();
-    const last = this.skipLogAt.get(bot.id) ?? 0;
-    if (now - last < 60_000) return;
-    this.skipLogAt.set(bot.id, now);
-    console.log(`[user-bots] ${bot.name || bot.botType} (${bot.id}) skip: ${reason}`);
-  }
-
-  /** Spend up to rule cap, but only what fits in wallet after gas reserve. */
-  buyEthForBalance(balanceEth, rules) {
-    const available = balanceEth - config.botGasReserveEth;
-    if (available <= 0) return 0;
-    return Math.min(rules.buyAmountEth, available);
-  }
-
-  gasNeededStatus(balanceEth, sym) {
-    return `need more ETH for gas on Ethereum mainnet — have ${balanceEth.toFixed(6)} ${sym}`;
   }
 
   start() {
     this.discovery.refresh();
-    this.timers.push(setInterval(() => this.discovery.refresh(), config.stockDiscoveryRefreshMs));
-    this.timers.push(setInterval(() => this.tick(), 5_000));
-    console.log('[user-bots] Engine started — Ethereum tokenized stocks via Uniswap V3, 5s tick');
+    this.timers.push(setInterval(() => this.discovery.refresh(), 60_000));
+    this.timers.push(setInterval(() => this.tick(), 3_000));
+    console.log('[user-bots] Engine started — 3s tick');
     setTimeout(() => this.tick(), 2_000);
   }
 
@@ -66,57 +33,41 @@ export class UserBotEngine {
     this.timers = [];
   }
 
-  async getWallet(userId) {
-    if (this.walletCache.has(userId)) return this.walletCache.get(userId);
+  async getKeypair(userId) {
+    if (this.keypairCache.has(userId)) return this.keypairCache.get(userId);
     const user = await findUserById(userId);
     if (!user?.serverEncryptedKey) return null;
     try {
       const secret = decryptWithServerKey(user.serverEncryptedKey, config.authServerKey);
-      const wallet = this.trading.walletFromPrivateKey(secret);
-      this.walletCache.set(userId, wallet);
-      return wallet;
+      const kp = Keypair.fromSecretKey(bs58.decode(secret));
+      this.keypairCache.set(userId, kp);
+      return kp;
     } catch (err) {
       console.error(`[user-bots] wallet decrypt failed for ${userId}:`, err.message);
-      return { decryptFailed: true };
+      return null;
     }
   }
 
-  /** Tradable stock tokens whose on-chain market cap fits the bot's band. */
   filterCandidates(rules) {
     return this.discovery.list().filter(
-      (t) => t.tradable
-        && t.usdMarketCap >= rules.minMarketCap
-        && t.usdMarketCap <= rules.maxMarketCap,
+      (t) => t.usdMarketCap >= rules.minMarketCap && t.usdMarketCap <= rules.maxMarketCap,
     );
   }
 
-  positionEntryPrice(position) {
-    return Number(position?.entryPrice) || 0;
-  }
-
-  shouldTakeProfit(position, currentPrice, rules) {
-    const entry = this.positionEntryPrice(position);
-    if (!entry || !currentPrice) return false;
-    const pct = ((currentPrice - entry) / entry) * 100;
+  shouldTakeProfit(position, currentMcap, rules) {
+    if (!position?.entryMcap || !currentMcap) return false;
+    const pct = ((currentMcap - position.entryMcap) / position.entryMcap) * 100;
     return pct >= rules.takeProfitPercent;
   }
 
-  shouldStopLoss(position, currentPrice, rules) {
-    const entry = this.positionEntryPrice(position);
-    if (!entry || !currentPrice) return false;
-    const pct = ((entry - currentPrice) / entry) * 100;
+  shouldStopLoss(position, currentMcap, rules) {
+    if (!position?.entryMcap || !currentMcap) return false;
+    const pct = ((position.entryMcap - currentMcap) / position.entryMcap) * 100;
     return pct >= rules.stopLossPercent;
   }
 
   async tick() {
-    if (this.busy) return;
-    if (config.simulationFallback) {
-      if (!this.simulationLogged) {
-        console.log('[user-bots] SIMULATION_FALLBACK=true — user bots disabled');
-        this.simulationLogged = true;
-      }
-      return;
-    }
+    if (this.busy || config.simulationFallback) return;
     this.busy = true;
     try {
       const bots = await listActiveBots();
@@ -124,220 +75,146 @@ export class UserBotEngine {
 
       if (!this.discovery.list().length) await this.discovery.refresh();
 
-      // One wallet per user — run bots sequentially per user to avoid nonce collisions.
-      const byUser = new Map();
-      for (const bot of bots) {
-        if (!byUser.has(bot.userId)) byUser.set(bot.userId, []);
-        byUser.get(bot.userId).push(bot);
-      }
-
-      await Promise.all([...byUser.entries()].map(([, userBots]) =>
-        (async () => {
-          for (const bot of userBots) {
-            await this.runBot(bot).catch((err) => {
-              console.error(`[user-bots] bot ${bot.id} error:`, err.message);
-            });
-          }
-        })(),
-      ));
+      await Promise.all(bots.map((bot) => this.runBot(bot).catch((err) => {
+        console.error(`[user-bots] bot ${bot.id} error:`, err.message);
+      })));
     } finally {
       this.busy = false;
     }
   }
 
-  async clearGhostPosition(bot, wallet) {
-    const tokenAddr = bot.position?.mint || bot.position?.address;
-    if (!tokenAddr) return false;
-    const held = await this.trading.getTokenBalanceRaw(wallet, tokenAddr);
-    if (held > 0n) return false;
-    await updateBot(bot.id, bot.userId, { position: null });
-    console.log(`[user-bots] ${bot.name || bot.botType} cleared stale position (no on-chain balance)`);
-    bot.position = null;
-    return true;
-  }
-
   async runBot(bot) {
-    const walletResult = await this.getWallet(bot.userId);
-    if (!walletResult) {
-      this.setStatus(bot, 'wallet not synced — use Sync wallet on dashboard');
+    const keypair = await this.getKeypair(bot.userId);
+    if (!keypair) {
+      this.botStatus.set(String(bot.id), { reason: 'wallet not synced for Solana trading', at: Date.now() });
       return;
     }
-    if (walletResult.decryptFailed) {
-      this.setStatus(bot, 'AUTH_SERVER_KEY mismatch — log out, log in again to re-sync');
-      return;
-    }
-    const wallet = walletResult;
 
     const rules = normalizeRules(bot.tradingRules);
-    const balanceEth = await this.trading.getBalanceEth(wallet.address);
-    const feeReserve = config.botGasReserveEth;
-    const sym = config.nativeSymbol;
+    const balance = await this.pump.connection.getBalance(keypair.publicKey);
+    const balanceSol = balance / LAMPORTS_PER_SOL;
+    const feeReserve = 0.004;
 
-    const tokenAddr = bot.position?.mint || bot.position?.address;
-    if (tokenAddr) {
-      await this.clearGhostPosition(bot, wallet);
-      if (!bot.position) return;
+    if (bot.position?.mint) {
+      const token = this.discovery.get(bot.position.mint);
+      const currentMcap = token?.usdMarketCap ?? 0;
+      const takeProfit = this.shouldTakeProfit(bot.position, currentMcap, rules);
+      const stopLoss = this.shouldStopLoss(bot.position, currentMcap, rules);
+      const stale = Date.now() - (bot.position.boughtAt ?? 0) > 30_000;
 
-      const token = this.discovery.get(tokenAddr);
-      const currentPrice = token?.priceUsd ?? 0;
-      const takeProfit = this.shouldTakeProfit(bot.position, currentPrice, rules);
-      const stopLoss = this.shouldStopLoss(bot.position, currentPrice, rules);
-      const maxHoldMs = config.botMaxHoldMs;
-      const stale = Date.now() - (bot.position.boughtAt ?? 0) > maxHoldMs;
+      if (takeProfit || stopLoss || stale) {
+        const sellSol = Math.min(rules.buyAmountSol, balanceSol);
+        if (balanceSol < feeReserve) return;
 
-      if (!takeProfit && !stopLoss && !stale) {
-        const entry = this.positionEntryPrice(bot.position);
-        const pnl = entry && currentPrice ? (((currentPrice - entry) / entry) * 100).toFixed(2) : '—';
-        this.setStatus(bot, `holding ${bot.position.symbol} stock @ $${currentPrice || '—'} (${pnl}%) — waiting for TP/SL`);
-        return;
-      }
-
-      if (balanceEth < feeReserve) {
-        this.setStatus(bot, this.gasNeededStatus(balanceEth, sym));
-        return;
-      }
-
-      const result = await this.trading.sellToken({
-        wallet,
-        mintAddress: tokenAddr,
-        pools: this.discovery.poolsFor(tokenAddr),
-      });
-
-      if (result) {
-        await insertBotTrade({
-          botId: bot.id,
-          userId: bot.userId,
-          side: 'sell',
-          mint: tokenAddr,
-          symbol: bot.position.symbol,
-          solAmount: result.ethAmount,
-          signature: result.signature,
-          explorerUrl: result.explorerUrl || txExplorerUrl(config.chainExplorerUrl, result.signature),
+        const result = await this.pump.sellToken({
+          keypair,
+          mintAddress: bot.position.mint,
+          targetSol: sellSol,
         });
-        await updateBot(bot.id, bot.userId, { position: null });
-        console.log(`[user-bots] ${bot.name || bot.botType} sold ${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
-        this.botStatus.delete(String(bot.id));
-        this.sellFailCounts.delete(bot.id);
-      } else {
-        const fails = (this.sellFailCounts.get(bot.id) ?? 0) + 1;
-        this.sellFailCounts.set(bot.id, fails);
-        if (fails >= 3) {
+
+        if (result) {
+          await insertBotTrade({
+            botId: bot.id,
+            userId: bot.userId,
+            side: 'sell',
+            mint: bot.position.mint,
+            symbol: bot.position.symbol,
+            solAmount: result.solAmount,
+            signature: result.signature,
+            explorerUrl: solscanTxUrl(result.signature),
+          });
           await updateBot(bot.id, bot.userId, { position: null });
-          bot.position = null;
-          this.sellFailCounts.delete(bot.id);
-          this.setStatus(bot, 'cleared stuck position after sell failures — will buy again');
-        } else {
-          this.setStatus(bot, `sell failed (${fails}/3) — retrying`);
+          console.log(`[user-bots] ${bot.name || bot.botType} sold $${bot.position.symbol} (${takeProfit ? 'TP' : stopLoss ? 'SL' : 'time'})`);
+          this.botStatus.delete(String(bot.id));
         }
+      } else {
+        const pnl = bot.position.entryMcap && currentMcap
+          ? (((currentMcap - bot.position.entryMcap) / bot.position.entryMcap) * 100).toFixed(2)
+          : '—';
+        this.botStatus.set(String(bot.id), {
+          reason: `holding $${bot.position.symbol} (${pnl}%) — waiting for TP/SL`,
+          at: Date.now(),
+        });
       }
       return;
     }
 
-    const buyEth = this.buyEthForBalance(balanceEth, rules);
-    if (buyEth <= 0) {
-      this.setStatus(bot, this.gasNeededStatus(balanceEth, sym));
+    if (balanceSol < rules.buyAmountSol + feeReserve) {
+      this.botStatus.set(String(bot.id), {
+        reason: `need more SOL — have ${balanceSol.toFixed(4)} SOL`,
+        at: Date.now(),
+      });
       return;
     }
 
     const candidates = this.filterCandidates(rules);
-    if (!candidates.length) {
-      const pool = this.discovery.list().length;
-      this.setStatus(bot, `no tradable Ethereum stock tokens in your mcap band (${pool} listed) — widen the range`);
-      return;
-    }
-
-    const ordered = buildTradeCandidateOrder(bot.botType, candidates);
-    let target = null;
-    let result;
-
-    for (const candidate of ordered.slice(0, 20)) {
-      try {
-        const pools = this.discovery.poolsFor(candidate.address);
-        const minOut = this.discovery.minOutForBuy(candidate.address, buyEth);
-        const routable = await this.trading.canSwapEthForToken(candidate.address, buyEth, pools, minOut);
-        if (!routable) continue;
-        target = candidate;
-        result = await this.trading.buyToken({
-          wallet,
-          mintAddress: candidate.address,
-          ethAmount: buyEth,
-          pools,
-          minOut,
-        });
-        break;
-      } catch (err) {
-        const msg = this.trading.formatTxError?.(err) ?? err.message;
-        console.error(`[user-bots] ${bot.name || bot.botType} buy failed on ${candidate.symbol}:`, msg);
-        this.setStatus(bot, `buy failed on ${candidate.symbol}: ${msg.slice(0, 120)}`);
-        return;
-      }
-    }
-
+    const target = selectToken(bot.botType, candidates);
     if (!target) {
-      this.setStatus(bot, `0/${candidates.length} stock tokens with live Uniswap V3 liquidity — retrying`);
+      this.botStatus.set(String(bot.id), {
+        reason: `no Pump.fun tokens in market-cap range (${this.discovery.list().length} scanned)`,
+        at: Date.now(),
+      });
       return;
     }
+
+    const result = await this.pump.buyToken({
+      keypair,
+      mintAddress: target.mint,
+      solAmount: rules.buyAmountSol,
+    });
 
     if (result) {
       await insertBotTrade({
         botId: bot.id,
         userId: bot.userId,
         side: 'buy',
-        mint: target.address,
+        mint: target.mint,
         symbol: target.symbol,
-        solAmount: result.ethAmount,
+        solAmount: result.solAmount,
         signature: result.signature,
-        explorerUrl: result.explorerUrl || txExplorerUrl(config.chainExplorerUrl, result.signature),
+        explorerUrl: solscanTxUrl(result.signature),
       });
       await updateBot(bot.id, bot.userId, {
         position: {
-          mint: target.address,
-          address: target.address,
+          mint: target.mint,
           symbol: target.symbol,
-          entryPrice: target.priceUsd,
           entryMcap: target.usdMarketCap,
-          entryEth: result.ethAmount,
-          entrySol: result.ethAmount,
+          entrySol: result.solAmount,
           boughtAt: Date.now(),
         },
       });
-      console.log(`[user-bots] ${bot.name || bot.botType} bought ${target.symbol} stock @ $${target.priceUsd}`);
+      console.log(`[user-bots] ${bot.name || bot.botType} bought $${target.symbol} (~$${Math.round(target.usdMarketCap)} mcap)`);
       this.botStatus.delete(String(bot.id));
     }
   }
 
   async getDiagnostics(userId) {
     const bots = await listBotsForUser(userId);
-    const active = bots.filter((b) => b.isActive);
-    const pool = this.discovery.list();
+    const active = bots.filter((bot) => bot.isActive);
     const rules = normalizeRules(active[0]?.tradingRules ?? defaultTradingRules());
+    const pool = this.discovery.list();
     const candidates = this.filterCandidates(rules);
-    let routableInRange = 0;
-    for (const t of candidates.slice(0, 15)) {
-      const pools = this.discovery.poolsFor(t.address);
-      const minOut = this.discovery.minOutForBuy(t.address, rules.buyAmountEth);
-      if (await this.trading.canSwapEthForToken(t.address, rules.buyAmountEth, pools, minOut)) {
-        routableInRange += 1;
-      }
-    }
     return {
       engineRunning: true,
-      chain: config.chainName,
-      chainId: config.chainId,
+      chain: 'Solana',
+      network: config.solanaNetwork,
       simulationFallback: config.simulationFallback,
       authConfigured: Boolean(config.authServerKey),
       discoveryPool: pool.length,
       candidatesInRange: candidates.length,
-      routableInRange,
-      stockDiscovery: this.discovery.getMeta(),
+      pumpDiscovery: {
+        poolSize: pool.length,
+        tradableCount: candidates.length,
+        lastRefresh: this.discovery.lastRefresh,
+      },
       mcapRange: { min: rules.minMarketCap, max: rules.maxMarketCap },
       activeBots: active.length,
-      botStatus: active.map((b) => ({
-        id: b.id,
-        name: b.name || b.botType,
-        isActive: b.isActive,
-        position: b.position,
-        lastStatus: this.getStatus(b.id),
+      botStatus: active.map((bot) => ({
+        id: bot.id,
+        name: bot.name || bot.botType,
+        isActive: bot.isActive,
+        position: bot.position,
+        lastStatus: this.botStatus.get(String(bot.id)) ?? null,
       })),
     };
   }

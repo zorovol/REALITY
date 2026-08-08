@@ -10,10 +10,10 @@
     }
   },
   "rewrites": [
-    { "source": "/socket.io", "destination": "https://ai-drama-island-api.onrender.com/socket.io" },
-    { "source": "/socket.io/(.*)", "destination": "https://ai-drama-island-api.onrender.com/socket.io/$1" },
+    { "source": "/socket.io", "destination": "https://tickwire-api.onrender.com/socket.io" },
+    { "source": "/socket.io/(.*)", "destination": "https://tickwire-api.onrender.com/socket.io/$1" },
     { "source": "/api/floor/:path*", "destination": "/api/floor/:path*" },
-    { "source": "/api/:path*", "destination": "https://ai-drama-island-api.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://tickwire-api.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

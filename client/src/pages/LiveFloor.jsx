@@ -68,8 +68,8 @@ export default function LiveFloor() {
               </div>
             </div>
             <div className="tf-hero-badges">
-              <span className="tf-badge tf-badge-pump">Stock tokens</span>
-              <span className="tf-badge tf-badge-mainnet">ROBINHOOD CHAIN</span>
+              <span className="tf-badge tf-badge-pump">pump.fun</span>
+              <span className="tf-badge tf-badge-mainnet">SOLANA</span>
             </div>
             <p className="tf-hero-disclaimer">
               Name your bot on the dashboard to appear here. Wallet address + password login — no server signup required.

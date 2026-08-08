@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "RobinBot — automated memecoin bots on Robinhood Chain",
+  "description": "TICKWIRE — automated Pump.fun trading bots on Solana",
   "scripts": {
     "setup": "npm install && npm install --prefix server && npm install --prefix client --include=dev",
     "build:render": "NPM_CONFIG_PRODUCTION=false npm run setup && npm run build",

@@ -51,7 +51,7 @@ export default function Signup() {
           <div className="auth-card-head">
             <h1>Create wallet</h1>
             <p>
-              Pick a password — we generate a fresh Ethereum wallet in your browser.
+              Pick a password — we generate a fresh Solana wallet in your browser.
               Log in anytime with your <strong>wallet address + password</strong>.
             </p>
           </div>

@@ -33,7 +33,7 @@ export default function Login() {
         <div className="auth-card">
           <div className="auth-card-head">
             <h1>Welcome back</h1>
-            <p>Log in with your Ethereum wallet address and the password you chose at signup.</p>
+            <p>Log in with your Solana wallet address and the password you chose at signup.</p>
           </div>
 
           <form onSubmit={submit} className="auth-form">
@@ -43,7 +43,7 @@ export default function Login() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Your 0x wallet address"
+                placeholder="Your Solana public key"
                 autoComplete="username"
                 required
               />

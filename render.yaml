@@ -1,16 +1,5 @@
-# Backend for TICKWIRE trading + websockets (Vercel hosts the static UI).
-# Render dashboard → Blueprint → connect repo, OR set env vars manually.
-#
-# DATABASE_URL: use Neon (recommended) OR the Render Postgres database below.
-# After adding DATABASE_URL, redeploy — /api/health should show db: "postgres".
-
-databases:
-  - name: tickwire-db
-    plan: free
-    region: oregon
-    databaseName: tickwire
-    user: tickwire
-
+# Backend for TICKWIRE Pump.fun bots + websockets (Vercel hosts the static UI).
+# Deploy at https://dashboard.render.com → New → Blueprint → connect this repo.
 services:
   - type: web
     name: tickwire-api
@@ -27,41 +16,40 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://tickwire.app,https://www.tickwire.app,https://robinbot.app,https://www.robinbot.app,https://ai-drama-island.vercel.app
+        value: https://tickwire.app,https://www.tickwire.app
       - key: SIMULATION_FALLBACK
         value: "false"
+      - key: PUMP_DISCOVERY
+        value: "true"
+      - key: PUMP_AUTO_LAUNCH
+        value: "false"
+      - key: TRADE_USD_PER_SIDE
+        value: "2"
+      - key: TRADE_INTERVAL_MS
+        value: "2000"
+      - key: MAX_TRADES_PER_MINUTE
+        value: "30"
+      - key: BALANCE_REFRESH_MS
+        value: "5000"
+      - key: TRADE_SELL_AFTER_BUY_MS
+        value: "20000"
+      - key: MIN_SOL_FOR_TRADE
+        value: "0.02"
+      - key: PUMP_TARGET_MCAP_USD
+        value: "4000"
+      - key: PUMP_MCAP_MIN_USD
+        value: "2500"
+      - key: PUMP_MCAP_MAX_USD
+        value: "6000"
+      - key: ENCRYPTION_KEY
+        sync: false
       - key: AUTH_SERVER_KEY
         sync: false
+      - key: WALLETS_ENC_B64
+        sync: false
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: SOLANA_NETWORK
+        value: mainnet-beta
       - key: DATABASE_URL
-        fromDatabase:
-          name: tickwire-db
-          property: connectionString
-      # Ethereum mainnet
-      - key: EVM_RPC_URL
-        value: https://ethereum.publicnode.com
-      - key: CHAIN_ID
-        value: "1"
-      - key: CHAIN_NAME
-        value: Ethereum
-      - key: CHAIN_EXPLORER_URL
-        value: https://etherscan.io
-      - key: NATIVE_SYMBOL
-        value: ETH
-      - key: WETH_ADDRESS
-        value: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
-      - key: USDC_ADDRESS
-        value: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
-      - key: UNISWAP_V3_ROUTER
-        value: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45
-      - key: UNISWAP_V3_QUOTER
-        value: 0x61fFE014bA17989E743c5F6cB21bF9697530B21e
-      - key: BOT_BUY_USD
-        value: "15"
-      - key: BOT_GAS_RESERVE_ETH
-        value: "0.005"
-      - key: ETH_USD_PRICE
-        value: "2500"
-      - key: STOCK_MIN_LIQUIDITY_USD
-        value: "1000"
-      - key: ENABLE_SOLANA_ISLAND
-        value: "false"
+        sync: false
