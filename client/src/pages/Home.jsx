@@ -121,6 +121,10 @@ export default function Home() {
           <div className="home-v2-stage-wrap">
             <div className="home-v2-stage">
               <div className="home-v2-stage-ring" />
+              <div className="home-v2-signal-card signal-a">
+                <span>AGENT SWARM</span>
+                <strong><i /> 5 ONLINE</strong>
+              </div>
               <div className="home-v2-stage-core">
                 <img src="/logo.png" alt={BRAND.name} className="home-v2-logo" />
               </div>
@@ -139,6 +143,10 @@ export default function Home() {
                 </div>
               ))}
               <div className="home-v2-stage-badge">pump.fun</div>
+              <div className="home-v2-signal-card signal-b">
+                <span>EXECUTION</span>
+                <strong>SOLANA <em>↗</em></strong>
+              </div>
             </div>
 
             <div className="home-v2-terminal" aria-hidden="true">
@@ -171,6 +179,7 @@ export default function Home() {
           {STRATEGIES.map((s) => (
             <article key={s.id} className="home-v2-strategy-card" style={{ '--accent': s.color }}>
               <div className="home-v2-strategy-dot" />
+              <span className="home-v2-agent-id">AI-0{STRATEGIES.indexOf(s) + 1}</span>
               <h3>{s.name}</h3>
               <p>{s.desc}</p>
             </article>

@@ -6,7 +6,7 @@ export const BRAND = {
   nameParts: { accent: 'TICK', rest: 'WIRE' },
   domain: 'tickwire.app',
   url: 'https://www.tickwire.app',
-  logoSrc: '/logo.svg',
+  logoSrc: '/logo.png',
   faviconSrc: '/favicon.svg',
   xUrl: 'https://x.com/tickwire',
   tagline: 'Automated Pump.fun bots on Solana',

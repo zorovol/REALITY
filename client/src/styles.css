@@ -12001,3 +12001,53 @@ body {
 .dash-hint::before { content: 'AI EXECUTION · '; color: var(--sol-purple); font-family: var(--font-mono); font-size: 9px; }
 .auth-shell { background: radial-gradient(ellipse at 20% 0%, rgba(140,123,255,0.22), transparent 45%), #05050b !important; }
 .auth-card { border-color: rgba(140,123,255,0.35) !important; box-shadow: 0 20px 80px rgba(0,0,0,0.5), 0 0 45px rgba(140,123,255,0.12) !important; }
+
+/* Original TICKWIRE signal mark and AI execution telemetry. */
+.platform-nav-brand .brand-logo-img {
+  border-radius: 9px;
+  box-shadow: 0 0 18px rgba(20,241,217,0.2), 0 0 34px rgba(140,123,255,0.14);
+}
+.home-v2-stage-core {
+  border-radius: 34px;
+  background: #070711;
+}
+.home-v2-logo { transform: scale(1.06); }
+.home-v2-signal-card {
+  position: absolute; z-index: 5;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 122px; padding: 10px 12px;
+  border: 1px solid rgba(20,241,217,0.34);
+  background: rgba(8,8,21,0.72);
+  backdrop-filter: blur(14px);
+  font-family: var(--font-mono);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  animation: tw-brand-in 0.8s cubic-bezier(0.16,1,0.3,1) both;
+}
+.home-v2-signal-card span {
+  color: #8e8da7; font-size: 8px; letter-spacing: 0.13em; font-weight: 700;
+}
+.home-v2-signal-card strong {
+  color: #f5f7ff; font-size: 10px; letter-spacing: 0.08em;
+}
+.home-v2-signal-card strong i {
+  display: inline-block; width: 6px; height: 6px; margin-right: 5px;
+  border-radius: 50%; background: #14f1d9; box-shadow: 0 0 10px #14f1d9;
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+.home-v2-signal-card strong em { color: #14f1d9; font-style: normal; }
+.home-v2-signal-card.signal-a { top: 48px; left: 8%; }
+.home-v2-signal-card.signal-b { right: 5%; bottom: 54px; border-color: rgba(140,123,255,0.42); animation-delay: 0.16s; }
+.home-v2-agent-id {
+  position: absolute; right: 12px; top: 11px;
+  font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em; color: rgba(255,255,255,0.32);
+}
+.home-v2-strategy-card { overflow: hidden; position: relative; }
+.home-v2-strategy-card::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: var(--accent); box-shadow: 0 0 14px var(--accent); opacity: 0.72;
+}
+@media (max-width: 640px) {
+  .home-v2-signal-card { min-width: 104px; padding: 8px 9px; }
+  .home-v2-signal-card.signal-a { left: 0; top: 16px; }
+  .home-v2-signal-card.signal-b { right: 0; bottom: 10px; }
+}
