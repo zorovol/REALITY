@@ -12112,7 +12112,7 @@ body {
   display: flex; flex-direction: column;
 }
 .home-v2-brand-card img {
-  width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover;
+  width: 100%; display: block; aspect-ratio: 3/1; object-fit: cover;
   border-bottom: 1px solid rgba(140,123,255,0.2);
 }
 .home-v2-brand-card:not(.wide) img { aspect-ratio: 1/1; }

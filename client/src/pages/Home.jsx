@@ -259,7 +259,7 @@ export default function Home() {
             <div className="home-v2-brand-card-row">
               <div>
                 <h3>Banner</h3>
-                <span>1536 × 1024 · PNG</span>
+                <span>1500 × 500 · PNG</span>
               </div>
               <a href="/social/solvanta-banner.png" download="solvanta-banner.png" className="home-v2-btn ghost">
                 Download
