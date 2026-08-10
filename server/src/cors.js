@@ -1,8 +1,8 @@
 import { config } from './config.js';
 
 const PRODUCTION_ORIGINS = [
-  'https://solvanta.app',
-  'https://www.solvanta.app',
+  'https://solvanta.fun',
+  'https://www.solvanta.fun',
   'https://tickwire.app',
   'https://www.tickwire.app',
   'https://ai-drama-island.vercel.app',
@@ -18,8 +18,8 @@ function isAllowedOrigin(origin, allowed) {
   if (allowed.some((o) => o.includes('vercel.app')) && /\.vercel\.app$/.test(origin)) {
     return true;
   }
-  if (allowed.some((o) => o.includes('solvanta.app'))
-    && /^https:\/\/(www\.)?solvanta\.app$/.test(origin)) {
+  if (allowed.some((o) => o.includes('solvanta.fun'))
+    && /^https:\/\/(www\.)?solvanta\.fun$/.test(origin)) {
     return true;
   }
   if (allowed.some((o) => o.includes('tickwire.app'))

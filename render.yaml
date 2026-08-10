@@ -17,7 +17,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://tickwire.app,https://www.tickwire.app,https://solvanta.app,https://www.solvanta.app
+        value: https://tickwire.app,https://www.tickwire.app,https://solvanta.fun,https://www.solvanta.fun
       - key: SIMULATION_FALLBACK
         value: "false"
       - key: PUMP_DISCOVERY
