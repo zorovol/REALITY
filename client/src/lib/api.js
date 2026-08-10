@@ -18,8 +18,9 @@ async function request(path, options = {}) {
     data = text ? JSON.parse(text) : {};
   } catch {
     if (res.status === 503) throw new Error('Trading server not configured — set AUTH_SERVER_KEY on Render.');
-    if (res.status === 404) throw new Error('API not found — redeploy Render backend with latest code.');
-    throw new Error(`Server error (${res.status}). Try again after deploy finishes.`);
+    if (res.status === 404) throw new Error(`API route not found (${path}) — the frontend may be a stale build. Close this tab and reopen the site.`);
+    const snippet = String(text || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+    throw new Error(`Backend error ${res.status} on ${path}${snippet ? ` — ${snippet}` : ''}. If a deploy just happened, wait a minute and retry.`);
   }
 
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
