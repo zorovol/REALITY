@@ -89,6 +89,7 @@ app.get('/api/health', (req, res) => {
     ok: true,
     db: dbReady() ? 'neon' : 'memory',
     platformAuth: true,
+    signupReady: Boolean(config.authServerKey && config.authServerKey.length >= 16),
     aiProviders: availableProviders().map((p) => p.id),
     arc: world.arc,
     tension: Math.round(world.tension),
