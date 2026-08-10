@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "TICKWIRE — automated Pump.fun trading bots on Solana",
+  "description": "SOLVANTA — AI trading agents on Solana (Pump.fun)",
   "scripts": {
     "setup": "npm install && npm install --prefix server && npm install --prefix client --include=dev",
     "build:render": "NPM_CONFIG_PRODUCTION=false npm run setup && npm run build",

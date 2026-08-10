@@ -152,7 +152,7 @@ export default function Home() {
             <div className="home-v2-terminal" aria-hidden="true">
               <div className="home-v2-terminal-bar">
                 <span /><span /><span />
-                <p>tickwire-agent-swarm · live</p>
+                <p>solvanta-agent-swarm · live</p>
               </div>
               <div className="home-v2-terminal-body">
                 {TERMINAL_LINES.map((line) => (

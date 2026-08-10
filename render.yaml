@@ -1,4 +1,5 @@
-# Backend for TICKWIRE Pump.fun bots + websockets (Vercel hosts the static UI).
+# Backend for SOLVANTA Pump.fun agents + websockets (Vercel hosts the static UI).
+# Service name kept as tickwire-api to match the live Render deployment.
 # Deploy at https://dashboard.render.com → New → Blueprint → connect this repo.
 services:
   - type: web
@@ -16,7 +17,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_ORIGIN
-        value: https://tickwire.app,https://www.tickwire.app
+        value: https://tickwire.app,https://www.tickwire.app,https://solvanta.app,https://www.solvanta.app
       - key: SIMULATION_FALLBACK
         value: "false"
       - key: PUMP_DISCOVERY

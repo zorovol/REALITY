@@ -1,12 +1,10 @@
 import { config } from './config.js';
 
 const PRODUCTION_ORIGINS = [
-  'https://robinbot.app',
-  'https://www.robinbot.app',
-  'https://botsforge.tech',
-  'https://www.botsforge.tech',
-  'https://gptgrokgeminideepseekfable.com',
-  'https://www.gptgrokgeminideepseekfable.com',
+  'https://solvanta.app',
+  'https://www.solvanta.app',
+  'https://tickwire.app',
+  'https://www.tickwire.app',
   'https://ai-drama-island.vercel.app',
 ];
 
@@ -20,16 +18,12 @@ function isAllowedOrigin(origin, allowed) {
   if (allowed.some((o) => o.includes('vercel.app')) && /\.vercel\.app$/.test(origin)) {
     return true;
   }
-  if (allowed.some((o) => o.includes('robinbot.app'))
-    && /^https:\/\/(www\.)?robinbot\.app$/.test(origin)) {
+  if (allowed.some((o) => o.includes('solvanta.app'))
+    && /^https:\/\/(www\.)?solvanta\.app$/.test(origin)) {
     return true;
   }
-  if (allowed.some((o) => o.includes('botsforge.tech'))
-    && /^https:\/\/([a-z0-9-]+\.)?botsforge\.tech$/.test(origin)) {
-    return true;
-  }
-  if (allowed.some((o) => o.includes('gptgrokgeminideepseekfable.com'))
-    && /^https:\/\/([a-z0-9-]+\.)?gptgrokgeminideepseekfable\.com$/.test(origin)) {
+  if (allowed.some((o) => o.includes('tickwire.app'))
+    && /^https:\/\/(www\.)?tickwire\.app$/.test(origin)) {
     return true;
   }
   return false;

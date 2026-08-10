@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   TICKWIRE — Solana pump.fun on black
+   SOLVANTA — Solana pump.fun on black
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -10184,7 +10184,7 @@ body {
   }
 }
 
-/* ── TICKWIRE brand + Solana palette ── */
+/* ── SOLVANTA brand + Solana palette ── */
 
 .brand-logo-wrap {
   display: inline-flex;
@@ -11015,7 +11015,7 @@ body {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TICKWIRE X — crazy tech HUD (Solana Pump.fun bots)
+   SOLVANTA X — crazy tech HUD (Solana Pump.fun agents)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .tw {
@@ -12002,7 +12002,7 @@ body {
 .auth-shell { background: radial-gradient(ellipse at 20% 0%, rgba(140,123,255,0.22), transparent 45%), #05050b !important; }
 .auth-card { border-color: rgba(140,123,255,0.35) !important; box-shadow: 0 20px 80px rgba(0,0,0,0.5), 0 0 45px rgba(140,123,255,0.12) !important; }
 
-/* Original TICKWIRE signal mark and AI execution telemetry. */
+/* Original SOLVANTA signal mark and AI execution telemetry. */
 .platform-nav-brand .brand-logo-img {
   border-radius: 9px;
   box-shadow: 0 0 18px rgba(20,241,217,0.2), 0 0 34px rgba(140,123,255,0.14);
