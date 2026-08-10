@@ -12087,3 +12087,44 @@ body {
   font-family: var(--font-mono);
 }
 .dash-engine-status strong { color: #14f1d9; font-weight: 600; }
+
+/* Brand kit — downloadable PFP + banner */
+.home-v2-brand-kit {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: 64px 24px 48px;
+}
+.home-v2-brand-kit-head { text-align: center; margin-bottom: 28px; }
+.home-v2-brand-kit-head h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  margin: 6px 0 10px;
+}
+.home-v2-brand-kit-head p:last-child { color: #8e8da7; font-size: 14px; max-width: 460px; margin: 0 auto; }
+.home-v2-brand-kit-grid {
+  display: grid; grid-template-columns: 1fr 1.6fr; gap: 16px;
+}
+.home-v2-brand-card {
+  border: 1px solid rgba(140,123,255,0.28);
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(21,20,42,0.9), rgba(8,8,17,0.88));
+  display: flex; flex-direction: column;
+}
+.home-v2-brand-card img {
+  width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover;
+  border-bottom: 1px solid rgba(140,123,255,0.2);
+}
+.home-v2-brand-card:not(.wide) img { aspect-ratio: 1/1; }
+.home-v2-brand-card-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 16px;
+}
+.home-v2-brand-card-row h3 { font-size: 14px; margin: 0 0 2px; }
+.home-v2-brand-card-row span {
+  font-family: var(--font-mono); font-size: 10px; color: #8e8da7; letter-spacing: 0.06em;
+}
+.home-v2-brand-card-row .home-v2-btn { padding: 9px 16px; font-size: 12px; }
+@media (max-width: 760px) {
+  .home-v2-brand-kit-grid { grid-template-columns: 1fr; }
+}

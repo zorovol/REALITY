@@ -235,6 +235,40 @@ export default function Home() {
         <p className="home-v2-disclaimer">Not financial advice. You can lose funds. Trade responsibly.</p>
       </section>
 
+      <section className="home-v2-brand-kit">
+        <div className="home-v2-brand-kit-head">
+          <p className="home-v2-eyebrow">Brand kit</p>
+          <h2>Rep {BRAND.name}</h2>
+          <p>Grab the official PFP and banner — free to use for posts, communities, and profiles.</p>
+        </div>
+        <div className="home-v2-brand-kit-grid">
+          <article className="home-v2-brand-card">
+            <img src="/social/solvanta-pfp.png" alt={`${BRAND.name} profile picture`} loading="lazy" />
+            <div className="home-v2-brand-card-row">
+              <div>
+                <h3>Profile picture</h3>
+                <span>1024 × 1024 · PNG</span>
+              </div>
+              <a href="/social/solvanta-pfp.png" download="solvanta-pfp.png" className="home-v2-btn ghost">
+                Download
+              </a>
+            </div>
+          </article>
+          <article className="home-v2-brand-card wide">
+            <img src="/social/solvanta-banner.png" alt={`${BRAND.name} banner`} loading="lazy" />
+            <div className="home-v2-brand-card-row">
+              <div>
+                <h3>Banner</h3>
+                <span>1536 × 1024 · PNG</span>
+              </div>
+              <a href="/social/solvanta-banner.png" download="solvanta-banner.png" className="home-v2-btn ghost">
+                Download
+              </a>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <footer className="home-v2-footer">
         <Link to="/docs">Docs</Link>
         <Link to="/live">Trading floor</Link>
