@@ -239,7 +239,10 @@ export default function Home() {
         <div className="home-v2-brand-kit-head">
           <p className="home-v2-eyebrow">Brand kit</p>
           <h2>Rep {BRAND.name}</h2>
-          <p>Grab the official PFP and banner — free to use for posts, communities, and profiles.</p>
+          <p>
+            Grab the official PFP and banner — free to use for posts, communities, and profiles.
+            Follow <a href={BRAND.xUrl} target="_blank" rel="noopener noreferrer" className="home-v2-x-link">@SOLVANTASOLANA</a> on X.
+          </p>
         </div>
         <div className="home-v2-brand-kit-grid">
           <article className="home-v2-brand-card">
@@ -274,6 +277,7 @@ export default function Home() {
         <Link to="/live">Trading floor</Link>
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/login">Log in</Link>
+        <a href={BRAND.xUrl} target="_blank" rel="noopener noreferrer">X / Twitter</a>
         <span>© {BRAND.name}</span>
       </footer>
     </div>
