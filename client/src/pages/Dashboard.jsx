@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [syncWarning, setSyncWarning] = useState('');
+  const [diagnostics, setDiagnostics] = useState(null);
 
   const load = useCallback(async () => {
     const session = getSession();
@@ -35,14 +36,16 @@ export default function Dashboard() {
     }
     setUser(session);
     try {
-      const [me, botRes, bal] = await Promise.all([
+      const [me, botRes, bal, diag] = await Promise.all([
         api.me(),
         api.listBots(),
         api.walletBalance().catch(() => ({ balanceSol: null })),
+        api.tradingDiagnostics().catch(() => null),
       ]);
       setUser({ walletAddress: me.walletAddress, createdAt: me.createdAt });
       setBots(botRes.bots);
       setBalance(bal.balanceSol);
+      setDiagnostics(diag);
       setSyncWarning('');
     } catch (err) {
       setSyncWarning(err.message);
@@ -194,6 +197,37 @@ export default function Dashboard() {
               + Create bot
             </button>
           </header>
+
+          {diagnostics && (
+            <section className="dash-engine-panel">
+              <div className="dash-engine-head">
+                <h2>
+                  <span className={`dash-engine-dot ${diagnostics.engineRunning && !diagnostics.simulationFallback ? 'on' : 'off'}`} />
+                  AI engine
+                </h2>
+                <span className="dash-engine-meta">
+                  {diagnostics.discoveryPool ?? 0} Pump.fun tokens scanned · {diagnostics.candidatesInRange ?? 0} in your mcap range
+                  {diagnostics.mcapRange && ` ($${diagnostics.mcapRange.min.toLocaleString()}–$${diagnostics.mcapRange.max.toLocaleString()})`}
+                </span>
+              </div>
+              {diagnostics.simulationFallback && (
+                <p className="dash-engine-warn">SIMULATION_FALLBACK is on — no real trades. Turn it off on Render.</p>
+              )}
+              {!diagnostics.tradingReady && (
+                <p className="dash-engine-warn">Wallet not synced for trading — log out and log back in to sync.</p>
+              )}
+              {diagnostics.candidatesInRange === 0 && (
+                <p className="dash-engine-warn">
+                  0 tokens in your market-cap band — widen min/max market cap on your bot.
+                </p>
+              )}
+              {(diagnostics.botStatus ?? []).filter((b) => b.lastStatus).map((b) => (
+                <p key={b.id} className="dash-engine-status">
+                  <strong>{b.name}</strong> — {b.lastStatus.reason}
+                </p>
+              ))}
+            </section>
+          )}
 
           {showCreate && (
             <section className="dash-create-panel">

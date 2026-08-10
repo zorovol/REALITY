@@ -104,13 +104,29 @@ export class UserBotEngine {
 
       if (takeProfit || stopLoss || stale) {
         const sellSol = Math.min(rules.buyAmountSol, balanceSol);
-        if (balanceSol < feeReserve) return;
+        if (balanceSol < feeReserve) {
+          this.botStatus.set(String(bot.id), {
+            reason: `cannot sell — need ~${feeReserve} SOL for fees, have ${balanceSol.toFixed(4)}`,
+            at: Date.now(),
+          });
+          return;
+        }
 
-        const result = await this.pump.sellToken({
-          keypair,
-          mintAddress: bot.position.mint,
-          targetSol: sellSol,
-        });
+        let result;
+        try {
+          result = await this.pump.sellToken({
+            keypair,
+            mintAddress: bot.position.mint,
+            targetSol: sellSol,
+          });
+        } catch (err) {
+          this.botStatus.set(String(bot.id), {
+            reason: `sell failed: ${String(err.message).slice(0, 140)}`,
+            at: Date.now(),
+          });
+          console.error(`[user-bots] ${bot.name || bot.botType} sell error:`, err.message);
+          return;
+        }
 
         if (result) {
           await insertBotTrade({
@@ -157,11 +173,21 @@ export class UserBotEngine {
       return;
     }
 
-    const result = await this.pump.buyToken({
-      keypair,
-      mintAddress: target.mint,
-      solAmount: rules.buyAmountSol,
-    });
+    let result;
+    try {
+      result = await this.pump.buyToken({
+        keypair,
+        mintAddress: target.mint,
+        solAmount: rules.buyAmountSol,
+      });
+    } catch (err) {
+      this.botStatus.set(String(bot.id), {
+        reason: `buy failed on $${target.symbol}: ${String(err.message).slice(0, 140)}`,
+        at: Date.now(),
+      });
+      console.error(`[user-bots] ${bot.name || bot.botType} buy error on $${target.symbol}:`, err.message);
+      return;
+    }
 
     if (result) {
       await insertBotTrade({
